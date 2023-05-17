@@ -16,10 +16,12 @@ config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.c
 Operator = BaseClass(config_path)
 
 # Daten einlesen und in Object speichern (Bank und Format default bzw. wird geraten)
-Operator.data = Operator.parse(sys.argv[1])
+Operator.parse(sys.argv[1])
 
 # Eingelesene Umsätze kategorisieren
-Operator.categorize(Operator.data)
+Operator.categorize()
+print(Operator.data)
+sys.exit()
 
 # Verarbeitete Kontiumsätze in die DB speichern und vom Objekt löschen
 Operator.flush_to_db()

@@ -19,8 +19,25 @@ class SQLiteHandler:
         try:
             self.connection = sqlite3.connect(self.database)
             self.connection.row_factory = sqlite3.Row
+            self.create_schema()
         except sqlite3.Error as e:
             print("Fehler beim Verbindungsaufbau zur Datenbank:", e)
+
+    def create_schema(self):
+        try:
+            with self.connection:
+                cursor = self.connection.cursor()
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+                tables = cursor.fetchall()
+                if len(tables) == 0:
+                    #TODO: Ein Datenbankschema erstellen
+                    cursor.execute("CREATE TABLE IF NOT EXISTS Cashflow (id INTEGER PRIMARY KEY, name TEXT);")
+                    print("Datenbankschema wurde erstellt")
+                else:
+                    print("Datenbankschema existiert bereits")
+        except sqlite3.Error as e:
+            print("Fehler beim Erstellen des Datenbankschemas:", e)
+
 
     def select(self, table, columns=["*"], condition=None):
         """

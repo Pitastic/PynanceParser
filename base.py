@@ -5,6 +5,7 @@
 import sys
 import logging
 import configparser
+import random
 
 from handler.SqliteDB import SQLiteHandler
 from parsers.Generic import Parser as Generic
@@ -46,6 +47,7 @@ class BaseClass():
     def parse(self, uri, bank='Generic', format=None):
         """
         Liest Kontoumsätze aus der Ressource ein. Wenn das Format nicht angegeben ist, wird versucht, es zu erraten.
+        Speichert Liste mit Dictonaries, als Standard-Objekt mit den Kontoumsätzen in der Instanz.
 
         Args:
             uri (str): Pfad zur Ressource mit den Kontoumsätzen.
@@ -53,43 +55,49 @@ class BaseClass():
             format (str, optional): Bezeichnung des Ressourcenformats (http, csv, pdf).
 
         Returns:
-            Liste mit Dictonaries, als Standard-Objekt mit den Kontoumsätzen.
+            int: Anzahl an geparsten Einträgen
         """
         # Format
         if format is None:
             #TODO: Logik zum Erraten des Datentyps
-            format = 'pdf'
+            format = 'csv'
 
         # Parser
         self.parser = self.parsers.get(bank, self.parsers.get('Generic'))()
-        if not self.parser.prepare(self.uri):
-            return False
         parsing_method = {
             'pdf': self.parser.from_pdf,
             'csv': self.parser.from_csv,
             'http': self.parser.from_http
         }.get(format)
 
-        return parsing_method(uri)
+        self.data = parsing_method(uri)
+        return len(self.data) if self.data is not None else 0
 
-    def categorize(self, data):
+    def categorize(self):
         """
-        Kategorisiert die Kontoumsätze
+        Kategorisiert die Kontoumsätze und aktualisiert die Daten in der Instanz.
 
         Args:
             data (str): Kontoumsätze, die kategorisiert werden sollen
 
         Returns:
-            Liste mit Dictonaries, als Standard-Objekt, die die übergebenen Daten mitsamt der Kategorisierung enthält.
+            int: Anzahl der kategorisierten Daten.
         """
-        raise NotImplemented()
+        #TODO: Categorize (Fake Methode)
+        list_of_categories = ['Vergnügen', 'Versicherung', 'KFZ', 'Kredite', 'Haushalt und Lebensmittel', 'Anschaffung']
+        c = 0
+        for d in self.data:
+            d['category'] = random.choice(list_of_categories)
+            c = c +1
+        return c
+        
 
     def flush_to_db(self):
         """
         Speichert die eingelesenen Kontodaten in der Datenbank und bereinigt den Objektspeicher.
 
         Returns:
-            Die Anzahl der eingefügten Datensätze
+            int: Die Anzahl der eingefügten Datensätze
         """
         normalized_data = self.data     # TODO: Liste der Dicts zurechtschneiden, damit sie dem DB Schema entsprechen.
         inserted_rows = self.db.insert(normalized_data)

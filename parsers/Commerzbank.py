@@ -10,18 +10,9 @@ class Parser(Generic):
         """
         Initialisiert eine Instanz der Parser-Klasse für Kontoumsätze der Commerzbank.
         """
-        super().__init__()
+        super().__init__()                
 
-    def from_csv(self):
-        """
-        Liest Kontoumsätze aus einer CSV Datei ein, die aus dem OnlineBanking der Commerzbank stammt.
-
-        Returns:
-            Liste mit Dictonaries, als Standard-Objekt mit allen ausgelesenen Kontoumsätzen entspricht.
-        """
-        raise NotImplemented()
-
-    def from_pdf(self):
+    def from_pdf(self, filepath):
         """
         Liest Kontoumsätze von Kontoauszügen ein, die im PDF Format von der Commerzbank ausgestellt worden sind.
 
