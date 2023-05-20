@@ -19,9 +19,8 @@ Operator = BaseClass(config_path)
 Operator.parse(sys.argv[1])
 
 # Eingelesene Umsätze kategorisieren
-Operator.categorize()
-print(Operator.data)
-sys.exit()
+Operator.tag()
+#print(Operator.data)
 
 # Verarbeitete Kontiumsätze in die DB speichern und vom Objekt löschen
 Operator.flush_to_db()

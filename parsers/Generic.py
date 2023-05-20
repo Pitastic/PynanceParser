@@ -15,13 +15,15 @@ class Parser:
         Initialisiert eine Instanz von Generic-Parser.
         Das Standard-Objekt, was vom Parsing zurückgegeben wird, sollte so aussehen:
         dict({
-            'date_tx': date,
+            'date_tx': int,
             'text_tx': str,
             'betrag': float,
             'iban': str,
-            'date_wert': date,      # (optional)
-            'art': str              # (optional)
-            'currency': str         # (optional)
+            'date_wert': int ,      # (optional)
+            'art': str,             # (optional)
+            'currency': str,        # (optional)
+            'primary_tag': str,     # (optional)
+            'secondary_tag': str    # (optional)
         })
         """
         return
@@ -47,10 +49,10 @@ class Parser:
                 result.append({
                     'date_tx': datetime.datetime.strptime(
                         row['Buchungstag'], date_format
-                    ).date(),
+                    ).timestamp(),
                     'date_wert': datetime.datetime.strptime(
                         row['Wertstellung'], date_format
-                    ).date(),
+                    ).timestamp(),
                     'art': row['Umsatzart'],
                     'text_tx': row['Buchungstext'],
                     'betrag': betrag,

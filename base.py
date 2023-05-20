@@ -6,6 +6,7 @@ import sys
 import logging
 import configparser
 import random
+import hashlib
 
 from handler.SqliteDb import SQLiteHandler
 from parsers.Generic import Parser as Generic
@@ -164,8 +165,46 @@ class BaseClass():
         Returns:
             int: Die Anzahl der eingefügten Datensätze
         """
-        # TODO: Liste der Dicts zurechtschneiden, damit sie dem DB Schema entsprechen.
-        normalized_data = self.data
-        inserted_rows = self.database.insert(self.config['DEFAULT']['iban'], normalized_data)
+        self.data = self.normalized_data(self.data)
+        self.generate_unique()
+        inserted_rows = self.database.insert(self.config['DEFAULT']['iban'], self.data)
         self.data = None
         return inserted_rows
+
+    def normalized_data(self, input_list):
+        """
+        Normalisiert die Daten für das Einfügen in das Datenbankschema.
+
+        Args:
+            input_list, list(dicts): Liste von Buchungen, die aus dem Parsing stammen.
+        Returns:
+            Die gleiche Liste mit bereinigten/angepassten Dicts.
+        """
+        required_keys = ['date_tx', 'text_tx', 'betrag', 'iban']
+        optional_keys = ['date_wert', 'art', 'currency', 'primary_tag', 'secondary_tag']
+        for transaction in input_list:
+
+            # Fehlen erforderliche Keys, löst das eine Exception aus
+            for key in required_keys:
+                if not key in transaction.keys():
+                    raise KeyError('Die geparsten Daten beinhalten nicht die erforderlichen' +
+                                f' Informationen. Es fehlt {key} !')
+
+            # Optionale Keys auf None setzen
+            for key in optional_keys:
+                if not key in transaction.keys():
+                    transaction[key] = None
+
+        return input_list
+
+    def generate_unique(self):
+        """
+        Erstellt einen einmaligen ID für jede Transaktion.
+        """
+        for transaction in self.data:
+            md5_hash = hashlib.md5()
+            combined_string = str(transaction.get('date_tx', '')) + \
+                              str(transaction.get('betrag', '')) + \
+                              transaction.get('text_tx', '')
+            md5_hash.update(combined_string.encode('utf-8'))
+            transaction['hash'] = md5_hash.hexdigest()
