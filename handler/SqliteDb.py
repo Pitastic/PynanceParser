@@ -6,37 +6,61 @@ import sqlite3
 
 
 class SQLiteHandler:
-    def __init__(self, database):
+    """
+    Handler für die Interaktion mit einer SQLite Datenbank.
+    """
+    def __init__(self, config, logger):
         """
-        Initialisiert eine Instanz von SQLiteHandler und stellt eine Verbindung zur Datenbankdatei her.
+        Initialisiert eine Instanz von SQLiteHandler und
+        stellt eine Verbindung zur Datenbankdatei her.
 
         Args:
             database (str): Der Dateipfad zur SQLite-Datenbank.
         """
-        self.database = database
+        self.config = config
+        self.logger = logger
+        self.database = self.config['DB']['path']
         self.connection = None
 
         try:
             self.connection = sqlite3.connect(self.database)
             self.connection.row_factory = sqlite3.Row
-            self.create_schema()
-        except sqlite3.Error as e:
-            print("Fehler beim Verbindungsaufbau zur Datenbank:", e)
+            self.create_schema(self.config['DEFAULT']['iban'])
+        except sqlite3.Error as ex:
+            print("Fehler beim Verbindungsaufbau zur Datenbank:", ex)
 
-    def create_schema(self):
+    def create_schema(self, iban):
+        """
+        Erstellt ein Schema für die Datenbank eines bestimmten Kontos (IBAN).
+
+        Args:
+            IBAN, str: IBAN vom Konto des Benutzers
+        """
         try:
             with self.connection:
                 cursor = self.connection.cursor()
                 cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
                 tables = cursor.fetchall()
                 if len(tables) == 0:
-                    #TODO: Ein Datenbankschema erstellen
-                    cursor.execute("CREATE TABLE IF NOT EXISTS Cashflow (id INTEGER PRIMARY KEY, name TEXT);")
-                    print("Datenbankschema wurde erstellt")
+                     #TODO: Ein Datenbankschema erstellen
+                    cursor.execute(f"""CREATE TABLE IF NOT EXISTS
+                        {iban} (
+                            id INTEGER PRIMARY KEY,
+                            date_tx INTEGER NOT NULL,
+                            text_tx TEXT NOT NULL
+                            betrag REAL NOT NULL,
+                            iban TEXT NOT NULL,
+                            date_wert INTEGER,
+                            art TEXT,
+                            currency TEXT NOT NULL DEFAULT 'EUR',
+                            primary_tag TEXT,
+                            seondary_tag TEXT
+                        );""")
+                    self.logger.info(f"Datenbankschema für {iban} wurde erstellt")
                 else:
-                    print("Datenbankschema existiert bereits")
-        except sqlite3.Error as e:
-            print("Fehler beim Erstellen des Datenbankschemas:", e)
+                    self.logger.info(f"Datenbankschema für {iban} existiert bereits")
+        except sqlite3.Error as ex:
+            self.logger.error(f"Fehler beim Erstellen des Datenbankschemas für {iban}: {ex}")
 
 
     def select(self, table, columns=["*"], condition=None):
@@ -58,8 +82,8 @@ class SQLiteHandler:
                 rows = cursor.fetchall()
                 results = [dict(row) for row in rows]
                 return results
-        except sqlite3.Error as e:
-            print("Fehler beim Auswählen der Datensätze:", e)
+        except sqlite3.Error as ex:
+            print("Fehler beim Auswählen der Datensätze:", ex)
 
     def insert(self, table, data):
         """
@@ -80,8 +104,8 @@ class SQLiteHandler:
                 values = [list(item.values()) for item in data]
                 cursor.executemany(f"INSERT OR IGNORE INTO {table} ({columns}) VALUES ({placeholders})", values)
                 return cursor.rowcount
-        except sqlite3.Error as e:
-            print("Fehler beim Einfügen der Datensätze:", e)
+        except sqlite3.Error as ex:
+            print("Fehler beim Einfügen der Datensätze:", ex)
 
     def update(self, table, data, condition):
         """
@@ -102,8 +126,8 @@ class SQLiteHandler:
                 values = list(data.values())
                 cursor.execute(f"UPDATE {table} SET {placeholders} WHERE {condition}", values)
                 return cursor.rowcount
-        except sqlite3.Error as e:
-            print("Fehler beim Aktualisieren der Datensätze:", e)
+        except sqlite3.Error as ex:
+            print("Fehler beim Aktualisieren der Datensätze:", ex)
 
     def delete(self, table, condition):
         """
@@ -121,5 +145,5 @@ class SQLiteHandler:
                 cursor = self.connection.cursor()
                 cursor.execute(f"DELETE FROM {table} WHERE {condition}")
                 return cursor.rowcount
-        except sqlite3.Error as e:
-            print("Fehler beim Löschen der Datensätze:", e)
+        except sqlite3.Error as ex:
+            print("Fehler beim Löschen der Datensätze:", ex)

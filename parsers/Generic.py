@@ -10,8 +10,8 @@ class Parser:
         Initialisiert eine Instanz von Generic-Parser.
         Das Standard-Objekt, was vom Parsing zurückgegeben wird, sollte so aussehen:
         dict({
-            'date_buchung': date,
-            'text': str,
+            'date_tx': date,
+            'text_tx': str,
             'betrag': float,
             'iban': str,
             'date_wert': date,      # (optional)
@@ -41,14 +41,14 @@ class Parser:
             for row in reader:
                 betrag = float(row['Betrag'].replace(',', '.'))
                 result.append({
-                    'date_buchung': datetime.datetime.strptime(
+                    'date_tx': datetime.datetime.strptime(
                         row['Buchungstag'], date_format
                     ).date(),
                     'date_wert': datetime.datetime.strptime(
                         row['Wertstellung'], date_format
                     ).date(),
                     'art': row['Umsatzart'],
-                    'text': row['Buchungstext'],
+                    'text_tx': row['Buchungstext'],
                     'betrag': betrag,
                     'iban': row['IBAN Auftraggeberkonto'],
                     'currency': row['Währung']
@@ -66,7 +66,7 @@ class Parser:
         """
         # Import specific Libraries
         #import ...
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def from_http(self, url):
         """
@@ -78,4 +78,4 @@ class Parser:
         """
         # Import specific Libraries
         #import requests
-        raise NotImplemented()
+        raise NotImplementedError()
