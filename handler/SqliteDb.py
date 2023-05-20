@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python3 # pylint: disable=invalid-name
 """Datenbankhandler für die Interaktion mit einer SQLite Datenbankdatei."""
 
 
@@ -42,7 +42,6 @@ class SQLiteHandler:
                 cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
                 tables = cursor.fetchall()
                 if len(tables) == 0:
-                     #TODO: Ein Datenbankschema erstellen
                     cursor.execute(f"""CREATE TABLE IF NOT EXISTS
                         {iban} (
                             id INTEGER PRIMARY KEY,
@@ -63,18 +62,23 @@ class SQLiteHandler:
             self.logger.error(f"Fehler beim Erstellen des Datenbankschemas für {iban}: {ex}")
 
 
-    def select(self, table, columns=["*"], condition=None):
+    def select(self, table, columns=None, condition=None):
         """
         Selektiert Datensätze aus der angegebenen Tabelle basierend auf einer Bedingung.
 
         Args:
             table (str): Der Name der Tabelle.
-            columns (str, optional): Eine Liste von Spaltennamen, die ausgewählt werden sollen. Standardmäßig werden alle Spalten ausgewählt.
-            condition (str, optional): Die Bedingung, die die ausgewählten Datensätze einschränkt. Standardmäßig wird nichts eingeschränkt.
+            columns (str, optional): Eine Liste von Spaltennamen, die ausgewählt werden sollen.
+                                     Standardmäßig werden alle Spalten ausgewählt.
+            condition (str, optional): Die Bedingung, die die ausgewählten Datensätze einschränkt.
+                                       Standardmäßig wird nichts eingeschränkt.
 
         Returns:
-            list: Eine Liste von Dictionaries, die die ausgewählten Datensätze repräsentieren. Jedes Dictionary enthält die Spaltennamen als Schlüssel und die zugehörigen Werte.
+            list: Eine Liste von Dictionaries, die die ausgewählten Datensätze repräsentieren.
+            Jedes Dictionary enthält die Spaltennamen als Schlüssel und die zugehörigen Werte.
         """
+        if columns is None:
+            columns = ["*"]
         try:
             with self.connection:
                 cursor = self.connection.cursor()
@@ -102,7 +106,9 @@ class SQLiteHandler:
                 placeholders = ", ".join([len(data[0].keys()) * "?"])
                 columns = ", ".join(data[0].keys())
                 values = [list(item.values()) for item in data]
-                cursor.executemany(f"INSERT OR IGNORE INTO {table} ({columns}) VALUES ({placeholders})", values)
+                cursor.executemany(f"""INSERT OR IGNORE INTO
+                    {table} ({columns})
+                    VALUES ({placeholders})""", values)
                 return cursor.rowcount
         except sqlite3.Error as ex:
             print("Fehler beim Einfügen der Datensätze:", ex)

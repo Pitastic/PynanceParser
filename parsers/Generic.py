@@ -1,10 +1,15 @@
-#!/usr/bin/python3
+#!/usr/bin/python3 # pylint: disable=invalid-name
 """Parser für das Einlesen von Kontoumsätzen in einem allgemeinen Format"""
 
 import datetime
+import csv
 
 
 class Parser:
+    """
+    Parser um aus übermittelten Daten Kontoführungsinformationen auszulesen.
+    Dieser Parser ist allgemein und nicht speziell auf das Format einer Bank angepasst.
+    """
     def __init__(self):
         """
         Initialisiert eine Instanz von Generic-Parser.
@@ -19,19 +24,18 @@ class Parser:
             'currency': str         # (optional)
         })
         """
-        pass
+        return
 
     def from_csv(self, filepath):
         """
-        Liest Kontoumsätze aus einer CSV Datei ein. Das Standardformat wird dabei mit einer Semikolon-separierten Liste pro Zeile angenommen, die dem Datenbankschema entspricht.
+        Liest Kontoumsätze aus einer CSV Datei ein. Das Standardformat wird dabei mit einer
+        Semikolon-separierten Liste pro Zeile angenommen, die dem Datenbankschema entspricht.
         Abweichungen werden explizit je Bank / Dienst in spezielleren Modulen berücksichtigt.
 
         Returns:
-            Liste mit Dictonaries, als Standard-Objekt mit allen ausgelesenen Kontoumsätzen entspricht.
+            Liste mit Dictonaries, als Standard-Objekt mit allen ausgelesenen
+            Kontoumsätzen entspricht.
         """
-        # Import specific Libraries
-        import csv
-
         result = []
         with open(filepath, 'r') as infile:
 
@@ -58,11 +62,13 @@ class Parser:
 
     def from_pdf(self, filepath):
         """
-        Liest Kontoumsätze von Kontoauszügen im PDF Format ein. Das Standardformat wird dem der CSV Datei bei .from_csv angenommmen.
+        Liest Kontoumsätze von Kontoauszügen im PDF Format ein.
+        Das Standardformat wird dem der CSV Datei bei .from_csv angenommmen.
         Abweichungen werden explizit je Bank / Dienst in spezielleren Modulen berücksichtigt.
 
         Returns:
-            Liste mit Dictonaries, als Standard-Objekt mit allen ausgelesenen Kontoumsätzen entspricht.
+            Liste mit Dictonaries, als Standard-Objekt mit allen
+            ausgelesenen Kontoumsätzen entspricht.
         """
         # Import specific Libraries
         #import ...
@@ -70,11 +76,13 @@ class Parser:
 
     def from_http(self, url):
         """
-        Liest Kontoumsätze von einer Internetressource ein. Das Standardformat wird dem der CSV Datei bei .from_csv angenommmen.
+        Liest Kontoumsätze von einer Internetressource ein.
+        Das Standardformat wird dem der CSV Datei bei .from_csv angenommmen.
         Abweichungen werden explizit je Bank / Dienst in spezielleren Modulen berücksichtigt.
 
         Returns:
-            Liste mit Dictonaries, als Standard-Objekt mit allen ausgelesenen Kontoumsätzen entspricht.
+            Liste mit Dictonaries, als Standard-Objekt mit allen
+            ausgelesenen Kontoumsätzen entspricht.
         """
         # Import specific Libraries
         #import requests

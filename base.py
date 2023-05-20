@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Basisklasse für die Vererbung allgemeiner Attribute und Methoden, die für den Programmablauf wichtig sind."""
+"""Basisklasse mit Methoden für den Programmablauf."""
 
 
 import sys
@@ -41,7 +41,7 @@ class BaseClass():
 
         # Weitere Attribute
         #TODO: Mehr als eine IBAN unterstützen
-        self.db = SQLiteHandler(self.config, self.logger)
+        self.database = SQLiteHandler(self.config, self.logger)
         self.parsers = {
             'Generic': Generic,
             'Commerzbank': Commerzbank,
@@ -51,8 +51,9 @@ class BaseClass():
 
     def parse(self, uri, bank='Generic', data_format=None):
         """
-        Liest Kontoumsätze aus der Ressource ein. Wenn das Format nicht angegeben ist, wird versucht, es zu erraten.
-        Speichert Liste mit Dictonaries, als Standard-Objekt mit den Kontoumsätzen in der Instanz.
+        Liest Kontoumsätze aus der Ressource ein. Wenn das Format nicht angegeben ist,
+        wird es versucht zu erraten. Speichert dann eine Liste mit Dictonaries,
+        als Standard-Objekt mit den Kontoumsätzen in der Instanz.
 
         Args:
             uri (str): Pfad zur Ressource mit den Kontoumsätzen.
@@ -103,7 +104,7 @@ class BaseClass():
         Returns:
             Anzahl der gespeicherten Datensätzen
         """
-        return self.db.update(
+        return self.database.update(
             self.config['DEFAULT']['iban'],
             {
                 'main_category': primary_tag,
@@ -142,7 +143,10 @@ class BaseClass():
             Anzahl der getaggten Datensätze
         """
         #TODO: Fake Funktion
-        list_of_categories = ['Vergnügen', 'Versicherung', 'KFZ', 'Kredite', 'Haushalt und Lebensmittel', 'Anschaffung']
+        list_of_categories = [
+            'Vergnügen', 'Versicherung', 'KFZ', 'Kredite',
+            'Haushalt und Lebensmittel', 'Anschaffung'
+        ]
         count = 0
         for transaction in self.data:
             if transaction.get('primary_tag') is None or take_all:
@@ -160,7 +164,8 @@ class BaseClass():
         Returns:
             int: Die Anzahl der eingefügten Datensätze
         """
-        normalized_data = self.data     # TODO: Liste der Dicts zurechtschneiden, damit sie dem DB Schema entsprechen.
-        inserted_rows = self.db.insert(self.config['DEFAULT']['iban'], normalized_data)
+        # TODO: Liste der Dicts zurechtschneiden, damit sie dem DB Schema entsprechen.
+        normalized_data = self.data
+        inserted_rows = self.database.insert(self.config['DEFAULT']['iban'], normalized_data)
         self.data = None
         return inserted_rows

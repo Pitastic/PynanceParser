@@ -1,0 +1,2 @@
+[pylint]
+disable=logging-fstring-interpolation, unspecified-encoding
