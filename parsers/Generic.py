@@ -10,7 +10,7 @@ class Parser:
     Parser um aus übermittelten Daten Kontoführungsinformationen auszulesen.
     Dieser Parser ist allgemein und nicht speziell auf das Format einer Bank angepasst.
     """
-    def __init__(self):
+    def __init__(self, config, logger):
         """
         Initialisiert eine Instanz von Generic-Parser.
         Das Standard-Objekt, was vom Parsing zurückgegeben wird, sollte so aussehen:
@@ -26,6 +26,8 @@ class Parser:
             'secondary_tag': str    # (optional)
         })
         """
+        self.config = config
+        self.logger = logger
         return
 
     def from_csv(self, filepath):
@@ -39,7 +41,7 @@ class Parser:
             Kontoumsätzen entspricht.
         """
         result = []
-        with open(filepath, 'r') as infile:
+        with open(filepath, 'r', encoding='utf-8-sig') as infile:
 
             reader = csv.DictReader(infile, delimiter=';')
             date_format = "%d.%m.%Y"

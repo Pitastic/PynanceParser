@@ -10,11 +10,11 @@ class Parser(Generic):
     Parser um aus übermittelten Daten Kontoführungsinformationen auszulesen.
     Dieser Parser ist speziell für die Daten angepasst, wie sie bei der Commerzbank vorkommen.
     """
-    def __init__(self):
+    def __init__(self, config, logger):
         """
         Initialisiert eine Instanz der Parser-Klasse für Kontoumsätze der Commerzbank.
         """
-        super().__init__()
+        super().__init__(config, logger)
         return
 
     def from_pdf(self, filepath):

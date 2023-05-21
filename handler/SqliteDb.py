@@ -5,7 +5,7 @@
 import sqlite3
 
 
-class SQLiteHandler:
+class SQLiteHandler():
     """
     Handler für die Interaktion mit einer SQLite Datenbank.
     """
@@ -25,7 +25,6 @@ class SQLiteHandler:
         try:
             self.connection = sqlite3.connect(self.database)
             self.connection.row_factory = sqlite3.Row
-            self.create_schema(self.config['DEFAULT']['iban'])
         except sqlite3.Error as ex:
             self.logger.error(f"Fehler beim Verbindungsaufbau zur Datenbank: {ex}")
 

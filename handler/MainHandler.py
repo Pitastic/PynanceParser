@@ -1,48 +1,54 @@
-#!/usr/bin/python3
+#!/usr/bin/python3 # pylint: disable=invalid-name
 """Basisklasse mit Methoden für den Programmablauf."""
 
 
-import sys
-import logging
-import configparser
 import random
 import hashlib
+import os
+import logging
+import configparser
+import re
 
 from handler.SqliteDb import SQLiteHandler
 from parsers.Generic import Parser as Generic
 from parsers.Commerzbank import Parser as Commerzbank
 
 
-class BaseClass():
+class MainHandler():
     """
-    Hauptfunktionen für den Programmablauf
+    Basisklasse mit Methoden für den Programmablauf.
     """
-    def __init__(self, configpath):
+    def __init__(self):
         """
         Initialisiert eine Instanz der Basisklasse und lädt die Konfiguration sowie die Logunktion.
-
-        Args:
-            configpath (str): Pfad zur Configdatei
         """
         # Logging
         self.logger = logging.getLogger()
         self.logger.setLevel(logging.DEBUG)
-        handler = logging.FileHandler('pynanceparser.log', 'w', 'utf-8')
+        handler = logging.FileHandler('pynanceparser.log', 'a', 'utf-8')
         handler.setFormatter(
             logging.Formatter('[%(asctime)s] %(levelname)s (%(module)s): %(message)s'))
         self.logger.addHandler(handler)
 
         # Config
+        config_path = os.path.join(
+            os.path.dirname(
+                os.path.dirname(os.path.abspath(__file__))
+            ),
+            'config.conf')
         try:
             self.config = configparser.ConfigParser()
-            self.config.read(configpath)
+            self.config.read(config_path)
+            if 'DB' not in self.config.sections():
+                raise IOError('Die Config scheint leer zu sein.')
         except IOError as ex:
-            self.logger.critical(f"Config Pfad '{configpath}' konnte nicht heladen werden ! - {ex}")
-            sys.exit()
+            self.logger.critical(f"Config Pfad '{config_path}' konnte nicht heladen werden !" + \
+                                 f" - {ex}")
 
         # Weitere Attribute
         #TODO: Mehr als eine IBAN unterstützen
         self.database = SQLiteHandler(self.config, self.logger)
+        self.database.create_schema(self.config['DEFAULT']['iban'])
         self.parsers = {
             'Generic': Generic,
             'Commerzbank': Commerzbank,
@@ -69,7 +75,11 @@ class BaseClass():
             data_format = 'csv'
 
         # Parser
-        self.parser = self.parsers.get(bank, self.parsers.get('Generic'))()
+        self.parser = self.parsers.get(
+            bank,
+            self.parsers.get('Generic')
+        )(self.config, self.logger)
+
         parsing_method = {
             'pdf': self.parser.from_pdf,
             'csv': self.parser.from_csv,
@@ -201,10 +211,13 @@ class BaseClass():
         """
         Erstellt einen einmaligen ID für jede Transaktion.
         """
+        no_special_chars = re.compile("[^A-Za-z0-9]")
         for transaction in self.data:
             md5_hash = hashlib.md5()
+            tx_text = no_special_chars.sub('', transaction.get('text_tx', ''))
+            print(tx_text)
             combined_string = str(transaction.get('date_tx', '')) + \
                               str(transaction.get('betrag', '')) + \
-                              transaction.get('text_tx', '')
+                              tx_text
             md5_hash.update(combined_string.encode('utf-8'))
             transaction['hash'] = md5_hash.hexdigest()

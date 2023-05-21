@@ -3,17 +3,14 @@
 
 
 import sys
-import os
-
-from base import BaseClass
+from handler.MainHandler import MainHandler
 
 
 # Arg 1 : Dateipfad zu PDF Kontoauszug der Commerzbank
 
 
 # Basis-Instanz, die die Ablaufmethoden bereitstellt:
-config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.conf')
-Operator = BaseClass(config_path)
+Operator = MainHandler()
 
 # Daten einlesen und in Object speichern (Bank und Format default bzw. wird geraten)
 Operator.parse(sys.argv[1])
