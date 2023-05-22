@@ -9,7 +9,8 @@ import logging
 import configparser
 import re
 
-from handler.SqliteDb import SQLiteHandler
+from handler.TinyDb import TinyDbHandler
+from handler.MongoDb import MongoDbHandler
 from parsers.Generic import Parser as Generic
 from parsers.Commerzbank import Parser as Commerzbank
 
@@ -47,8 +48,13 @@ class MainHandler():
 
         # Weitere Attribute
         #TODO: Mehr als eine IBAN unterstützen
-        self.database = SQLiteHandler(self.config, self.logger)
-        self.database.create_schema(self.config['DEFAULT']['iban'])
+        # Datenbankhandler starten
+        self.database = {
+            'tiny': TinyDbHandler,
+            'mongo': MongoDbHandler
+        }.get(self.config['DB']['backend'])
+        self.database = self.database(self.config, self.logger)
+        # Parser hinterlegen
         self.parsers = {
             'Generic': Generic,
             'Commerzbank': Commerzbank,
@@ -206,7 +212,7 @@ class MainHandler():
             int: Die Anzahl der eingefügten Datensätze
         """
         self.generate_unique()
-        inserted_rows = self.database.insert(self.config['DEFAULT']['iban'], self.data)
+        inserted_rows = self.database.insert(self.data)
         self.data = None
         return inserted_rows
 

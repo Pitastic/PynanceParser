@@ -1,0 +1,2 @@
+tinydb==4.7.1
+pymongo==4.3.3
