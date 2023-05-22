@@ -19,6 +19,7 @@ class Parser:
             'text_tx': str,
             'betrag': float,
             'iban': str,
+            'parsed': str,
             'date_wert': int ,      # (optional)
             'art': str,             # (optional)
             'currency': str,        # (optional)
@@ -59,7 +60,8 @@ class Parser:
                     'text_tx': row['Buchungstext'],
                     'betrag': betrag,
                     'iban': row['IBAN Auftraggeberkonto'],
-                    'currency': row['Währung']
+                    'currency': row['Währung'],
+                    'parsed': {}
                 })
 
         return result

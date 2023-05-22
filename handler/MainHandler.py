@@ -56,7 +56,7 @@ class MainHandler():
         self.data = None
         self.parser = None
 
-    def parse(self, uri, bank='Generic', data_format=None):
+    def read_input(self, uri, bank='Generic', data_format=None):
         """
         Liest Kontoumsätze aus der Ressource ein. Wenn das Format nicht angegeben ist,
         wird es versucht zu erraten. Speichert dann eine Liste mit Dictonaries,
@@ -87,7 +87,37 @@ class MainHandler():
         }.get(data_format)
 
         self.data = parsing_method(uri)
-        return len(self.data) if self.data is not None else 0
+        if self.data is not None:
+            self.data = self.parse(self.data)
+            return len(self.data)
+
+        return 0
+
+    def parse(self, input_data=None):
+        """
+        Untersucht die Daten eines Standard-Objekts (hauptsächlich den Text)
+        und identifiziert spezielle Angaben anhand von Mustern.
+        Alle Treffer werden unter dem Schlüssel 'parsed' jedem Eintrag hinzugefügt.
+        """
+        # RegExes
+        # Der Key wird als Bezeichner für das Ergebnis verwendet.
+        # Jeder RegEx muss genau eine Gruppe matchen.
+        parse_regexes = {
+            'Mandatsreferenz': re.compile(r"Mandatsref\:\s?([A-z0-9]*)"),
+            'Gläubiger': re.compile(r"([A-Z]{2}[0-9]{2}[A-Z]{3}0[0-9]{10})")
+        }
+
+        # Parsing Data
+        if input_data is None:
+            input_data = self.data
+
+        for d in input_data:
+            for name, regex in parse_regexes.items():
+                re_match = regex.search(d['text_tx'])
+                if re_match:
+                    d['parsed'][name] = re_match.group(1)
+
+        return input_data
 
     def tag(self):
         """
@@ -175,37 +205,10 @@ class MainHandler():
         Returns:
             int: Die Anzahl der eingefügten Datensätze
         """
-        self.data = self.normalized_data(self.data)
         self.generate_unique()
         inserted_rows = self.database.insert(self.config['DEFAULT']['iban'], self.data)
         self.data = None
         return inserted_rows
-
-    def normalized_data(self, input_list):
-        """
-        Normalisiert die Daten für das Einfügen in das Datenbankschema.
-
-        Args:
-            input_list, list(dicts): Liste von Buchungen, die aus dem Parsing stammen.
-        Returns:
-            Die gleiche Liste mit bereinigten/angepassten Dicts.
-        """
-        required_keys = ['date_tx', 'text_tx', 'betrag', 'iban']
-        optional_keys = ['date_wert', 'art', 'currency', 'primary_tag', 'secondary_tag']
-        for transaction in input_list:
-
-            # Fehlen erforderliche Keys, löst das eine Exception aus
-            for key in required_keys:
-                if not key in transaction.keys():
-                    raise KeyError('Die geparsten Daten beinhalten nicht die erforderlichen' +
-                                f' Informationen. Es fehlt {key} !')
-
-            # Optionale Keys auf None setzen
-            for key in optional_keys:
-                if not key in transaction.keys():
-                    transaction[key] = None
-
-        return input_list
 
     def generate_unique(self):
         """
@@ -215,7 +218,6 @@ class MainHandler():
         for transaction in self.data:
             md5_hash = hashlib.md5()
             tx_text = no_special_chars.sub('', transaction.get('text_tx', ''))
-            print(tx_text)
             combined_string = str(transaction.get('date_tx', '')) + \
                               str(transaction.get('betrag', '')) + \
                               tx_text

@@ -13,11 +13,13 @@ from handler.MainHandler import MainHandler
 Operator = MainHandler()
 
 # Daten einlesen und in Object speichern (Bank und Format default bzw. wird geraten)
-Operator.parse(sys.argv[1])
+Operator.read_input(sys.argv[1])
+Operator.parse()
 
 # Eingelesene Umsätze kategorisieren
 Operator.tag()
-#print(Operator.data)
 
 # Verarbeitete Kontiumsätze in die DB speichern und vom Objekt löschen
 Operator.flush_to_db()
+
+# Manuelle Durchsicht der erstellten Datenbankdatei

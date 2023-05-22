@@ -3,6 +3,7 @@
 
 
 import sqlite3
+import json
 
 
 class SQLiteHandler():
@@ -52,6 +53,7 @@ class SQLiteHandler():
                             date_wert INTEGER,
                             art TEXT,
                             currency TEXT NOT NULL DEFAULT 'EUR',
+                            parsed TEXT,
                             primary_tag TEXT,
                             secondary_tag TEXT
                         );""")
@@ -60,7 +62,6 @@ class SQLiteHandler():
                     self.logger.info(f"Datenbankschema für {iban} existiert bereits")
         except sqlite3.Error as ex:
             self.logger.error(f"Fehler beim Erstellen des Datenbankschemas für {iban}: {ex}")
-
 
     def select(self, table, columns=None, condition=None):
         """
@@ -84,7 +85,12 @@ class SQLiteHandler():
                 cursor = self.connection.cursor()
                 cursor.execute(f"SELECT {','.join(columns)} FROM {table} WHERE {condition}")
                 rows = cursor.fetchall()
-                results = [dict(row) for row in rows]
+                results = []
+                # Parse JSON and create Dicts
+                for row in rows:
+                    if row['parsed']:
+                        row['parsed'] = json.loads(row['parsed'])
+                    results.append(dict(row))
                 return results
         except sqlite3.Error as ex:
             self.logger.error(f"Fehler beim Auswählen der Datensätze: {ex}")
@@ -100,6 +106,26 @@ class SQLiteHandler():
         Returns:
             int: Die Anzahl der eingefügten Datensätze.
         """
+        # Normalize Data
+        required_keys = ['date_tx', 'text_tx', 'betrag', 'iban']
+        optional_keys = ['date_wert', 'art', 'currency', 'primary_tag', 'secondary_tag']
+        for transaction in data:
+
+            # Fehlen erforderliche Keys, löst das eine Exception aus
+            for key in required_keys:
+                if not key in transaction.keys():
+                    raise KeyError('Die geparsten Daten beinhalten nicht die erforderlichen' +
+                                f' Informationen. Es fehlt {key} !')
+
+            # Optionale Keys auf None setzen
+            for key in optional_keys:
+                if not key in transaction.keys():
+                    transaction[key] = None
+
+            # Stringify Dicts
+            transaction['parsed'] = json.dumps(transaction['parsed'])
+
+        # Insert Rows
         try:
             with self.connection:
                 cursor = self.connection.cursor()
