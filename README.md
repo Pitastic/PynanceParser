@@ -4,21 +4,30 @@ Abruf, Analyse und Darstellung von Kontoumsätzen bei mehreren Banken.
 
 ## Features
 
-### Parse
+### Parsing
 
-- CSV Import (exportierte Kontoümsätze)
-- PDF Import (Kontoauszüge aus dem Onlinebanking Archiv)
-- HTTP (Daten von APIs - keine Banken-APIs leider :man_shrugging: )
+Importieren von Kontoumsätzen aus
+
+- Umsatzübersicht im Online Banking
+    - CSV Export
+    - PDF Export
+- Kontoauszüge
+    - PDFs aus dem Online Banking Archiv
+    - PDFs eingescannter Papierauszüge
+- Online Quellen
+    - HTTP (Daten von APIs - keine Banken-APIs leider :man_shrugging: )
 
 Modulare Importer können nach und nach für verschiedene Banken oder spezielle Formate vorhanden sein.
 
 ### Analyse
 
-- Tagging
-- Reguläre Ausdrücke
-- Automatisches Tagging
+- Automatisches Extrahieren und bewerten einer Transaktion durch Muster (RegEx)
+- Automatisches Kategorisieren anhand hinterlegter Regeln
+- Manuelles Kategorisieren
 
-Klassifizierung von Kontoumsätzen nach Haupt- und Unterkategorie. Das automatische Tagging erfolgt auf Wunsch und Grundlage der bisherigen Taggings mittels KI.
+Hinterlegte Regeln können die extrahierten Informationen, weitere Umsatzinformationen und weitere RegExes berücksichtigen oder anhand einer Ähnlichkeitssuche eines manuell herausgesuchten Umsatzes entscheiden.
+
+Die Klassifizierung wird dabei nach Haupt- und Unterkategorie vorgenommen und erfolgt für alle oder alle unkategorisierten Umsätze auf Wunsch, automatisch beim Import oder manuell für markierte Umsätze über die Obefläche.
 
 ### Darstellung
 
