@@ -1,6 +1,7 @@
 #!/usr/bin/python3 # pylint: disable=invalid-name
 """Datenbankhandler für die Interaktion mit einer TinyDB Datenbankdatei."""
 
+import os
 from tinydb import TinyDB, Query
 
 
@@ -19,7 +20,12 @@ class TinyDbHandler():
         self.config = config
         self.logger = logger
         try:
-            self.connection = TinyDB(self.config['DB']['path'])
+            self.connection = TinyDB(
+                    os.path.join(self.config['DB']['uri'],
+                    self.config['DB']['name'])
+                )
+            if not hasattr(self, 'connection'):
+                raise IOError('Es konnte kein Connection Objekt erstellt werden')
         except IOError as ex:
             self.logger.error(f"Fehler beim Verbindungsaufbau zur Datenbank: {ex}")
 
@@ -38,7 +44,7 @@ class TinyDbHandler():
             table = self.config['DEFAULT']['iban']
         table = self.connection.table(table)
         if condition is None:
-            return self.connection.all()
+            return table.all()
         condition = Query()[condition['key']] == condition['value']
         return self.connection.search(condition)
 
