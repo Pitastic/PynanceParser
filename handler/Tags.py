@@ -2,7 +2,7 @@
 """Ausgelagerter Handler für die Umsatzuntersuchung."""
 
 import random
-#import cherrypy
+import cherrypy
 
 
 class Tagger(object):
@@ -22,12 +22,14 @@ class Tagger(object):
             Anzahl der getaggten Datensätze
         """
         #TODO: Fake Funktion
+        cherrypy.log("Tagging with RegExes....")
         count = 0
         for transaction in data:
             if transaction.get('primary_tag') is None or take_all:
                 # Komplette Untersuchung
                 # Setzt 'primary' und 'secondary' (ggf. None) soweit erkannt
                 count = count + 1
+        cherrypy.log("Tagging with RegExes....DONE")
         return random.randint(0, count)
 
     def tag_ai(self, data, take_all=False):
@@ -43,6 +45,7 @@ class Tagger(object):
             Anzahl der getaggten Datensätze
         """
         #TODO: Fake Funktion
+        cherrypy.log("Tagging with AI....")
         list_of_categories = [
             'Vergnügen', 'Versicherung', 'KFZ', 'Kredite',
             'Haushalt und Lebensmittel', 'Anschaffung'
@@ -55,4 +58,5 @@ class Tagger(object):
                 transaction['primary_tag'] = random.choice(list_of_categories)
                 transaction['secondary_tag'] = None
                 count = count + 1
+        cherrypy.log("Tagging with AI....DONE")
         return random.randint(0, count)

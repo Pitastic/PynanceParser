@@ -3,8 +3,6 @@
 
 import hashlib
 import os
-import logging
-import configparser
 import re
 import cherrypy
 
@@ -24,37 +22,14 @@ class UserInterface(object):
         """
         Initialisiert eine Instanz der Basisklasse und lädt die Konfiguration sowie die Logunktion.
         """
-        #TODO: Config und Logger auf CherryPy umstellen
-        # Logging
-        self.logger = logging.getLogger()
-        self.logger.setLevel(logging.DEBUG)
-        handler = logging.FileHandler('pynanceparser.log', 'a', 'utf-8')
-        handler.setFormatter(
-            logging.Formatter('[%(asctime)s] %(levelname)s (%(module)s): %(message)s'))
-        self.logger.addHandler(handler)
-
-        # Config
-        config_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            'config.conf'
-        )
-        try:
-            self.config = configparser.ConfigParser()
-            self.config.read(config_path)
-            if 'DB' not in self.config.sections():
-                raise IOError('Die Config scheint leer zu sein.')
-        except IOError as ex:
-            self.logger.critical(f"Config Pfad '{config_path}' konnte nicht heladen werden !" + \
-                                 f" - {ex}")
-
         #TODO: Mehr als eine IBAN unterstützen
         # Handler
         # Datenbankhandler
         self.database = {
             'tiny': TinyDbHandler,
             'mongo': MongoDbHandler
-        }.get(self.config['DB']['backend'])
-        self.database = self.database(self.config)
+        }.get(cherrypy.config['database.backend'])
+        self.database = self.database()
         # Parser
         self.parsers = {
             'Generic': Generic,
@@ -87,9 +62,8 @@ class UserInterface(object):
 
         # Parser
         self.parser = self.parsers.get(
-            bank,
-            self.parsers.get('Generic')
-        )(self.config, self.logger)
+            bank, self.parsers.get('Generic')
+        )()
 
         parsing_method = {
             'pdf': self.parser.from_pdf,
@@ -225,10 +199,19 @@ class UserInterface(object):
             html: Tabelle mit den Umsätzen
         """
         rows = self.database.select(iban)
-        out = "<div>"
+        out = """<table style="border: 1px solid black;"><thead><tr>
+            <th>Datum</th> <th>Betrag</th> <th>Tag (pri)</th> <th>Tag (sec.)</th> <th>Parsed</th> <th>Hash</th>
+        </tr></thead><tbody>"""
         for r in rows:
-            out += f"<p>{r}</p>"
-        out += "</div>"
+            out += f"""<tr>
+            <td>{r['date_tx']}</td> <td>{r['betrag']} {r['currency']}</td>
+            <td>{r['primary_tag']}</td> <td>{r['secondary_tag']}</td>
+            <td>"""
+            for parse_element in r['parsed']:
+                out += f"<p>{parse_element}</p>"
+            out += f"</td><td>{r['hash']}</td>"
+            out += "</tr>"
+        out += """</tbody></table>"""
         return out
 
     @cherrypy.expose
@@ -262,7 +245,6 @@ class UserInterface(object):
             Anzahl der gespeicherten Datensätzen
         """
         return self.database.update(
-            self.config['DEFAULT']['iban'],
             {
                 'main_category': primary_tag,
                 'second_category': secondary_tag,
@@ -270,4 +252,14 @@ class UserInterface(object):
             f'WHERE id = {t_id}')
 
 if __name__ == '__main__':
-    cherrypy.quickstart(UserInterface())
+
+    # Global Config
+    config_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        'config.conf'
+    )
+    cherrypy.config.update('config.conf')
+    if cherrypy.config.get('database.backend') is None:
+        raise IOError(f"Config Pfad '{config_path}' konnte nicht heladen werden !")
+
+    cherrypy.quickstart(UserInterface(), '/', config_path)
