@@ -54,7 +54,7 @@ class UserInterface(object):
             'tiny': TinyDbHandler,
             'mongo': MongoDbHandler
         }.get(self.config['DB']['backend'])
-        self.database = self.database(self.config, self.logger)
+        self.database = self.database(self.config)
         # Parser
         self.parsers = {
             'Generic': Generic,

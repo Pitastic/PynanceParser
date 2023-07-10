@@ -2,6 +2,7 @@
 """Datenbankhandler für die Interaktion mit einer TinyDB Datenbankdatei."""
 
 import os
+import cherrypy
 from tinydb import TinyDB, Query
 
 
@@ -9,16 +10,15 @@ class TinyDbHandler():
     """
     Handler für die Interaktion mit einer TinyDB Datenbank.
     """
-    def __init__(self, config, logger):
+    def __init__(self, config):
         """
         Initialisiert den TinyDB-Handler und öffnet die Datenbank.
 
         Args:
             config (object): Config Objekt der Hauptinstanz
-            logger (object): Logger Objekt der Hauptinstanz
         """
+        cherrypy.log("Starting TinyDB Handler...")
         self.config = config
-        self.logger = logger
         try:
             self.connection = TinyDB(
                     os.path.join(self.config['DB']['uri'],
@@ -27,7 +27,7 @@ class TinyDbHandler():
             if not hasattr(self, 'connection'):
                 raise IOError('Es konnte kein Connection Objekt erstellt werden')
         except IOError as ex:
-            self.logger.error(f"Fehler beim Verbindungsaufbau zur Datenbank: {ex}")
+            cherrypy.log.error(f"Fehler beim Verbindungsaufbau zur Datenbank: {ex}")
 
     def select(self, table=None, condition=None):
         """

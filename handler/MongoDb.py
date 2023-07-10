@@ -1,6 +1,7 @@
 #!/usr/bin/python3 # pylint: disable=invalid-name
 """Datenbankhandler für die Interaktion mit einer MongoDB."""
 
+import cherrypy
 import pymongo
 
 
@@ -8,16 +9,15 @@ class MongoDbHandler:
     """
     Handler für die Interaktion mit einer TinyDB Datenbank.
     """
-    def __init__(self, config, logger):
+    def __init__(self, config):
         """
         Initialisiert den MongoDB-Handler und Verbinden zum Datenbankserver.
 
         Args:
             config (object): Config Objekt der Hauptinstanz
-            logger (object): Logger Objekt der Hauptinstanz
         """
+        cherrypy.log("Starting MongoDB Handler...")
         self.config = config
-        self.logger = logger
         self.client = pymongo.MongoClient(self.config['DB']['uri'])
         self.connection = self.client[self.config['DB']['name']]
 
