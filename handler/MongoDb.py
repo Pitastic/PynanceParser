@@ -1,6 +1,7 @@
 #!/usr/bin/python3 # pylint: disable=invalid-name
 """Datenbankhandler für die Interaktion mit einer MongoDB."""
 
+import cherrypy
 import pymongo
 
 
@@ -8,18 +9,15 @@ class MongoDbHandler:
     """
     Handler für die Interaktion mit einer TinyDB Datenbank.
     """
-    def __init__(self, config, logger):
+    def __init__(self):
         """
         Initialisiert den MongoDB-Handler und Verbinden zum Datenbankserver.
-
-        Args:
-            config (object): Config Objekt der Hauptinstanz
-            logger (object): Logger Objekt der Hauptinstanz
         """
-        self.config = config
-        self.logger = logger
-        self.client = pymongo.MongoClient(self.config['DB']['uri'])
-        self.connection = self.client[self.config['DB']['name']]
+        cherrypy.log("Starting MongoDB Handler...")
+        self.client = pymongo.MongoClient(cherrypy.config['database.uri'])
+        self.connection = self.client[cherrypy.config['database.name']]
+        if not self.connection:
+            raise IOError(f"Store {cherrypy.config['database.name']} not found !")
 
     def select(self, collection=None, condition=None):
         """
@@ -33,7 +31,7 @@ class MongoDbHandler:
             list: Liste der ausgewählten Datensätze
         """
         if collection is None:
-            collection = self.config['DEFAULT']['iban']
+            collection = cherrypy.request.app.config['account']['iban']
         collection = self.connection[collection]
         if condition is None:
             query = {}
@@ -55,7 +53,7 @@ class MongoDbHandler:
             list: Liste mit den neu eingefügten IDs
         """
         if collection is None:
-            collection = self.config['DEFAULT']['iban']
+            collection = cherrypy.request.app.config['account']['iban']
         collection = self.connection[collection]
 
         if isinstance(data, list):
@@ -78,7 +76,7 @@ class MongoDbHandler:
             int: Anzahl der aktualisierten Datensätze
         """
         if collection is None:
-            collection = self.config['DEFAULT']['iban']
+            collection = cherrypy.request.app.config['account']['iban']
         collection = self.connection[collection]
         if condition is None:
             query = {}
@@ -98,7 +96,7 @@ class MongoDbHandler:
             int: Anzahl der gelöschten Datensätze
         """
         if collection is None:
-            collection = self.config['DEFAULT']['iban']
+            collection = cherrypy.request.app.config['account']['iban']
         collection = self.connection[collection]
         if condition is None:
             query = {}

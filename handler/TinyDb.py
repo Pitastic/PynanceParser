@@ -1,6 +1,8 @@
 #!/usr/bin/python3 # pylint: disable=invalid-name
 """Datenbankhandler für die Interaktion mit einer TinyDB Datenbankdatei."""
 
+import os
+import cherrypy
 from tinydb import TinyDB, Query
 
 
@@ -8,20 +10,20 @@ class TinyDbHandler():
     """
     Handler für die Interaktion mit einer TinyDB Datenbank.
     """
-    def __init__(self, config, logger):
+    def __init__(self):
         """
         Initialisiert den TinyDB-Handler und öffnet die Datenbank.
-
-        Args:
-            config (object): Config Objekt der Hauptinstanz
-            logger (object): Logger Objekt der Hauptinstanz
         """
-        self.config = config
-        self.logger = logger
+        cherrypy.log("Starting TinyDB Handler...")
         try:
-            self.connection = TinyDB(self.config['DB']['path'])
+            self.connection = TinyDB(os.path.join(
+                cherrypy.config['database.uri'],
+                cherrypy.config['database.name']
+            ))
+            if not hasattr(self, 'connection'):
+                raise IOError('Es konnte kein Connection Objekt erstellt werden')
         except IOError as ex:
-            self.logger.error(f"Fehler beim Verbindungsaufbau zur Datenbank: {ex}")
+            cherrypy.log.error(f"Fehler beim Verbindungsaufbau zur Datenbank: {ex}")
 
     def select(self, table=None, condition=None):
         """
@@ -35,10 +37,10 @@ class TinyDbHandler():
             list: Liste der ausgewählten Datensätze
         """
         if table is None:
-            table = self.config['DEFAULT']['iban']
+            table = cherrypy.request.app.config['account']['iban']
         table = self.connection.table(table)
         if condition is None:
-            return self.connection.all()
+            return table.all()
         condition = Query()[condition['key']] == condition['value']
         return self.connection.search(condition)
 
@@ -54,7 +56,7 @@ class TinyDbHandler():
             list: Liste mit den neu eingefügten IDs
         """
         if table is None:
-            table = self.config['DEFAULT']['iban']
+            table = cherrypy.request.app.config['account']['iban']
         table = self.connection.table(table)
 
         if isinstance(data, list):
@@ -77,7 +79,7 @@ class TinyDbHandler():
             int: Anzahl der aktualisierten Datensätze
         """
         if table is None:
-            table = self.config['DEFAULT']['iban']
+            table = cherrypy.request.app.config['account']['iban']
         table = self.connection.table(table)
         if condition is not None:
             condition = Query()[condition['key']] == condition['value']
@@ -97,7 +99,7 @@ class TinyDbHandler():
             int: Anzahl der gelöschten Datensätze
         """
         if table is None:
-            table = self.config['DEFAULT']['iban']
+            table = cherrypy.request.app.config['account']['iban']
         table = self.connection.table(table)
         if condition is not None:
             condition = Query()[condition['key']] == condition['value']
