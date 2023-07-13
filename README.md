@@ -1,4 +1,4 @@
-# PyCashFlow
+# PynanceParser
 
 Abruf, Analyse und Darstellung von Kontoumsätzen bei mehreren Banken.
 
@@ -51,4 +51,5 @@ Für neuen Code sollte ebenfalls ein Test geschrieben werden. Gegebenenfalls wir
 
 ```
 pip install -r requirements.txt
+python3 src/app.py
 ```
