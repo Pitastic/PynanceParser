@@ -6,12 +6,12 @@ import os
 import re
 import cherrypy
 
-from handler.TinyDb import TinyDbHandler
-from handler.MongoDb import MongoDbHandler
-from handler.Tags import Tagger
+from .handler.TinyDb import TinyDbHandler
+from .handler.MongoDb import MongoDbHandler
+from .handler.Tags import Tagger
 
-from parsers.Generic import Parser as Generic
-from parsers.Commerzbank import Parser as Commerzbank
+from .parsers.Generic import Parser as Generic
+from .parsers.Commerzbank import Parser as Commerzbank
 
 
 class UserInterface(object):
@@ -258,7 +258,7 @@ if __name__ == '__main__':
         os.path.dirname(os.path.abspath(__file__)),
         'config.conf'
     )
-    cherrypy.config.update('config.conf')
+    cherrypy.config.update(config_path)
     if cherrypy.config.get('database.backend') is None:
         raise IOError(f"Config Pfad '{config_path}' konnte nicht heladen werden !")
 
