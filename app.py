@@ -2,16 +2,19 @@
 """Basisklasse mit Methoden für den Programmablauf."""
 
 import hashlib
-import os
+import os, sys
 import re
 import cherrypy
 
-from .handler.TinyDb import TinyDbHandler
-from .handler.MongoDb import MongoDbHandler
-from .handler.Tags import Tagger
+#parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+#sys.path.append(parent_dir)
 
-from .parsers.Generic import Parser as Generic
-from .parsers.Commerzbank import Parser as Commerzbank
+from handler.TinyDb import TinyDbHandler
+from handler.MongoDb import MongoDbHandler
+from handler.Tags import Tagger
+
+from parsers.Generic import Parser as Generic
+from parsers.Commerzbank import Parser as Commerzbank
 
 
 class UserInterface(object):
@@ -37,6 +40,7 @@ class UserInterface(object):
         }
         # Tagger
         self.tagger = Tagger()
+        #TODO: DB Interface und evtl. auch Tagger in BUS einbauen
 
         # Weitere Attribute
         self.data = None
@@ -262,4 +266,7 @@ if __name__ == '__main__':
     if cherrypy.config.get('database.backend') is None:
         raise IOError(f"Config Pfad '{config_path}' konnte nicht heladen werden !")
 
-    cherrypy.quickstart(UserInterface(), '/', config_path)
+    #cherrypy.quickstart(UserInterface(), '/', config_path)
+    cherrypy.tree.mount(UserInterface(), "/", config_path)
+    cherrypy.engine.start()
+    cherrypy.engine.block()

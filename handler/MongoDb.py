@@ -31,7 +31,7 @@ class MongoDbHandler:
             list: Liste der ausgewählten Datensätze
         """
         if collection is None:
-            collection = cherrypy.request.app.config['account']['iban']
+            collection = cherrypy.config['iban']
         collection = self.connection[collection]
         if condition is None:
             query = {}
@@ -53,7 +53,7 @@ class MongoDbHandler:
             list: Liste mit den neu eingefügten IDs
         """
         if collection is None:
-            collection = cherrypy.request.app.config['account']['iban']
+            collection = cherrypy.config['iban']
         collection = self.connection[collection]
 
         if isinstance(data, list):
@@ -76,7 +76,7 @@ class MongoDbHandler:
             int: Anzahl der aktualisierten Datensätze
         """
         if collection is None:
-            collection = cherrypy.request.app.config['account']['iban']
+            collection = cherrypy.config['iban']
         collection = self.connection[collection]
         if condition is None:
             query = {}
@@ -96,7 +96,7 @@ class MongoDbHandler:
             int: Anzahl der gelöschten Datensätze
         """
         if collection is None:
-            collection = cherrypy.request.app.config['account']['iban']
+            collection = cherrypy.config['iban']
         collection = self.connection[collection]
         if condition is None:
             query = {}
