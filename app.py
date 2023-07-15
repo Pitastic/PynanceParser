@@ -146,35 +146,36 @@ class UserInterface(object):
         return """<html><body>
             <h2>Upload a file</h2>
             <form action="upload" method="post" enctype="multipart/form-data">
-            filename: <input type="file" name="myFile" /><br />
+            filename: <input type="file" name="tx_file" /><br />
             <input type="submit" />
             </form>
         </body></html>
         """
 
     @cherrypy.expose
-    def upload(self, myFile):
+    def upload(self, tx_file):
         """
         Endpunkt für das Annehmen hochgeladener Kontoumsatzdateien.
         Im Anschluss wird automatisch die Untersuchung der Inhalte angestoßen.
 
         Args:
-            myFile (binary): Dateiupload aus Formular-Submit
+            tx_file (binary): Dateiupload aus Formular-Submit
         Returns:
             html: Informationen zur Datei und Ergebnis der Untersuchung.
         """
         out = """<html>
         <body>
-            myFile length: {size}<br />
-            myFile filename: {filename}<br />
-            myFile mime-type: {content_type}
+            tx_file length: {size}<br />
+            tx_file filename: {filename}<br />
+            tx_file mime-type: {content_type}
         </body>
         </html>"""
         size = 0
+        #TODO: Datei wieder löschen
         path = '/tmp/test.file'
         with open(path, 'wb') as f:
             while True:
-                data = myFile.file.read(8192)
+                data = tx_file.file.read(8192)
                 if not data:
                     break
                 size += len(data)
@@ -190,7 +191,8 @@ class UserInterface(object):
         # Verarbeitete Kontiumsätze in die DB speichern und vom Objekt löschen
         self.flush_to_db()
 
-        return out.format(size=size, filename=myFile.filename, content_type=myFile.content_type)
+        #TODO: Wenn Daten geschrieben wurden, sollte die Response 201 sein
+        return out.format(size=size, filename=tx_file.filename, content_type=tx_file.content_type)
 
     @cherrypy.expose
     def view(self, iban=None):
