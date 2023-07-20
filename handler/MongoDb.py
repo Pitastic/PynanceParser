@@ -103,3 +103,14 @@ class MongoDbHandler:
         else:
             query = { condition['key']: condition['value'] }
         collection.delete_many(query)
+
+    def truncate(self, collection=None):
+        """Löscht alle Datensätze aus einer Tabelle/Collection
+
+        Args:
+            collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
+                                   Default: None -> Default der delete Methode
+        Returns:
+            int: Anzahl der gelöschten Datensätze                        
+        """
+        return self.delete(condition=None, collection=collection)

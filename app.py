@@ -209,13 +209,13 @@ class UserInterface(object):
             <th>Datum</th> <th>Betrag</th> <th>Tag (pri)</th> <th>Tag (sec.)</th> <th>Parsed</th> <th>Hash</th>
         </tr></thead><tbody>"""
         for r in rows:
-            out += f"""<tr>
-            <td>{r['date_tx']}</td> <td>{r['betrag']} {r['currency']}</td>
-            <td>{r['primary_tag']}</td> <td>{r['secondary_tag']}</td>
-            <td>"""
+            out += f"""<tr id="tr-{r['hash']}">
+            <td class="td-date">{r['date_tx']}</td> <td class="td-betrag">{r['betrag']} {r['currency']}</td>
+            <td class="td-tag1">{r['primary_tag']}</td> <td class="td-tag2">{r['secondary_tag']}</td>
+            <td class="td-parsed">"""
             for parse_element in r['parsed']:
                 out += f"<p>{parse_element}</p>"
-            out += f"</td><td>{r['hash']}</td>"
+            out += f"</td><td class='td-hash'>{r['hash']}</td>"
             out += "</tr>"
         out += """</tbody></table>"""
         return out
@@ -256,6 +256,10 @@ class UserInterface(object):
                 'second_category': secondary_tag,
             },
             f'WHERE id = {t_id}')
+
+    @cherrypy.expose
+    def truncateDatabase(self, iban=None):
+        return self.database.truncate(iban)
 
 if __name__ == '__main__':
 
