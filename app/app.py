@@ -27,7 +27,6 @@ class UserInterface(object):
         """
         Initialisiert eine Instanz der Basisklasse und lädt die Konfiguration sowie die Logunktion.
         """
-        #TODO: Mehr als eine IBAN unterstützen
         # Handler
         # Datenbankhandler
         self.database = {
@@ -42,7 +41,6 @@ class UserInterface(object):
         }
         # Tagger
         self.tagger = Tagger()
-        #TODO: DB Interface und evtl. auch Tagger in BUS einbauen
 
         # Weitere Attribute
         self.data = None
@@ -63,7 +61,7 @@ class UserInterface(object):
         """
         # Format
         if data_format is None:
-            #TODO: Logik zum Erraten des Datentyps
+            #TODO: Logik zum Erraten des Datentyps, #10
             data_format = 'csv'
 
         # Parser
@@ -173,7 +171,6 @@ class UserInterface(object):
         </body>
         </html>"""
         size = 0
-        #TODO: Datei wieder löschen
         path = '/tmp/test.file'
         with open(path, 'wb') as f:
             while True:
@@ -190,8 +187,9 @@ class UserInterface(object):
         # Eingelesene Umsätze kategorisieren
         self.tag()
 
-        # Verarbeitete Kontiumsätze in die DB speichern und vom Objekt löschen
+        # Verarbeitete Kontiumsätze in die DB speichern und vom Objekt und Dateisystem löschen
         self.flush_to_db()
+        os.remove(path)
 
         #TODO: Wenn Daten geschrieben wurden, sollte die Response 201 sein
         return out.format(size=size, filename=tx_file.filename, content_type=tx_file.content_type)
