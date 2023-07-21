@@ -1,13 +1,15 @@
 #!/usr/bin/python3 # pylint: disable=invalid-name
 """Basisklasse mit Methoden für den Programmablauf."""
 
-import hashlib
 import os, sys
+import hashlib
 import re
 import cherrypy
 
-#parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-#sys.path.append(parent_dir)
+# Add Parent for importing Classes
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(parent_dir)
+
 
 from handler.TinyDb import TinyDbHandler
 from handler.MongoDb import MongoDbHandler

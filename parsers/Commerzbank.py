@@ -1,7 +1,7 @@
 #!/usr/bin/python3 # pylint: disable=invalid-name
 """Parser für das Einlesen von Kontoumsätzen in dem Format, der Commerzbank."""
 
-from .Generic import Parser as Generic
+from parsers.Generic import Parser as Generic
 
 
 class Parser(Generic):

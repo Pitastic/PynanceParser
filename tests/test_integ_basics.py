@@ -1,15 +1,19 @@
 #!/usr/bin/python3 # pylint: disable=invalid-name
 """Basisc Module for easy Imports and Methods"""
 
-import os
+import os, sys
 import cherrypy
 from bs4 import BeautifulSoup
 import requests
 import pytest
 import cherrypy.test.helper as cphelper
 
+# Add Parent for importing from 'app.py'
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(parent_dir)
+
 # Import Server Startup
-from app import UserInterface
+from app.app import UserInterface
 
 
 @pytest.fixture(scope='function', autouse=True)
@@ -34,7 +38,6 @@ class TestClass(cphelper.CPWebCase):
         """Server start (wie originale App)"""
         config_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
-            'testdata',
             'config.conf'
         )
         cherrypy.config.update(config_path)
@@ -168,7 +171,6 @@ def getTestFileContents(relative_path, binary=True):
     """
     path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
-        'testdata',
         relative_path
     )
     flag = 'r'
