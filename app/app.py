@@ -15,8 +15,8 @@ from handler.TinyDb import TinyDbHandler
 from handler.MongoDb import MongoDbHandler
 from handler.Tags import Tagger
 
-from parsers.Generic import Parser as Generic
-from parsers.Commerzbank import Parser as Commerzbank
+from reader.Generic import Reader as Generic
+from reader.Commerzbank import Reader as Commerzbank
 
 
 class UserInterface(object):
@@ -34,8 +34,8 @@ class UserInterface(object):
             'mongo': MongoDbHandler
         }.get(cherrypy.config['database.backend'])
         self.database = self.database()
-        # Parser
-        self.parsers = {
+        # Reader
+        self.readers = {
             'Generic': Generic,
             'Commerzbank': Commerzbank,
         }
@@ -44,7 +44,7 @@ class UserInterface(object):
 
         # Weitere Attribute
         self.data = None
-        self.parser = None
+        self.reader = None
 
     def read_input(self, uri, bank='Generic', data_format=None):
         """
@@ -54,7 +54,7 @@ class UserInterface(object):
 
         Args:
             uri (str): Pfad zur Ressource mit den Kontoumsätzen.
-            bank (str): Bezeichnung der Bank bzw. des einzusetzenden Parsers.
+            bank (str): Bezeichnung der Bank bzw. des einzusetzenden Readers.
             format (str, optional): Bezeichnung des Ressourcenformats (http, csv, pdf).
         Returns:
             int: Anzahl an geparsten Einträgen
@@ -64,15 +64,15 @@ class UserInterface(object):
             #TODO: Logik zum Erraten des Datentyps, #10
             data_format = 'csv'
 
-        # Parser
-        self.parser = self.parsers.get(
-            bank, self.parsers.get('Generic')
+        # Reader
+        self.reader = self.readers.get(
+            bank, self.readers.get('Generic')
         )()
 
         parsing_method = {
-            'pdf': self.parser.from_pdf,
-            'csv': self.parser.from_csv,
-            'http': self.parser.from_http
+            'pdf': self.reader.from_pdf,
+            'csv': self.reader.from_csv,
+            'http': self.reader.from_http
         }.get(data_format)
 
         self.data = parsing_method(uri)

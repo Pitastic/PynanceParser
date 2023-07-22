@@ -1,18 +1,18 @@
 #!/usr/bin/python3 # pylint: disable=invalid-name
-"""Parser für das Einlesen von Kontoumsätzen in einem allgemeinen Format"""
+"""Reader für das Einlesen von Kontoumsätzen in einem allgemeinen Format"""
 
 import datetime
 import csv
 
 
-class Parser:
+class Reader:
     """
-    Parser um aus übermittelten Daten Kontoführungsinformationen auszulesen.
-    Dieser Parser ist allgemein und nicht speziell auf das Format einer Bank angepasst.
+    Reader um aus übermittelten Daten Kontoführungsinformationen auszulesen.
+    Dieser Reader ist allgemein und nicht speziell auf das Format einer Bank angepasst.
     """
     def __init__(self):
         """
-        Initialisiert eine Instanz von Generic-Parser.
+        Initialisiert eine Instanz von Generic-Reader.
         Das Standard-Objekt, was vom Parsing zurückgegeben wird, sollte so aussehen:
         dict({
             'date_tx': int,         # (UTC)
@@ -20,11 +20,11 @@ class Parser:
             'betrag': float,
             'iban': str,
             'parsed': str,
+            'primary_tag': str,
+            'secondary_tag': str
             'date_wert': int ,      # (optional, UTC)
             'art': str,             # (optional)
             'currency': str,        # (optional)
-            'primary_tag': str,     # (optional)
-            'secondary_tag': str    # (optional)
         })
         """
         return

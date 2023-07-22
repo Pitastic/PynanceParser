@@ -29,6 +29,7 @@ class TestClass(cphelper.CPWebCase):
     """Testen der Endpunkte und Basisfunktionen"""
 
     def setUp(self):
+        """Vorbereitung der Testklasse"""
         # Pass GC Test from CherryPy (will fail otherwise)
         self.do_gc_test = False
         self.uri = f"{self.scheme}://{self.interface()}:{self.PORT}"
@@ -45,7 +46,8 @@ class TestClass(cphelper.CPWebCase):
             'server.socket_host': '127.0.0.1',
             'server.socket_port': 54583,
         })
-        assert cherrypy.config.get('database.backend')
+        assert cherrypy.config.get('database.backend'), \
+            "Unable to read Test Config"
 
         cherrypy.tree.mount(UserInterface(), "/", config_path)
         cherrypy.engine.start()

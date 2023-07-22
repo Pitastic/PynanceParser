@@ -41,7 +41,7 @@ Listen und Diagramme zeigen dir, wo eigentlich das Geld geblieben ist :wink:
 
 Beiträge erwünscht.
 
-Die Parser sind modular gestaltet um Code für verschiedene Banken einfach aufzunehmen.
+Die Reader sind modular gestaltet um Code für verschiedene Banken einfach aufzunehmen.
 
 Für diese und andere Bereiche können gerne PullRequests gestellt werden, die allerdings alle PyTests bestehen müssen.
 

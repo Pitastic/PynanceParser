@@ -1,17 +1,17 @@
 #!/usr/bin/python3 # pylint: disable=invalid-name
-"""Parser für das Einlesen von Kontoumsätzen in dem Format, der Commerzbank."""
+"""Reader für das Einlesen von Kontoumsätzen in dem Format, der Commerzbank."""
 
-from parsers.Generic import Parser as Generic
+from reader.Generic import Reader as Generic
 
 
-class Parser(Generic):
+class Reader(Generic):
     """
-    Parser um aus übermittelten Daten Kontoführungsinformationen auszulesen.
-    Dieser Parser ist speziell für die Daten angepasst, wie sie bei der Commerzbank vorkommen.
+    Reader um aus übermittelten Daten Kontoführungsinformationen auszulesen.
+    Dieser Reader ist speziell für die Daten angepasst, wie sie bei der Commerzbank vorkommen.
     """
     def __init__(self):
         """
-        Initialisiert eine Instanz der Parser-Klasse für Kontoumsätze der Commerzbank.
+        Initialisiert eine Instanz der Reader-Klasse für Kontoumsätze der Commerzbank.
         """
         super().__init__()
         return
