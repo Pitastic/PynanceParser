@@ -1,4 +1,4 @@
-# PyCashFlow
+# PynanceParser
 
 Abruf, Analyse und Darstellung von Kontoumsätzen bei mehreren Banken.
 
@@ -41,7 +41,7 @@ Listen und Diagramme zeigen dir, wo eigentlich das Geld geblieben ist :wink:
 
 Beiträge erwünscht.
 
-Die Parser sind modular gestaltet um Code für verschiedene Banken einfach aufzunehmen.
+Die Reader sind modular gestaltet um Code für verschiedene Banken einfach aufzunehmen.
 
 Für diese und andere Bereiche können gerne PullRequests gestellt werden, die allerdings alle PyTests bestehen müssen.
 
@@ -51,4 +51,5 @@ Für neuen Code sollte ebenfalls ein Test geschrieben werden. Gegebenenfalls wir
 
 ```
 pip install -r requirements.txt
+python3 src/app.py
 ```

@@ -1,30 +1,30 @@
 #!/usr/bin/python3 # pylint: disable=invalid-name
-"""Parser für das Einlesen von Kontoumsätzen in einem allgemeinen Format"""
+"""Reader für das Einlesen von Kontoumsätzen in einem allgemeinen Format"""
 
 import datetime
 import csv
 
 
-class Parser:
+class Reader:
     """
-    Parser um aus übermittelten Daten Kontoführungsinformationen auszulesen.
-    Dieser Parser ist allgemein und nicht speziell auf das Format einer Bank angepasst.
+    Reader um aus übermittelten Daten Kontoführungsinformationen auszulesen.
+    Dieser Reader ist allgemein und nicht speziell auf das Format einer Bank angepasst.
     """
     def __init__(self):
         """
-        Initialisiert eine Instanz von Generic-Parser.
+        Initialisiert eine Instanz von Generic-Reader.
         Das Standard-Objekt, was vom Parsing zurückgegeben wird, sollte so aussehen:
         dict({
-            'date_tx': int,
+            'date_tx': int,         # (UTC)
             'text_tx': str,
             'betrag': float,
             'iban': str,
             'parsed': str,
-            'date_wert': int ,      # (optional)
+            'primary_tag': str,
+            'secondary_tag': str
+            'date_wert': int ,      # (optional, UTC)
             'art': str,             # (optional)
             'currency': str,        # (optional)
-            'primary_tag': str,     # (optional)
-            'secondary_tag': str    # (optional)
         })
         """
         return
@@ -47,13 +47,15 @@ class Parser:
 
             for row in reader:
                 betrag = float(row['Betrag'].replace(',', '.'))
+                date_tx = datetime.datetime.strptime(
+                            row['Buchungstag'], date_format
+                        ).replace(tzinfo=datetime.timezone.utc).timestamp()
+                date_wert = datetime.datetime.strptime(
+                            row['Wertstellung'], date_format
+                        ).replace(tzinfo=datetime.timezone.utc).timestamp()
                 result.append({
-                    'date_tx': datetime.datetime.strptime(
-                        row['Buchungstag'], date_format
-                    ).timestamp(),
-                    'date_wert': datetime.datetime.strptime(
-                        row['Wertstellung'], date_format
-                    ).timestamp(),
+                    'date_tx': date_tx,
+                    'date_wert': date_wert,
                     'art': row['Umsatzart'],
                     'text_tx': row['Buchungstext'],
                     'betrag': betrag,

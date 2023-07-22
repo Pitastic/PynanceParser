@@ -37,7 +37,7 @@ class TinyDbHandler():
             list: Liste der ausgewählten Datensätze
         """
         if table is None:
-            table = cherrypy.request.app.config['account']['iban']
+            table = cherrypy.config['iban']
         table = self.connection.table(table)
         if condition is None:
             return table.all()
@@ -56,7 +56,7 @@ class TinyDbHandler():
             list: Liste mit den neu eingefügten IDs
         """
         if table is None:
-            table = cherrypy.request.app.config['account']['iban']
+            table = cherrypy.config['iban']
         table = self.connection.table(table)
 
         if isinstance(data, list):
@@ -79,7 +79,7 @@ class TinyDbHandler():
             int: Anzahl der aktualisierten Datensätze
         """
         if table is None:
-            table = cherrypy.request.app.config['account']['iban']
+            table = cherrypy.config['iban']
         table = self.connection.table(table)
         if condition is not None:
             condition = Query()[condition['key']] == condition['value']
@@ -87,22 +87,34 @@ class TinyDbHandler():
             condition = Query().noop()
         return self.connection.update(data, condition)
 
-    def delete(self, condition=None, table=None):
+    def delete(self, condition, collection=None):
         """
         Löscht Datensätze in der Datenbank, die die angegebene Bedingung erfüllen.
 
         Args:
-            condition (dict, optional): Beding als Dictionary {'key': Schlüssel, 'value': Wert}
-            table (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
+            condition (dict, optional): Bedingung als Dictionary {'key': Schlüssel, 'value': Wert}
+            collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
                                    Default: IBAN aus der Config.
         Returns:
             int: Anzahl der gelöschten Datensätze
         """
-        if table is None:
-            table = cherrypy.request.app.config['account']['iban']
-        table = self.connection.table(table)
-        if condition is not None:
-            condition = Query()[condition['key']] == condition['value']
-        else:
-            condition = Query().noop()
+        if collection is None:
+            collection = cherrypy.config['iban']
+        collection = self.connection.table(collection)
+        condition = Query()[condition['key']] == condition['value']
         return self.connection.remove(condition)
+
+    def truncate(self, collection=None):
+        """Löscht alle Datensätze aus einer Tabelle/Collection
+
+        Args:
+            collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
+                                   Default: IBAN aus der Config.
+        Returns:
+            int: Anzahl der gelöschten Datensätze                        
+        """
+        if collection is None:
+            collection = cherrypy.config['iban']
+        table = self.connection.table(collection)
+        table.truncate()
+        return self.select(collection)
