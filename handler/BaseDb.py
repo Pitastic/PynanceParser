@@ -1,0 +1,40 @@
+#!/usr/bin/python3 # pylint: disable=invalid-name
+"""Basisklasse für die Vererbung an Datenbankhandler mit allgemeinen Funktionen"""
+
+import hashlib
+import re
+
+
+class BaseDb():
+
+    def generate_unique(self, tx_entries):
+        """
+        Erstellt einen einmaligen ID für jede Transaktion.
+
+        Args:
+            tx_entries (dict | list of dicts): Liste mit Transaktionsobjekten
+        Returns:
+            dict | list of dicts: Die um die IDs ('hash') erweiterte Eingabeliste
+        """
+        no_special_chars = re.compile("[^A-Za-z0-9]")
+
+        # Input List or single Dict
+        if not isinstance(tx_entries, list):
+            tx_list = [tx_entries]
+        else:
+            tx_list = tx_entries
+
+        for transaction in tx_list:
+            md5_hash = hashlib.md5()
+            tx_text = no_special_chars.sub('', transaction.get('text_tx', ''))
+            combined_string = str(transaction.get('date_tx', '')) + \
+                              str(transaction.get('betrag', '')) + \
+                              tx_text
+            md5_hash.update(combined_string.encode('utf-8'))
+            transaction['hash'] = md5_hash.hexdigest()
+
+        # Input List or single Dict
+        if not isinstance(tx_entries, list):
+            return tx_list[0]
+
+        return tx_list

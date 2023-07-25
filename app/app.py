@@ -2,7 +2,6 @@
 """Basisklasse mit Methoden für den Programmablauf."""
 
 import os, sys
-import hashlib
 import re
 import cherrypy
 
@@ -115,25 +114,9 @@ class UserInterface(object):
         Returns:
             int: Die Anzahl der eingefügten Datensätze
         """
-        self.generate_unique()
         inserted_rows = self.database.insert(self.data)
         self.data = None
         return inserted_rows
-
-    def generate_unique(self):
-        """
-        Erstellt einen einmaligen ID für jede Transaktion.
-        """
-        no_special_chars = re.compile("[^A-Za-z0-9]")
-        for transaction in self.data:
-            md5_hash = hashlib.md5()
-            tx_text = no_special_chars.sub('', transaction.get('text_tx', ''))
-            combined_string = str(transaction.get('date_tx', '')) + \
-                              str(transaction.get('betrag', '')) + \
-                              tx_text
-            md5_hash.update(combined_string.encode('utf-8'))
-            transaction['hash'] = md5_hash.hexdigest()
-
 
     @cherrypy.expose
     def index(self):

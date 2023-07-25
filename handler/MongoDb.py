@@ -3,9 +3,12 @@
 
 import cherrypy
 import pymongo
+import re
+
+from handler.BaseDb import BaseDb
 
 
-class MongoDbHandler:
+class MongoDbHandler(BaseDb):
     """
     Handler für die Interaktion mit einer TinyDB Datenbank.
     """
@@ -16,7 +19,7 @@ class MongoDbHandler:
         cherrypy.log("Starting MongoDB Handler...")
         self.client = pymongo.MongoClient(cherrypy.config['database.uri'])
         self.connection = self.client[cherrypy.config['database.name']]
-        if not self.connection:
+        if self.connection is None:
             raise IOError(f"Store {cherrypy.config['database.name']} not found !")
 
     def select(self, collection=None, condition=None):
@@ -26,18 +29,42 @@ class MongoDbHandler:
         Args:
             collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
                                    Default: IBAN aus der Config.
-            condition (dict): Beding als Dictionary {'key': Schlüssel, 'value': Wert}
+            condition (dict): Bedingung als Dictionary
+                - 'key', str    : Spalten- oder Schlüsselname,
+                - 'value', any  : Wert der bei 'key' verglichen werden soll
+                - 'compare', str: (optional, default '==')
+                    - '[==, !=, <, >, <=, >=]': Wert asu DB [compare] value
+                    - 'like'    : Wert aus DB == *value* (case insensitive)
+                    - 'regex'   : value wird als RegEx behandelt
         Returns:
             list: Liste der ausgewählten Datensätze
         """
         if collection is None:
             collection = cherrypy.config['iban']
         collection = self.connection[collection]
+
+        query = {}
         if condition is None:
-            query = {}
+            return list(collection.find(query))
+
+        #TODO: Mehr als einen Query Parameter
+        condition_method = condition.get('compare', 'eq')
+        if condition_method == 'regex':
+            # Regex Suche
+            rx = re.compile(condition.get('value'))
+            query[condition.get('key')] = rx
+
+        elif condition_method == 'like':
+            # Like Suche
+            escaped_condition = re.escape(condition.get('value'))
+            rx = re.compile(f".*{escaped_condition}.*", re.IGNORECASE)
+            query[condition.get('key')] = rx
+
         else:
-            query = { condition['key']: condition['value'] }
-        return collection.find(query)
+            # Standard Query
+            query[condition.get('key')] = condition.get('value')
+
+        return list(collection.find(query))
 
     def insert(self, data, collection=None):
         """
@@ -55,6 +82,9 @@ class MongoDbHandler:
         if collection is None:
             collection = cherrypy.config['iban']
         collection = self.connection[collection]
+
+        # Add generated IDs
+        data = self.generate_unique(data)
 
         if isinstance(data, list):
             result = collection.insert_many(data)
@@ -98,11 +128,11 @@ class MongoDbHandler:
         if collection is None:
             collection = cherrypy.config['iban']
         collection = self.connection[collection]
-        if condition is None:
+        if not condition:
             query = {}
         else:
             query = { condition['key']: condition['value'] }
-        collection.delete_many(query)
+        return collection.delete_many(query).deleted_count
 
     def truncate(self, collection=None):
         """Löscht alle Datensätze aus einer Tabelle/Collection
@@ -113,4 +143,4 @@ class MongoDbHandler:
         Returns:
             int: Anzahl der gelöschten Datensätze                        
         """
-        return self.delete(condition=None, collection=collection)
+        return self.delete(condition={}, collection=collection)

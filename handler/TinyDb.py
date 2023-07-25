@@ -3,10 +3,13 @@
 
 import os
 import cherrypy
-from tinydb import TinyDB, Query
+from tinydb import TinyDB, Query, where
+import re
+
+from handler.BaseDb import BaseDb
 
 
-class TinyDbHandler():
+class TinyDbHandler(BaseDb):
     """
     Handler für die Interaktion mit einer TinyDB Datenbank.
     """
@@ -32,32 +35,73 @@ class TinyDbHandler():
         Args:
             table (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
                                    Default: IBAN aus der Config.
-            condition (dict): Beding als Dictionary {'key': Schlüssel, 'value': Wert}
+            condition (dict): Bedingung als Dictionary
+                - 'key', str    : Spalten- oder Schlüsselname,
+                - 'value', any  : Wert der bei 'key' verglichen werden soll
+                - 'compare', str: (optional, default '==')
+                    - '[==, !=, <, >, <=, >=]': Wert asu DB [compare] value
+                    - 'like'    : Wert aus DB == *value* (case insensitive)
+                    - 'regex'   : value wird als RegEx behandelt
         Returns:
             list: Liste der ausgewählten Datensätze
         """
         if table is None:
             table = cherrypy.config['iban']
         table = self.connection.table(table)
+
         if condition is None:
             return table.all()
-        condition = Query()[condition['key']] == condition['value']
-        return self.connection.search(condition)
 
-    def insert(self, data, table=None):
+        #TODO: Mehr als einen Query Parameter
+        condition_method = condition.get('compare', '==')
+        if condition_method == 'regex':
+            # RegEx Suche
+            return table.search(
+                where(condition.get('key')) \
+                .search(condition.get('value'))
+            )
+
+        if condition_method == 'like':
+            # Like Suche
+            test_contains = lambda value, search: search.lower() in value.lower()
+            return table.search(
+                where(condition.get('key')) \
+                .test(test_contains, condition.get('value'))
+            )
+
+        # Standard Query
+        if condition_method == '==':
+            where_statement = where(condition.get('key')) == condition.get('value')
+        if condition_method == '!=':
+            where_statement = where(condition.get('key')) != condition.get('value')
+        if condition_method == '>=':
+            where_statement = where(condition.get('key')) >= condition.get('value')
+        if condition_method == '<=':
+            where_statement = where(condition.get('key')) <= condition.get('value')
+        if condition_method == '>':
+            where_statement = where(condition.get('key')) > condition.get('value')
+        if condition_method == '<':
+            where_statement = where(condition.get('key')) < condition.get('value')
+        
+        return table.search(where_statement)
+
+    def insert(self, data, collection=None):
         """
         Fügt einen oder mehrere Datensätze in die Datenbank ein.
 
         Args:
             data (dict or list): Einzelner Datensatz oder eine Liste von Datensätzen
-            table (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
-                                   Default: IBAN aus der Config.
+            collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
+                                        Default: IBAN aus der Config.
         Returns:
             list: Liste mit den neu eingefügten IDs
         """
-        if table is None:
-            table = cherrypy.config['iban']
-        table = self.connection.table(table)
+        if collection is None:
+            collection = cherrypy.config['iban']
+        table = self.connection.table(collection)
+
+        # Add generated IDs
+        data = self.generate_unique(data)
 
         if isinstance(data, list):
             result = table.insert_multiple(data)
@@ -102,7 +146,8 @@ class TinyDbHandler():
             collection = cherrypy.config['iban']
         collection = self.connection.table(collection)
         condition = Query()[condition['key']] == condition['value']
-        return self.connection.remove(condition)
+        deleted_ids = self.connection.remove(condition)
+        return len(deleted_ids)
 
     def truncate(self, collection=None):
         """Löscht alle Datensätze aus einer Tabelle/Collection
@@ -116,5 +161,4 @@ class TinyDbHandler():
         if collection is None:
             collection = cherrypy.config['iban']
         table = self.connection.table(collection)
-        table.truncate()
-        return self.select(collection)
+        return len(table.remove(lambda x: True))

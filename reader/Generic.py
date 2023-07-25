@@ -61,7 +61,9 @@ class Reader:
                     'betrag': betrag,
                     'iban': row['IBAN Auftraggeberkonto'],
                     'currency': row['Währung'],
-                    'parsed': {}
+                    'parsed': {},
+                    'primary_tag': None,
+                    'secondary_tag': None
                 })
 
         return result
