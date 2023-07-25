@@ -6,7 +6,7 @@ import pytest
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
 
-from reader.Generic import Reader as Generic
+from reader.Commerzbank import Reader as Generic
 
 
 class TestReaderGeneric():
@@ -79,15 +79,15 @@ def checkTransaktionList(tx_list):
         iban = entry.get('iban')
         assert type(iban) == str and len(iban), \
             f"'iban' wurde nicht oder falsch erkannt: {iban}"
-        # Wertstellung (optional, aber bei Generic mit dabei)
+        # Wertstellung (optional, aber bei Commerzbank mit dabei)
         assert type(entry.get('date_wert')) == float, (
             f"'date_wert' bei Zeile {i} nicht als Zeit in Sekunden (float) eingelesen: "
             f"{entry.get('date_wert')}")
-        # Buchungsart (optional, aber bei Generic mit dabei)
+        # Buchungsart (optional, aber bei Commerzbank mit dabei)
         buchungs_art = entry.get('art')
         assert type(buchungs_art) == str and len(buchungs_art), \
             f"'art' wurde nicht oder falsch erkannt: {iban}"
-        # Währung (optional, aber bei Generic mit dabei)
+        # Währung (optional, aber bei Commerzbank mit dabei)
         currency = entry.get('currency')
         assert type(currency) == str and len(currency) == 3, \
             f"'currency' wurde nicht oder falsch erkannt: {currency}"

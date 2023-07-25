@@ -25,7 +25,7 @@ def between_tests_cleaner(request):
 
 
 
-class TestClass(cphelper.CPWebCase):
+class TestIntegration(cphelper.CPWebCase):
     """Testen der Endpunkte und Basisfunktionen"""
 
     def setUp(self):
@@ -33,6 +33,7 @@ class TestClass(cphelper.CPWebCase):
         # Pass GC Test from CherryPy (will fail otherwise)
         self.do_gc_test = False
         self.uri = f"{self.scheme}://{self.interface()}:{self.PORT}"
+        assert cherrypy.config['iban'] != "", "IBAN not set in Config"
 
     @staticmethod
     def setup_server():
