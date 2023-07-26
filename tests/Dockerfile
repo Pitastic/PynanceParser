@@ -1,7 +1,7 @@
 FROM python
 
 COPY ./requirements.txt /data/requirements_app.txt
-COPY ./testdata/requirements.txt /data/requirements_tests.txt
+COPY ./tests/requirements.txt /data/requirements_tests.txt
 
 
 RUN pip install -r /data/requirements_app.txt

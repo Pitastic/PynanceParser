@@ -53,7 +53,8 @@ class TestDbHandler():
         """Testet das Einfügen von Datensätzen"""
         # Einzelner Datensatz
         data = generateFakeData(1)[0]
-        id_list = self.DbHandler.insert(data, collection=cherrypy.config['iban'])
+        id_list = self.DbHandler.insert(data,
+                                        collection=cherrypy.config['iban'])
         assert len(id_list) == 1, \
             f"Es wurde nicht die erwartete Anzahl an Datensätzen eingefügt: {id_list}"
 
@@ -89,7 +90,8 @@ class TestDbHandler():
         """Testet das Auslesen von einzelnen und mehreren Datensätzen mit Filter"""
         # Selektieren mit Filter (by Hash)
         query = {'key': 'hash', 'value': '13d505688ab3b940dbed47117ffddf95'}
-        result_filtered = self.DbHandler.select(cherrypy.config['iban'], condition=query)
+        result_filtered = self.DbHandler.select(cherrypy.config['iban'],
+                                                condition=query)
         assert len(result_filtered) == 1, \
             f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
         for entry in result_filtered:
@@ -107,7 +109,8 @@ class TestDbHandler():
         """Testet das Auslesen von Datensätzen mit Textfiltern (like)"""
         # Selektieren mit Filter (by LIKE Text-Content)
         query = {'key': 'text_tx', 'compare': 'like', 'value': 'Garten'}
-        result_filtered = self.DbHandler.select(cherrypy.config['iban'], condition=query)
+        result_filtered = self.DbHandler.select(cherrypy.config['iban'],
+                                                condition=query)
         assert len(result_filtered) == 1, \
             f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
         for entry in result_filtered:
@@ -116,7 +119,8 @@ class TestDbHandler():
     def test_select_lt(self):
         """Testet das Auslesen von Datensätzen mit 'kleiner als'"""
         query = {'key': 'betrag', 'compare': '<', 'value': -100}
-        result_filtered = self.DbHandler.select(cherrypy.config['iban'], condition=query)
+        result_filtered = self.DbHandler.select(cherrypy.config['iban'],
+                                                condition=query)
         assert len(result_filtered) == 2, \
             f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
         for entry in result_filtered:
@@ -134,7 +138,8 @@ class TestDbHandler():
     def test_select_not_eq(self):
         """Testet das Auslesen von Datensätzen mit 'ungleich'"""
         query = {'key': 'date_wert', 'compare': '!=', 'value': 1684108800}
-        result_filtered = self.DbHandler.select(cherrypy.config['iban'], condition=query)
+        result_filtered = self.DbHandler.select(cherrypy.config['iban'],
+                                                condition=query)
         assert len(result_filtered) == 1, \
             f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
         for entry in result_filtered:
@@ -152,13 +157,17 @@ class TestDbHandler():
     def test_select_multi(self):
         """Testet das Auslesen von Datensätzen mit mehreren Filterargumenten"""
         # Selektieren mit Filter (mehrere Bedingungen)
-        #query = {}
-        #result_filtered = self.DbHandler.select(cherrypy.config['iban'], condition=query)
-        #assert len(result_filtered) == 3, \
-        #    f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
-        #for entry in result_filtered:
-        #    checkEntry(entry)
-        pass
+        query = [
+            {'key': 'text_tx', 'compare': 'like', 'value': 'Kartenzahlung'},
+            {'key': 'betrag', 'compare': '>', 'value': -100},
+        ]
+        result_filtered = self.DbHandler.select(cherrypy.config['iban'],
+                                                condition=query,
+                                                multi='AND')
+        assert len(result_filtered) == 3, \
+            f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
+        for entry in result_filtered:
+            checkEntry(entry)
 
     def test_update(self):
         """Testet das Aktualisieren von Datensätzen"""

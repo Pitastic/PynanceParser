@@ -22,13 +22,13 @@ class MongoDbHandler(BaseDb):
         if self.connection is None:
             raise IOError(f"Store {cherrypy.config['database.name']} not found !")
 
-    def select(self, collection=None, condition=None):
+    def select(self, collection=None, condition=None, multi='AND'):
         """
         Selektiert Datensätze aus der Datenbank, die die angegebene Bedingung erfüllen.
 
         Args:
             collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
-                                   Default: IBAN aus der Config.
+                                        Default: IBAN aus der Config.
             condition (dict): Bedingung als Dictionary
                 - 'key', str    : Spalten- oder Schlüsselname,
                 - 'value', any  : Wert der bei 'key' verglichen werden soll
@@ -36,6 +36,8 @@ class MongoDbHandler(BaseDb):
                     - '[==, !=, <, >, <=, >=]': Wert asu DB [compare] value
                     - 'like'    : Wert aus DB == *value* (case insensitive)
                     - 'regex'   : value wird als RegEx behandelt
+            multi (str) : ['AND' | 'OR'] Wenn 'condition' eine Liste mit conditions ist,
+                          werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
         Returns:
             list: Liste der ausgewählten Datensätze
         """
@@ -43,26 +45,15 @@ class MongoDbHandler(BaseDb):
             collection = cherrypy.config['iban']
         collection = self.connection[collection]
 
-        query = {}
-        if condition is None:
-            return list(collection.find(query))
-
-        #TODO: Mehr als einen Query Parameter
-        condition_method = condition.get('compare', 'eq')
-        if condition_method == 'regex':
-            # Regex Suche
-            rx = re.compile(condition.get('value'))
-            query[condition.get('key')] = rx
-
-        elif condition_method == 'like':
-            # Like Suche
-            escaped_condition = re.escape(condition.get('value'))
-            rx = re.compile(f".*{escaped_condition}.*", re.IGNORECASE)
-            query[condition.get('key')] = rx
+        # Single or Multi Conditions
+        if isinstance(condition, list):
+            operator = '$or' if multi.upper() == 'OR' else '$and'
+            query = {operator: []}
+            for c in condition:
+                query[operator].append(self._form_query(c))
 
         else:
-            # Standard Query
-            query[condition.get('key')] = condition.get('value')
+            query = self._form_query(condition)
 
         return list(collection.find(query))
 
@@ -135,7 +126,8 @@ class MongoDbHandler(BaseDb):
         return collection.delete_many(query).deleted_count
 
     def truncate(self, collection=None):
-        """Löscht alle Datensätze aus einer Tabelle/Collection
+        """
+        Löscht alle Datensätze aus einer Tabelle/Collection
 
         Args:
             collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
@@ -144,3 +136,45 @@ class MongoDbHandler(BaseDb):
             int: Anzahl der gelöschten Datensätze                        
         """
         return self.delete(condition={}, collection=collection)
+
+    def _form_query(self, condition):
+        """
+        Erstellt aus einem Condition-Dict eine entsprechende Query
+
+        Args:
+            condition (dict): Query Dictionary ( siehe .select() )
+        Returns:
+            dict: Query-Dict für die Querymethode
+        """
+        query = {}
+        if condition is None:
+            return query
+
+        condition_method = condition.get('compare', '==')
+
+        if condition_method.lower() == 'regex':
+            # Regex Suche
+            rx = re.compile(condition.get('value'))
+            query[condition.get('key')] = rx
+
+        if condition_method.lower() == 'like':
+            # Like Suche
+            escaped_condition = re.escape(condition.get('value'))
+            rx = re.compile(f".*{escaped_condition}.*", re.IGNORECASE)
+            query[condition.get('key')] = rx
+
+        # Standard Query
+        if condition_method == '==':
+            query[condition.get('key')] = condition.get('value')
+        if condition_method == '!=':
+            query[condition.get('key')] = {'$not': {'$eq': condition.get('value')}}
+        if condition_method == '>=':
+            query[condition.get('key')] = {'$gte': condition.get('value')}
+        if condition_method == '<=':
+            query[condition.get('key')] = {'$lte': condition.get('value')}
+        if condition_method == '>':
+            query[condition.get('key')] = {'$gt': condition.get('value')}
+        if condition_method == '<':
+            query[condition.get('key')] = {'$lt': condition.get('value')}
+
+        return query

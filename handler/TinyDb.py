@@ -28,7 +28,7 @@ class TinyDbHandler(BaseDb):
         except IOError as ex:
             cherrypy.log.error(f"Fehler beim Verbindungsaufbau zur Datenbank: {ex}")
 
-    def select(self, table=None, condition=None):
+    def select(self, table=None, condition=None, multi='AND'):
         """
         Selektiert Datensätze aus der Datenbank, die die angegebene Bedingung erfüllen.
 
@@ -42,6 +42,8 @@ class TinyDbHandler(BaseDb):
                     - '[==, !=, <, >, <=, >=]': Wert asu DB [compare] value
                     - 'like'    : Wert aus DB == *value* (case insensitive)
                     - 'regex'   : value wird als RegEx behandelt
+            multi (str) : ['AND' | 'OR'] Wenn 'condition' eine Liste mit conditions ist,
+                          werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
         Returns:
             list: Liste der ausgewählten Datensätze
         """
@@ -49,40 +51,21 @@ class TinyDbHandler(BaseDb):
             table = cherrypy.config['iban']
         table = self.connection.table(table)
 
-        if condition is None:
+        # Single or Multi Conditions
+        if isinstance(condition, list):
+            #TODO: AND | OR
+            #operator = '$or' if multi.upper() == 'OR' else '$and'
+            #where_statement = {operator: []}
+            #for c in condition:
+            #    where_statement[operator].append(self._form_query(c))
+            pass
+
+        else:
+            where_statement = self._form_query(condition)
+
+        if where_statement is None:
             return table.all()
-
-        #TODO: Mehr als einen Query Parameter
-        condition_method = condition.get('compare', '==')
-        if condition_method == 'regex':
-            # RegEx Suche
-            return table.search(
-                where(condition.get('key')) \
-                .search(condition.get('value'))
-            )
-
-        if condition_method == 'like':
-            # Like Suche
-            test_contains = lambda value, search: search.lower() in value.lower()
-            return table.search(
-                where(condition.get('key')) \
-                .test(test_contains, condition.get('value'))
-            )
-
-        # Standard Query
-        if condition_method == '==':
-            where_statement = where(condition.get('key')) == condition.get('value')
-        if condition_method == '!=':
-            where_statement = where(condition.get('key')) != condition.get('value')
-        if condition_method == '>=':
-            where_statement = where(condition.get('key')) >= condition.get('value')
-        if condition_method == '<=':
-            where_statement = where(condition.get('key')) <= condition.get('value')
-        if condition_method == '>':
-            where_statement = where(condition.get('key')) > condition.get('value')
-        if condition_method == '<':
-            where_statement = where(condition.get('key')) < condition.get('value')
-        
+            
         return table.search(where_statement)
 
     def insert(self, data, collection=None):
@@ -162,3 +145,45 @@ class TinyDbHandler(BaseDb):
             collection = cherrypy.config['iban']
         table = self.connection.table(collection)
         return len(table.remove(lambda x: True))
+
+    def _form_query(self, condition):
+        """
+        Erstellt aus einem Condition-Dict eine entsprechende Query
+
+        Args:
+            condition (dict): Query Dictionary ( siehe .select() )
+        Returns:
+            dict: Query-Dict für die Querymethode
+        """
+        if condition is None:
+            return None
+
+        where_statement = None
+        condition_method = condition.get('compare', '==')
+
+        if condition_method == 'regex':
+            # RegEx Suche
+            return where(condition.get('key')) \
+                   .search(condition.get('value'))
+
+        if condition_method == 'like':
+            # Like Suche
+            test_contains = lambda value, search: search.lower() in value.lower()
+            return where(condition.get('key')) \
+                   .test(test_contains, condition.get('value'))
+
+        # Standard Query
+        if condition_method == '==':
+            where_statement = where(condition.get('key')) == condition.get('value')
+        if condition_method == '!=':
+            where_statement = where(condition.get('key')) != condition.get('value')
+        if condition_method == '>=':
+            where_statement = where(condition.get('key')) >= condition.get('value')
+        if condition_method == '<=':
+            where_statement = where(condition.get('key')) <= condition.get('value')
+        if condition_method == '>':
+            where_statement = where(condition.get('key')) > condition.get('value')
+        if condition_method == '<':
+            where_statement = where(condition.get('key')) < condition.get('value')
+
+        return where_statement
