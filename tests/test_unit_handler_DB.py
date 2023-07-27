@@ -1,7 +1,8 @@
-import os, sys
+import os
+import sys
+import json
 import cherrypy
 import pytest
-import json
 
 # Add Parent for importing from Modules
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -35,12 +36,12 @@ class TestDbHandler():
 
         # Starten von DbHandler
         self.db_engine = cherrypy.config['database.backend']
-        self.DbHandler = {
+        self.db_handler = {
             'tiny': TinyDbHandler,
             'mongo': MongoDbHandler
         }.get(self.db_engine)()
-        assert self.DbHandler, "TinyDbHandler Klasse konnte nicht instanziiert werden"
-        self.DbHandler.truncate()
+        assert self.db_handler, "TinyDbHandler Klasse konnte nicht instanziiert werden"
+        self.db_handler.truncate()
 
     def teardown_class(self):
         """Nachbereitung der Testklasse"""
@@ -53,34 +54,36 @@ class TestDbHandler():
         """Testet das Einfügen von Datensätzen"""
         # Einzelner Datensatz
         data = generateFakeData(1)[0]
-        id_list = self.DbHandler.insert(data,
+        id_count = self.db_handler.insert(data,
                                         collection=cherrypy.config['iban'])
-        assert len(id_list) == 1, \
-            f"Es wurde nicht die erwartete Anzahl an Datensätzen eingefügt: {id_list}"
+        assert id_count == 1, \
+            f"Es wurde nicht die erwartete Anzahl an Datensätzen eingefügt: {id_count}"
 
         # Zwischendurch leeren
-        delete_count = self.DbHandler.truncate()
+        delete_count = self.db_handler.truncate()
         assert delete_count == 1, "Die Datenbank konnte während des Tests nicht geleert werden"
 
         # Liste von Datensätzen
+        data = generateFakeData(4)
+        id_count = self.db_handler.insert(data, collection=cherrypy.config['iban'])
+        assert id_count == 4, \
+            f"Es wurde nicht die erwartete Anzahl an Datensätzen eingefügt: {id_count}"
+
+        # Keine Duplikate
         data = generateFakeData(5)
-        id_list = self.DbHandler.insert(data, collection=cherrypy.config['iban'])
-        assert len(id_list) == 5, \
-            f"Es wurde nicht die erwartete Anzahl an Datensätzen eingefügt: {id_list}"
-
-        # Zwischendurch leeren
-        #delete_count = self.DbHandler.truncate()
-
-        #TODO: Keine Duplikate
-        #data = generateFakeData(3)
-        #id_list = self.DbHandler.insert(data, collection=cherrypy.config['iban'])
-        #assert len(id_list) == 3, \
-        #    f"Es wurde nicht die erwartete Anzahl an Datensätzen eingefügt: {id_list}"
+        id_count = self.db_handler.insert(data, collection=cherrypy.config['iban'])
+        assert id_count == 1, \
+            f"Es wurden doppelte Datensätze eingefügt: {id_count}"
 
     def test_select_all(self):
         """Testet das Auslesen von allen Datensätzen"""
+        # Liste von Datensätzen einfügen
+        self.db_handler.truncate()
+        data = generateFakeData(5)
+        self.db_handler.insert(data, collection=cherrypy.config['iban'])
+
         # Alles selektieren
-        result_all = self.DbHandler.select(cherrypy.config['iban'])
+        result_all = self.db_handler.select(cherrypy.config['iban'])
         assert len(result_all) == 5, \
             f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_all)}"
         for entry in result_all:
@@ -90,7 +93,7 @@ class TestDbHandler():
         """Testet das Auslesen von einzelnen und mehreren Datensätzen mit Filter"""
         # Selektieren mit Filter (by Hash)
         query = {'key': 'hash', 'value': '13d505688ab3b940dbed47117ffddf95'}
-        result_filtered = self.DbHandler.select(cherrypy.config['iban'],
+        result_filtered = self.db_handler.select(cherrypy.config['iban'],
                                                 condition=query)
         assert len(result_filtered) == 1, \
             f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
@@ -99,7 +102,7 @@ class TestDbHandler():
 
         # Selektieren mit Filter (by Art)
         query = {'key': 'art', 'value': 'Lastschrift'}
-        result_filtered = self.DbHandler.select(cherrypy.config['iban'], condition=query)
+        result_filtered = self.db_handler.select(cherrypy.config['iban'], condition=query)
         assert len(result_filtered) == 5, \
             f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
         for entry in result_filtered:
@@ -109,7 +112,7 @@ class TestDbHandler():
         """Testet das Auslesen von Datensätzen mit Textfiltern (like)"""
         # Selektieren mit Filter (by LIKE Text-Content)
         query = {'key': 'text_tx', 'compare': 'like', 'value': 'Garten'}
-        result_filtered = self.DbHandler.select(cherrypy.config['iban'],
+        result_filtered = self.db_handler.select(cherrypy.config['iban'],
                                                 condition=query)
         assert len(result_filtered) == 1, \
             f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
@@ -119,7 +122,7 @@ class TestDbHandler():
     def test_select_lt(self):
         """Testet das Auslesen von Datensätzen mit 'kleiner als'"""
         query = {'key': 'betrag', 'compare': '<', 'value': -100}
-        result_filtered = self.DbHandler.select(cherrypy.config['iban'],
+        result_filtered = self.db_handler.select(cherrypy.config['iban'],
                                                 condition=query)
         assert len(result_filtered) == 2, \
             f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
@@ -129,7 +132,7 @@ class TestDbHandler():
     def test_select_lt_eq(self):
         """Testet das Auslesen von Datensätzen mit 'kleiner als, gleich'"""
         query = {'key': 'betrag', 'compare': '<=', 'value': -71.35}
-        result_filtered = self.DbHandler.select(cherrypy.config['iban'], condition=query)
+        result_filtered = self.db_handler.select(cherrypy.config['iban'], condition=query)
         assert len(result_filtered) == 4, \
             f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
         for entry in result_filtered:
@@ -138,7 +141,7 @@ class TestDbHandler():
     def test_select_not_eq(self):
         """Testet das Auslesen von Datensätzen mit 'ungleich'"""
         query = {'key': 'date_wert', 'compare': '!=', 'value': 1684108800}
-        result_filtered = self.DbHandler.select(cherrypy.config['iban'],
+        result_filtered = self.db_handler.select(cherrypy.config['iban'],
                                                 condition=query)
         assert len(result_filtered) == 1, \
             f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
@@ -148,7 +151,7 @@ class TestDbHandler():
     def test_select_regex(self):
         """Testet das Auslesen von Datensätzen mit Textfiltern (regex)"""
         query = {'key': 'text_tx', 'compare': 'regex', 'value': r'KFN\s[0-9]\s[A-Z]{2}\s[0-9]{3,4}'}
-        result_filtered = self.DbHandler.select(cherrypy.config['iban'], condition=query)
+        result_filtered = self.db_handler.select(cherrypy.config['iban'], condition=query)
         assert len(result_filtered) == 4, \
             f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
         for entry in result_filtered:
@@ -161,7 +164,7 @@ class TestDbHandler():
             {'key': 'text_tx', 'compare': 'like', 'value': 'Kartenzahlung'},
             {'key': 'betrag', 'compare': '>', 'value': -100},
         ]
-        result_filtered = self.DbHandler.select(cherrypy.config['iban'],
+        result_filtered = self.db_handler.select(cherrypy.config['iban'],
                                                 condition=query,
                                                 multi='AND')
         assert len(result_filtered) == 3, \

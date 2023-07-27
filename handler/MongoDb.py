@@ -1,9 +1,9 @@
 #!/usr/bin/python3 # pylint: disable=invalid-name
 """Datenbankhandler für die Interaktion mit einer MongoDB."""
 
+import re
 import cherrypy
 import pymongo
-import re
 
 from handler.BaseDb import BaseDb
 
@@ -21,6 +21,15 @@ class MongoDbHandler(BaseDb):
         self.connection = self.client[cherrypy.config['database.name']]
         if self.connection is None:
             raise IOError(f"Store {cherrypy.config['database.name']} not found !")
+        self.create()
+
+    def create(self):
+        """
+        Erstellt eine Collection je Konto und legt Indexes/Constraints fest
+        """
+        self.connection[cherrypy.config['iban']].create_index(
+            [("hash", pymongo.TEXT)], unique=True
+        )
 
     def select(self, collection=None, condition=None, multi='AND'):
         """
@@ -68,7 +77,7 @@ class MongoDbHandler(BaseDb):
             collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
                                    Default: IBAN aus der Config.
         Returns:
-            list: Liste mit den neu eingefügten IDs
+            int: Zahl der neu eingefügten IDs
         """
         if collection is None:
             collection = cherrypy.config['iban']
@@ -78,11 +87,21 @@ class MongoDbHandler(BaseDb):
         data = self.generate_unique(data)
 
         if isinstance(data, list):
-            result = collection.insert_many(data)
-            return result.inserted_ids
+            # Insert Many (INSERT IGNORE)
+            try:
+                result = collection.insert_many(data, ordered=False)
+                return len(result.inserted_ids)
+            except pymongo.errors.BulkWriteError as e:
+                inserted = e.details.get('nInserted')
+                cherrypy.log(f"Dropping Duplicates, just INSERT {inserted}")
+                return inserted
 
-        result = collection.insert_one(data)
-        return [result.inserted_id]
+        # INSERT One
+        try:
+            result = collection.insert_one(data)
+            return 1
+        except pymongo.errors.BulkWriteError:
+            return 0
 
     def update(self, data, condition=None, collection=None):
         """

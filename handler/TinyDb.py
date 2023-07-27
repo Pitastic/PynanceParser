@@ -77,7 +77,7 @@ class TinyDbHandler(BaseDb):
             collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
                                         Default: IBAN aus der Config.
         Returns:
-            list: Liste mit den neu eingefügten IDs
+            int: Zahl der neu eingefügten IDs
         """
         if collection is None:
             collection = cherrypy.config['iban']
@@ -86,12 +86,14 @@ class TinyDbHandler(BaseDb):
         # Add generated IDs
         data = self.generate_unique(data)
 
+        # Insert Many (INSERT IGNORE)
         if isinstance(data, list):
             result = table.insert_multiple(data)
-            return result
+            return len(result)
 
+        # INSERT One
         result = table.insert(data)
-        return [result]
+        return 1
 
     def update(self, data, condition=None, table=None):
         """
