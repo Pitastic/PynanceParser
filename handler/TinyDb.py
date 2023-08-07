@@ -2,9 +2,9 @@
 """Datenbankhandler für die Interaktion mit einer TinyDB Datenbankdatei."""
 
 import os
+import operator
 import cherrypy
 from tinydb import TinyDB, Query, where
-import re
 
 from handler.BaseDb import BaseDb
 
@@ -27,6 +27,14 @@ class TinyDbHandler(BaseDb):
                 raise IOError('Es konnte kein Connection Objekt erstellt werden')
         except IOError as ex:
             cherrypy.log.error(f"Fehler beim Verbindungsaufbau zur Datenbank: {ex}")
+        self.create()
+
+    def create(self):
+        """
+        Erstellt einen Table je Konto und legt Indexes/Constraints fest
+        """
+        # Touch Table
+        self.connection.table(cherrypy.config['iban'])
 
     def select(self, table=None, condition=None, multi='AND'):
         """
@@ -51,21 +59,37 @@ class TinyDbHandler(BaseDb):
             table = cherrypy.config['iban']
         table = self.connection.table(table)
 
-        # Single or Multi Conditions
+        # Multi condition
         if isinstance(condition, list):
-            #TODO: AND | OR
-            #operator = '$or' if multi.upper() == 'OR' else '$and'
-            #where_statement = {operator: []}
-            #for c in condition:
-            #    where_statement[operator].append(self._form_query(c))
-            pass
+
+            # Create every where_statement from condition
+            where_statement = None
+            where_statements = []
+            for c in condition:
+                where_statements.append(self._form_query(c))
+
+            if multi.upper() == 'OR':
+                # Concat all where_statements with OR later
+                logical_concat = operator.or_
+
+            else:
+                # Concat all where_statements with AND later
+                logical_concat = operator.and_
+
+            # Concat conditions logical
+            for w in where_statements:
+                if where_statement is None:
+                    where_statement = w
+                    continue
+                where_statement = logical_concat(where_statement, w)
 
         else:
+            # Single condition
             where_statement = self._form_query(condition)
 
         if where_statement is None:
             return table.all()
-            
+
         return table.search(where_statement)
 
     def insert(self, data, collection=None):
@@ -170,7 +194,8 @@ class TinyDbHandler(BaseDb):
 
         if condition_method == 'like':
             # Like Suche
-            test_contains = lambda value, search: search.lower() in value.lower()
+            def test_contains(value, search):
+                return search.lower() in value.lower()
             return where(condition.get('key')) \
                    .test(test_contains, condition.get('value'))
 
