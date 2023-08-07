@@ -38,7 +38,7 @@ class MongoDbHandler(BaseDb):
         Args:
             collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
                                         Default: IBAN aus der Config.
-            condition (dict): Bedingung als Dictionary
+            condition (dict | list of dicts): Bedingung als Dictionary
                 - 'key', str    : Spalten- oder Schlüsselname,
                 - 'value', any  : Wert der bei 'key' verglichen werden soll
                 - 'compare', str: (optional, default '==')
@@ -74,8 +74,6 @@ class MongoDbHandler(BaseDb):
             data (dict or list): Einzelner Datensatz oder eine Liste von Datensätzen
             collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
                                         Default: IBAN aus der Config.
-            collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
-                                   Default: IBAN aus der Config.
         Returns:
             int: Zahl der neu eingefügten IDs
         """
@@ -84,7 +82,9 @@ class MongoDbHandler(BaseDb):
         collection = self.connection[collection]
 
         # Add generated IDs
-        data = self.generate_unique(data)
+        data = self._generate_unique(data)
+
+        #TODO: ID Check statt === Doubletten
 
         if isinstance(data, list):
             # Insert Many (INSERT IGNORE)

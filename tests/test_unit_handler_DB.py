@@ -159,15 +159,30 @@ class TestDbHandler():
 
     def test_select_multi(self):
         """Testet das Auslesen von Datensätzen mit mehreren Filterargumenten"""
-        # Selektieren mit Filter (mehrere Bedingungen)
+        # Selektieren mit Filter (mehrere Bedingungen - AND)
         query = [
             {'key': 'text_tx', 'compare': 'like', 'value': 'Kartenzahlung'},
             {'key': 'betrag', 'compare': '>', 'value': -100},
+            {'key': 'betrag', 'compare': '<', 'value': -50},
         ]
         result_filtered = self.db_handler.select(cherrypy.config['iban'],
                                                 condition=query,
                                                 multi='AND')
-        assert len(result_filtered) == 3, \
+        assert len(result_filtered) == 2, \
+            f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
+        for entry in result_filtered:
+            checkEntry(entry)
+
+        # Selektieren mit Filter (mehrere Bedingungen - OR)
+        query = [
+            {'key': 'text_tx', 'compare': 'like', 'value': 'München'},
+            {'key': 'text_tx', 'compare': 'like', 'value': 'Frankfurt'},
+            {'key': 'text_tx', 'compare': 'like', 'value': 'FooBar not exists'},
+        ]
+        result_filtered = self.db_handler.select(cherrypy.config['iban'],
+                                                condition=query,
+                                                multi='OR')
+        assert len(result_filtered) == 2, \
             f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
         for entry in result_filtered:
             checkEntry(entry)
