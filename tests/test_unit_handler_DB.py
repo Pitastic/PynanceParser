@@ -53,7 +53,7 @@ class TestDbHandler():
     def test_insert(self):
         """Testet das Einfügen von Datensätzen"""
         # Einzelner Datensatz
-        data = generateFakeData(1)[0]
+        data = generate_fake_data(1)[0]
         id_count = self.db_handler.insert(data,
                                         collection=cherrypy.config['iban'])
         assert id_count == 1, \
@@ -64,13 +64,13 @@ class TestDbHandler():
         assert delete_count == 1, "Die Datenbank konnte während des Tests nicht geleert werden"
 
         # Liste von Datensätzen
-        data = generateFakeData(4)
+        data = generate_fake_data(4)
         id_count = self.db_handler.insert(data, collection=cherrypy.config['iban'])
         assert id_count == 4, \
             f"Es wurde nicht die erwartete Anzahl an Datensätzen eingefügt: {id_count}"
 
         # Keine Duplikate
-        data = generateFakeData(5)
+        data = generate_fake_data(5)
         id_count = self.db_handler.insert(data, collection=cherrypy.config['iban'])
         assert id_count == 1, \
             f"Es wurden doppelte Datensätze eingefügt: {id_count}"
@@ -79,7 +79,7 @@ class TestDbHandler():
         """Testet das Auslesen von allen Datensätzen"""
         # Liste von Datensätzen einfügen
         self.db_handler.truncate()
-        data = generateFakeData(5)
+        data = generate_fake_data(5)
         self.db_handler.insert(data, collection=cherrypy.config['iban'])
 
         # Alles selektieren
@@ -87,7 +87,7 @@ class TestDbHandler():
         assert len(result_all) == 5, \
             f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_all)}"
         for entry in result_all:
-            checkEntry(entry)
+            check_entry(entry)
 
     def test_select_filter(self):
         """Testet das Auslesen von einzelnen und mehreren Datensätzen mit Filter"""
@@ -98,7 +98,7 @@ class TestDbHandler():
         assert len(result_filtered) == 1, \
             f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
         for entry in result_filtered:
-            checkEntry(entry, key_vals={'date_tx': 1672617600, 'betrag': -118.94})
+            check_entry(entry, key_vals={'date_tx': 1672617600, 'betrag': -118.94})
 
         # Selektieren mit Filter (by Art)
         query = {'key': 'art', 'value': 'Lastschrift'}
@@ -106,7 +106,7 @@ class TestDbHandler():
         assert len(result_filtered) == 5, \
             f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
         for entry in result_filtered:
-            checkEntry(entry)
+            check_entry(entry)
 
     def test_select_like(self):
         """Testet das Auslesen von Datensätzen mit Textfiltern (like)"""
@@ -117,7 +117,7 @@ class TestDbHandler():
         assert len(result_filtered) == 1, \
             f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
         for entry in result_filtered:
-            checkEntry(entry)
+            check_entry(entry)
 
     def test_select_lt(self):
         """Testet das Auslesen von Datensätzen mit 'kleiner als'"""
@@ -127,7 +127,7 @@ class TestDbHandler():
         assert len(result_filtered) == 2, \
             f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
         for entry in result_filtered:
-            checkEntry(entry)
+            check_entry(entry)
 
     def test_select_lt_eq(self):
         """Testet das Auslesen von Datensätzen mit 'kleiner als, gleich'"""
@@ -136,7 +136,7 @@ class TestDbHandler():
         assert len(result_filtered) == 4, \
             f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
         for entry in result_filtered:
-            checkEntry(entry)
+            check_entry(entry)
 
     def test_select_not_eq(self):
         """Testet das Auslesen von Datensätzen mit 'ungleich'"""
@@ -146,7 +146,7 @@ class TestDbHandler():
         assert len(result_filtered) == 1, \
             f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
         for entry in result_filtered:
-            checkEntry(entry)
+            check_entry(entry)
 
     def test_select_regex(self):
         """Testet das Auslesen von Datensätzen mit Textfiltern (regex)"""
@@ -155,7 +155,7 @@ class TestDbHandler():
         assert len(result_filtered) == 4, \
             f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
         for entry in result_filtered:
-            checkEntry(entry)
+            check_entry(entry)
 
     def test_select_multi(self):
         """Testet das Auslesen von Datensätzen mit mehreren Filterargumenten"""
@@ -171,7 +171,7 @@ class TestDbHandler():
         assert len(result_filtered) == 2, \
             f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
         for entry in result_filtered:
-            checkEntry(entry)
+            check_entry(entry)
 
         # Selektieren mit Filter (mehrere Bedingungen - OR)
         query = [
@@ -185,7 +185,7 @@ class TestDbHandler():
         assert len(result_filtered) == 2, \
             f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
         for entry in result_filtered:
-            checkEntry(entry)
+            check_entry(entry)
 
     def test_update(self):
         """Testet das Aktualisieren von Datensätzen"""
@@ -198,7 +198,7 @@ class TestDbHandler():
         pass
 
 
-def generateFakeData(count):
+def generate_fake_data(count):
     """
     Erstellt ausgedachte Transaktionen in gewünschter Anzahl.
     Zunächst auf Grundlage einer Beispieldatei.
@@ -217,7 +217,7 @@ def generateFakeData(count):
 
     return object_list[0:count]
 
-def checkEntry(tx_entry, key_vals=None):
+def check_entry(tx_entry, key_vals=None):
     """
     Prüft die STRUKTUR eines Datenbankeintrags
 

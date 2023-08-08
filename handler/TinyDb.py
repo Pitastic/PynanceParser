@@ -87,10 +87,6 @@ class TinyDbHandler(BaseDb):
             # Single condition
             where_statement = self._form_query(condition)
 
-        print(20*'~')
-        print(where_statement)
-        print(20*'~')
-
         if where_statement is None:
             return collection.all()
 
@@ -109,32 +105,40 @@ class TinyDbHandler(BaseDb):
         """
         if collection is None:
             collection = cherrypy.config['iban']
-        collection = self.connection.table(collection)
 
         # Add generated IDs
         data = self._generate_unique(data)
 
-        # Duplikate in der DB suchen
+        # Da es keine Unique contraints in TinyDB gibt,
+        # müssen die Datensätze zuvor vin der DB gesucht
+        # und Duplikate anschließend gefiltert werden.
         duplicates = self._double_check(collection, data)
 
         # Insert Many (INSERT IGNORE)
         if isinstance(data, list):
 
             # Pop duplicates from list
+            unique_data = []
             for d in data:
-                if d.get('hash') in duplicates:
-                    cherrypy.log(f'Not inserting Duplicate \'{d.get("hash")}\'')
-                    data.remove(d)
+                if d.get('hash') not in duplicates:
+                    # Add to unique
+                    unique_data.append(d)
 
-            result = collection.insert_multiple(data)
+            # No non-duplicates in data
+            if not data:
+                return 0
+
+            # Insert remaining data
+            result = self.connection.table(collection).insert_multiple(unique_data)
             return len(result)
 
         # INSERT One
         if data.get('hash') in duplicates:
+            # Don't insert duplicate
             cherrypy.log(f'Not inserting Duplicate \'{data.get("hash")}\'')
             return 0
 
-        result = collection.insert(data)
+        result = self.connection.table(collection).insert(data)
         return 1
 
     def update(self, data, condition=None, collection=None):
@@ -232,3 +236,24 @@ class TinyDbHandler(BaseDb):
             where_statement = where(condition.get('key')) < condition.get('value')
 
         return where_statement
+
+    def _double_check(self, collection, data):
+        """
+        Prüft anhand der unique IDs einer Transaktion,
+        ob diese schon in der Datenbank vorhanden ist
+
+        Args:
+            collection (str, optional): Name der Collection, in der die Werte geprüft werden sollen.
+            data (dict | list of dicts): Zu prüfende Transaktionen (inkl. ID)
+        Returns:
+            list: Liste der IDs, die sich bereits in der Datenbank befinden
+        """
+        if isinstance(data, list):
+            query = [{'key': 'hash', 'value': d.get('hash')} for d in data]
+        else:
+            query = {'key': 'hash', 'value': data.get('hash')}
+
+        results = self.select(collection=collection, condition=query, multi='OR')
+        duplicate_ids = [r.get('hash') for r in results]
+
+        return duplicate_ids

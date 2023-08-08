@@ -6,6 +6,7 @@ import re
 
 
 class BaseDb():
+    """Basisklasse für die Vererbung an Datenbankhandler mit allgemeinen Funktionen"""
 
     def create(self):
         """Erstellen des Datenbankspeichers"""
@@ -62,25 +63,3 @@ class BaseDb():
             return tx_list[0]
 
         return tx_list
-
-    def _double_check(self, collection, data):
-        """
-        Prüft anhand der unique IDs einer Transaktion,
-        ob diese schon in der Datenbank vorhanden ist
-
-        Args:
-            data (dict | list of dicts): Zu prüfende Transaktionen (inkl. ID)
-        Returns:
-            list: Liste der IDs, die sich bereits in der Datenbank befinden
-        """
-        if isinstance(data, list):
-            query = [{'key': 'hash', 'value': d.get('hash')} for d in data]
-        else:
-            query = {'key': 'hash', 'value': data.get('hash')}
-
-        #TODO: Funktion findet IDs (hashes) nicht
-        print(20*'?', query)
-        results = self.select(collection=collection, condition=query, multi='OR')
-        print(20*'>', results)
-
-        return [r.get('hash') for r in results]
