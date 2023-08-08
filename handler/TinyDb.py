@@ -59,38 +59,13 @@ class TinyDbHandler(BaseDb):
             collection = cherrypy.config['iban']
         collection = self.connection.table(collection)
 
-        # Multi condition
-        if isinstance(condition, list):
+        # Form condition into a query
+        query = self._form_complete_query(condition, multi)
 
-            # Create every where_statement from condition
-            where_statement = None
-            where_statements = []
-            for c in condition:
-                where_statements.append(self._form_query(c))
-
-            if multi.upper() == 'OR':
-                # Concat all where_statements with OR later
-                logical_concat = operator.or_
-
-            else:
-                # Concat all where_statements with AND later
-                logical_concat = operator.and_
-
-            # Concat conditions logical
-            for w in where_statements:
-                if where_statement is None:
-                    where_statement = w
-                    continue
-                where_statement = logical_concat(where_statement, w)
-
-        else:
-            # Single condition
-            where_statement = self._form_query(condition)
-
-        if where_statement is None:
+        if query is None:
             return collection.all()
 
-        return collection.search(where_statement)
+        return collection.search(query)
 
     def insert(self, data, collection=None):
         """
@@ -141,43 +116,70 @@ class TinyDbHandler(BaseDb):
         result = self.connection.table(collection).insert(data)
         return 1
 
-    def update(self, data, condition=None, collection=None):
+    def update(self, data, collection=None, condition=None, multi='AND'):
         """
         Aktualisiert Datensätze in der Datenbank, die die angegebene Bedingung erfüllen.
 
         Args:
             data (dict): Aktualisierte Daten für die passenden Datensätze
-            condition (dict, optional): Beding als Dictionary {'key': Schlüssel, 'value': Wert}
             collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
                                    Default: IBAN aus der Config.
+            condition (dict | list of dicts): Bedingung als Dictionary
+                - 'key', str    : Spalten- oder Schlüsselname,
+                - 'value', any  : Wert der bei 'key' verglichen werden soll
+                - 'compare', str: (optional, default '==')
+                    - '[==, !=, <, >, <=, >=]': Wert asu DB [compare] value
+                    - 'like'    : Wert aus DB == *value* (case insensitive)
+                    - 'regex'   : value wird als RegEx behandelt
+            multi (str) : ['AND' | 'OR'] Wenn 'condition' eine Liste mit conditions ist,
+                          werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
         Returns:
             int: Anzahl der aktualisierten Datensätze
         """
         if collection is None:
             collection = cherrypy.config['iban']
         collection = self.connection.table(collection)
-        if condition is not None:
-            condition = Query()[condition['key']] == condition['value']
-        else:
-            condition = Query().noop()
-        return self.connection.update(data, condition)
 
-    def delete(self, condition, collection=None):
+        # Form condition into a query and run
+        if condition is None:
+            query = Query().noop()
+        else:
+            query = self._form_complete_query(condition, multi)
+
+        # run update
+        update_result = collection.update(data, query)
+        return len(update_result)
+
+    def delete(self, collection=None, condition=None, multi='AND'):
         """
         Löscht Datensätze in der Datenbank, die die angegebene Bedingung erfüllen.
 
         Args:
-            condition (dict, optional): Bedingung als Dictionary {'key': Schlüssel, 'value': Wert}
             collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
                                    Default: IBAN aus der Config.
+            condition (dict | list of dicts): Bedingung als Dictionary
+                - 'key', str    : Spalten- oder Schlüsselname,
+                - 'value', any  : Wert der bei 'key' verglichen werden soll
+                - 'compare', str: (optional, default '==')
+                    - '[==, !=, <, >, <=, >=]': Wert asu DB [compare] value
+                    - 'like'    : Wert aus DB == *value* (case insensitive)
+                    - 'regex'   : value wird als RegEx behandelt
+            multi (str) : ['AND' | 'OR'] Wenn 'condition' eine Liste mit conditions ist,
+                          werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
         Returns:
             int: Anzahl der gelöschten Datensätze
         """
         if collection is None:
             collection = cherrypy.config['iban']
         collection = self.connection.table(collection)
-        condition = Query()[condition['key']] == condition['value']
-        deleted_ids = self.connection.remove(condition)
+
+        # Form condition into a query
+        if condition is None:
+            query = Query().noop()
+        else:
+            query = self._form_complete_query(condition, multi)
+
+        deleted_ids = collection.remove(query)
         return len(deleted_ids)
 
     def truncate(self, collection=None):
@@ -194,7 +196,7 @@ class TinyDbHandler(BaseDb):
         table = self.connection.table(collection)
         return len(table.remove(lambda x: True))
 
-    def _form_query(self, condition):
+    def _form_where(self, condition):
         """
         Erstellt aus einem Condition-Dict eine entsprechende Query
 
@@ -236,6 +238,48 @@ class TinyDbHandler(BaseDb):
             where_statement = where(condition.get('key')) < condition.get('value')
 
         return where_statement
+
+    def _form_complete_query(self, condition, multi='AND'):
+        """
+        Erstellt eine oder mehrere Query Objekte und
+        verkettet diese entprechend für eine Abfrage
+
+        Args:
+            condition (dict | list of dicts): Bedingung als Dictionary
+            multi (str) : ['AND' | 'OR'] Wenn 'condition' eine Liste mit conditions ist,
+                          werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
+        Returns:
+            set: Ein oder mehrere Query Objekte im set
+        """
+        # Multi condition
+        if isinstance(condition, list):
+
+            # Create every where_statement from condition
+            query = None
+            where_statements = []
+            for c in condition:
+                where_statements.append(self._form_where(c))
+
+            if multi.upper() == 'OR':
+                # Concat all where_statements with OR later
+                logical_concat = operator.or_
+
+            else:
+                # Concat all where_statements with AND later
+                logical_concat = operator.and_
+
+            # Concat conditions logical
+            for w in where_statements:
+                if query is None:
+                    query = w
+                    continue
+                query = logical_concat(query, w)
+
+        else:
+            # Single condition
+            query = self._form_where(condition)
+
+        return query
 
     def _double_check(self, collection, data):
         """

@@ -20,11 +20,11 @@ class BaseDb():
         """Einfügen von Werten in die Datenbank"""
         raise NotImplementedError()
 
-    def update(self, data, condition, collection):
+    def update(self, data, collection, condition, multi):
         """Aktualisieren von Werten in der Datenbank"""
         raise NotImplementedError()
 
-    def delete(self, condition, collection):
+    def delete(self, collection, condition):
         """Löschen von Werten aus der Datenbank"""
         raise NotImplementedError()
 

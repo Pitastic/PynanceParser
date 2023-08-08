@@ -54,15 +54,8 @@ class MongoDbHandler(BaseDb):
             collection = cherrypy.config['iban']
         collection = self.connection[collection]
 
-        # Single or Multi Conditions
-        if isinstance(condition, list):
-            operator = '$or' if multi.upper() == 'OR' else '$and'
-            query = {operator: []}
-            for c in condition:
-                query[operator].append(self._form_query(c))
-
-        else:
-            query = self._form_query(condition)
+        # Form condition into a query
+        query = self._form_complete_query(condition, multi)
 
         return list(collection.find(query))
 
@@ -84,8 +77,6 @@ class MongoDbHandler(BaseDb):
         # Add generated IDs
         data = self._generate_unique(data)
 
-        #TODO: ID Check statt === Doubletten
-
         if isinstance(data, list):
             # Insert Many (INSERT IGNORE)
             try:
@@ -103,46 +94,64 @@ class MongoDbHandler(BaseDb):
         except pymongo.errors.BulkWriteError:
             return 0
 
-    def update(self, data, condition=None, collection=None):
+    def update(self, data, collection=None, condition=None, multi='AND'):
         """
         Aktualisiert Datensätze in der Datenbank, die die angegebene Bedingung erfüllen.
 
         Args:
             data (dict): Aktualisierte Daten für die passenden Datensätze
-            condition (dict, optional): Beding als Dictionary {'key': Schlüssel, 'value': Wert}
             collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
                                    Default: IBAN aus der Config.
+            condition (dict | list of dicts): Bedingung als Dictionary
+                - 'key', str    : Spalten- oder Schlüsselname,
+                - 'value', any  : Wert der bei 'key' verglichen werden soll
+                - 'compare', str: (optional, default '==')
+                    - '[==, !=, <, >, <=, >=]': Wert asu DB [compare] value
+                    - 'like'    : Wert aus DB == *value* (case insensitive)
+                    - 'regex'   : value wird als RegEx behandelt
+            multi (str) : ['AND' | 'OR'] Wenn 'condition' eine Liste mit conditions ist,
+                          werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
         Returns:
             int: Anzahl der aktualisierten Datensätze
         """
         if collection is None:
             collection = cherrypy.config['iban']
         collection = self.connection[collection]
-        if condition is None:
-            query = {}
-        else:
-            query = { condition['key']: condition['value'] }
-        return collection.update_many(query, {'$set': data})
 
-    def delete(self, condition=None, collection=None):
+        # Form condition into a query
+        query = self._form_complete_query(condition, multi)
+
+        update_result = collection.update_many(query, {'$set': data})
+        return update_result.modified_count
+
+    def delete(self, collection=None, condition=None, multi='AND'):
         """
         Löscht Datensätze in der Datenbank, die die angegebene Bedingung erfüllen.
 
         Args:
-            condition (dict): Beding als Dictionary {'key': Schlüssel, 'value': Wert}
             collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
                                    Default: IBAN aus der Config.
+            condition (dict | list of dicts): Bedingung als Dictionary
+                - 'key', str    : Spalten- oder Schlüsselname,
+                - 'value', any  : Wert der bei 'key' verglichen werden soll
+                - 'compare', str: (optional, default '==')
+                    - '[==, !=, <, >, <=, >=]': Wert asu DB [compare] value
+                    - 'like'    : Wert aus DB == *value* (case insensitive)
+                    - 'regex'   : value wird als RegEx behandelt
+            multi (str) : ['AND' | 'OR'] Wenn 'condition' eine Liste mit conditions ist,
+                          werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
         Returns:
             int: Anzahl der gelöschten Datensätze
         """
         if collection is None:
             collection = cherrypy.config['iban']
         collection = self.connection[collection]
-        if not condition:
-            query = {}
-        else:
-            query = { condition['key']: condition['value'] }
-        return collection.delete_many(query).deleted_count
+
+        # Form condition into a query
+        query = self._form_complete_query(condition, multi)
+
+        delete_result = collection.delete_many(query)
+        return delete_result.deleted_count
 
     def truncate(self, collection=None):
         """
@@ -154,9 +163,9 @@ class MongoDbHandler(BaseDb):
         Returns:
             int: Anzahl der gelöschten Datensätze                        
         """
-        return self.delete(condition={}, collection=collection)
+        return self.delete(collection=collection)
 
-    def _form_query(self, condition):
+    def _form_condition(self, condition):
         """
         Erstellt aus einem Condition-Dict eine entsprechende Query
 
@@ -195,5 +204,28 @@ class MongoDbHandler(BaseDb):
             query[condition.get('key')] = {'$gt': condition.get('value')}
         if condition_method == '<':
             query[condition.get('key')] = {'$lt': condition.get('value')}
+
+        return query
+
+    def _form_complete_query(self, condition, multi='AND'):
+        """
+        Erstellt ein Query Objekt aus ein oder mehreren Conditions.
+
+        Args:
+            condition (dict | list of dicts): Bedingung als Dictionary
+            multi (str) : ['AND' | 'OR'] Wenn 'condition' eine Liste mit conditions ist,
+                          werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
+        Returns:
+            dict: MongoDB Query dict
+        """
+        # Single or Multi Conditions
+        if isinstance(condition, list):
+            operator = '$or' if multi.upper() == 'OR' else '$and'
+            query = {operator: []}
+            for c in condition:
+                query[operator].append(self._form_condition(c))
+
+        else:
+            query = self._form_condition(condition)
 
         return query

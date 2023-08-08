@@ -189,13 +189,46 @@ class TestDbHandler():
 
     def test_update(self):
         """Testet das Aktualisieren von Datensätzen"""
-        # Selects wie bei 'select' ermöglichen'
-        pass
+        # Update some records and multiple fields
+        data = {'currency': 'USD', 'primary_tag': 'Updated'}
+        query = [
+            {'key': 'hash', 'value': '13d505688ab3b940dbed47117ffddf95'},
+            {'key': 'text_tx', 'value': 'Wucherpfennig', 'compare': 'like'}
+        ]
+        update_two = self.db_handler.update(data, condition=query, multi='OR')
+        assert update_two == 2, \
+            f'Es wurde nicht die richtige Anzahl geupdated (update_two): {update_two}'
+
+        result_one = self.db_handler.select(cherrypy.config['iban'], condition=query)
+        for entry in result_one:
+            check_entry(entry, data)
+
+        # Update all with one field
+        data = {'art': 'Überweisung'}
+        update_all = self.db_handler.update(data)
+        assert update_all == 5, \
+            f'Es wurde nicht die richtige Anzahl geupdated (update_all): {update_all}'
+
+        result_all = self.db_handler.select(cherrypy.config['iban'])
+        for entry in result_all:
+            check_entry(entry, data)
 
     def test_delete(self):
         """Testet das Löschen von Datensätzen"""
-        # Selects wie bei 'select' ermöglichen'
-        pass
+        # Einzelnen Datensatz löschen
+        query = {'key': 'hash', 'value': '13d505688ab3b940dbed47117ffddf95'}
+        delete_one = self.db_handler.delete(condition=query)
+        assert delete_one == 1, \
+            f'Es wurde nicht die richtige Anzahl an Datensätzen gelöscht: {delete_one}'
+
+        # Mehrere Datensätze löschen
+        query = [
+            {'key': 'currency', 'value': 'EUR'},
+            {'key': 'currency', 'value': 'USD'}
+        ]
+        delete_one = self.db_handler.delete(condition=query, multi='OR')
+        assert delete_one == 4, \
+            f'Es wurde nicht die richtige Anzahl an Datensätzen gelöscht: {delete_one}'
 
 
 def generate_fake_data(count):
@@ -239,4 +272,5 @@ def check_entry(tx_entry, key_vals=None):
         return None
 
     for k, v in key_vals.items():
+        if tx_entry.get(k) is None: continue
         assert tx_entry[k] == v, f"Der Schlüssel {k} hat den falschen Wert"
