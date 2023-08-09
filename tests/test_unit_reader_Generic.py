@@ -1,4 +1,5 @@
-import os, sys
+import os
+import sys
 import cherrypy
 import pytest
 
@@ -36,7 +37,7 @@ class TestReaderGeneric():
         )
         transaction_list = self.Reader.from_csv(uri)
         # Check Reader Ergebnisse
-        checkTransaktionList(transaction_list)
+        check_transaktion_list(transaction_list)
 
     @pytest.mark.skip(reason="Currently not implemented yet")
     def test_read_from_pdf(self):
@@ -49,9 +50,10 @@ class TestReaderGeneric():
         return None
 
 
-def checkTransaktionList(tx_list):
-    for i in range(len(tx_list)):
-        entry = tx_list[i]
+def check_transaktion_list(tx_list):
+    """Helper zum prüfen der Parsingergebnisse"""
+
+    for i, entry in enumerate(tx_list):
 
         # Dict Struktur
         required_keys = [
@@ -64,30 +66,30 @@ def checkTransaktionList(tx_list):
                 f'Der Schlüssel {r_key} ist nicht im Element zur Zeile {i} vorhanden'
 
         # Buchungsdatum
-        assert type(entry.get('date_tx')) == float, (
+        assert isinstance(entry.get('date_tx'), float), (
             f"'date_tx' bei Zeile {i} nicht als Zeit in Sekunden (float) eingelesen: "
             f"{entry.get('date_tx')}")
         # Betrag
-        assert type(entry.get('betrag')) == float, (
+        assert isinstance(entry.get('betrag'), float), (
             f"'betrag' bei Zeile {i} nicht als Kommazahl eingelesen: "
             f"{entry.get('betrag')}")
         # Buchungstext
         text_tx = entry.get('text_tx')
-        assert type(text_tx) == str and len(text_tx), \
+        assert isinstance(text_tx, str) and len(text_tx), \
             f"'text_tx' wurde nicht oder falsch erkannt: {text_tx}"
         # IBAN
         iban = entry.get('iban')
-        assert type(iban) == str and len(iban), \
+        assert isinstance(iban, str) and len(iban), \
             f"'iban' wurde nicht oder falsch erkannt: {iban}"
         # Wertstellung (optional, aber bei Generic mit dabei)
-        assert type(entry.get('date_wert')) == float, (
+        assert isinstance(entry.get('date_wert'), float), (
             f"'date_wert' bei Zeile {i} nicht als Zeit in Sekunden (float) eingelesen: "
             f"{entry.get('date_wert')}")
         # Buchungsart (optional, aber bei Generic mit dabei)
         buchungs_art = entry.get('art')
-        assert type(buchungs_art) == str and len(buchungs_art), \
+        assert isinstance(buchungs_art, str) and len(buchungs_art), \
             f"'art' wurde nicht oder falsch erkannt: {iban}"
         # Währung (optional, aber bei Generic mit dabei)
         currency = entry.get('currency')
-        assert type(currency) == str and len(currency) == 3, \
+        assert isinstance(currency, str) and len(currency) == 3, \
             f"'currency' wurde nicht oder falsch erkannt: {currency}"
