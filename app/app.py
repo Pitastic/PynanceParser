@@ -1,7 +1,8 @@
 #!/usr/bin/python3 # pylint: disable=invalid-name
 """Basisklasse mit Methoden für den Programmablauf."""
 
-import os, sys
+import os
+import sys
 import re
 import cherrypy
 
@@ -171,10 +172,14 @@ class UserInterface(object):
         self.tag()
 
         # Verarbeitete Kontiumsätze in die DB speichern und vom Objekt und Dateisystem löschen
-        self.flush_to_db()
+        inserted = self.flush_to_db()
         os.remove(path)
 
-        #TODO: Wenn Daten geschrieben wurden, sollte die Response 201 sein
+        if inserted:
+            cherrypy.response.status = 201 # created
+        else:
+            cherrypy.response.status = 304 # not modified
+
         return out.format(size=size, filename=tx_file.filename, content_type=tx_file.content_type)
 
     @cherrypy.expose
@@ -204,6 +209,7 @@ class UserInterface(object):
         return out
 
     @cherrypy.expose
+    @cherrypy.tools.json_out()
     def tag(self):
         """
         Kategorisiert die Kontoumsätze und aktualisiert die Daten in der Instanz.
@@ -219,9 +225,10 @@ class UserInterface(object):
         count = self.tagger.tag_regex(data=self.data)
         # 2. AI Tagging
         count = count + self.tagger.tag_ai(data=self.data)
-        return count
+        return {'tagged': count}
 
     @cherrypy.expose
+    @cherrypy.tools.json_out()
     def setManualTag(self, t_id, primary_tag, secondary_tag=None):
         """
         Setzt manuell eine Kategorie für einen bestimmten Eintrag.
@@ -233,16 +240,20 @@ class UserInterface(object):
         Returns:
             Anzahl der gespeicherten Datensätzen
         """
-        return self.database.update(
+        updated_entries = self.database.update(
             {
                 'main_category': primary_tag,
                 'second_category': secondary_tag,
             },
             f'WHERE id = {t_id}')
+        return {'updated': updated_entries}
 
     @cherrypy.expose
+    @cherrypy.tools.json_out()
     def truncateDatabase(self, iban=None):
-        return self.database.truncate(iban)
+        """Leert die Datenbank"""
+        deleted_entries = self.database.truncate(iban)
+        return { 'deleted': deleted_entries }
 
 if __name__ == '__main__':
 

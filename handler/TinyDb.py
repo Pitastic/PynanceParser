@@ -194,7 +194,8 @@ class TinyDbHandler(BaseDb):
         if collection is None:
             collection = cherrypy.config['iban']
         table = self.connection.table(collection)
-        return len(table.remove(lambda x: True))
+        r = table.remove(lambda x: True)
+        return len(r)
 
     def _form_where(self, condition):
         """

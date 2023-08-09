@@ -2,7 +2,6 @@ import os
 import sys
 import json
 import cherrypy
-import pytest
 
 # Add Parent for importing from Modules
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -42,12 +41,6 @@ class TestDbHandler():
         }.get(self.db_engine)()
         assert self.db_handler, "TinyDbHandler Klasse konnte nicht instanziiert werden"
         self.db_handler.truncate()
-
-    def teardown_class(self):
-        """Nachbereitung der Testklasse"""
-        #remaining_data = self.DbHandler.truncate()
-        #assert remaining_data == [], "Die Datenbank konnte nach dem Test nicht geleert werden"
-        pass
 
 
     def test_insert(self):
@@ -271,6 +264,7 @@ def check_entry(tx_entry, key_vals=None):
     if key_vals is None:
         return None
 
-    for k, v in key_vals.items():
-        if tx_entry.get(k) is None: continue
-        assert tx_entry[k] == v, f"Der Schlüssel {k} hat den falschen Wert"
+    for key, val in key_vals.items():
+        if tx_entry.get(key) is None:
+            continue
+        assert tx_entry[key] == val, f"Der Schlüssel {key} hat den falschen Wert"
