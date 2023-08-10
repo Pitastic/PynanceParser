@@ -59,8 +59,8 @@ jobs:
         pylint . --recursive=y --disable=W0511,R0801 --score=y --report=y ; echo linter=$? >> "$GITHUB_ENV"
     - name: Pass or fail
       run: |
-        if [[ ${{ steps.linting.outputs.linter }} != 0 ]]; then
-          if [[ ${{ steps.linting.outputs.linter }} -gt 7 ]]; then
+        if [[ ${{ $linter }} != 0 ]]; then
+          if [[ ${{ $linter }} -gt 7 ]]; then
             # anything below Warning level
             exit 0
           else
