@@ -55,7 +55,13 @@ jobs:
         set +e
         pylint . --recursive=y --disable=W0511,R0801 --score=y --report=y
         exitcode=$?
-        if [[ $exitcode -gt 7 ]]; then
+        if [[ $exitcode -eq 0 ]]; then
+          echo "Excellent!"
+          exit 0
+        elif \
+           [[ $exitcode -lt 8 ]] || \
+           [[ $exitcode -ge 9 && $exitcode -le 15 ]] || \
+           [[ $exitcode -ge 17 && $exitcode -le 23 ]]; then
           echo "Tolerating minor linting issues (code: ${exitcode})..."
           exit 0
         else
