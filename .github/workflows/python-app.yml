@@ -56,7 +56,7 @@ jobs:
       continue-on-error: true
       run: |
         # stop on linter problems above 
-        pylint . --recursive=y --disable=W0511,R0801 --score=y --report=y ; echo "linter=$?" >> $GITHUB_OUTPUT ; echo "foo=Bar" >> $GITHUB_OUTPUT
+        pylint . --recursive=y --disable=W0511,R0801 --score=y --report=y ; echo "::set-output name=linter::$?" ; echo "::set-output name=foo::bar"
     - name: Pass or fail
       run: |
         echo $linter
