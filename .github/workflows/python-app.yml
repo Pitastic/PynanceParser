@@ -51,12 +51,12 @@ jobs:
         pip install pylint
         # pip install -r requirements.txt
         # pip install -r tests/requirements.txt
-    - name: Lint with PyLint
-      id: linting
-      continue-on-error: true
-      run: |
-        # stop on linter problems above 
-        pylint . --recursive=y --disable=W0511,R0801 --score=y --report=y ; echo "::set-output name=linter::$?" ; echo "::set-output name=foo::bar"
+    #- name: Lint with PyLint
+    #  id: linting
+    #  continue-on-error: true
+    #  run: |
+    #    # stop on linter problems above 
+    #    pylint . --recursive=y --disable=W0511,R0801 --score=y --report=y ; echo "::set-output name=linter::$?" ; echo "::set-output name=foo::bar"
     #- name: Pass or fail
     #  run: |
     #    echo "${{ steps.linting.outputs.exitcode }}"
@@ -74,8 +74,11 @@ jobs:
     #      exit 0
     #    fi
     - name: Another Test
-      uses: actions/setup-python@v3
-    - if: steps.linting.outputs.exitcode != '0'
+      id: linting2
+      continue-on-error: true
+      run: |
+        pylint . --recursive=y --disable=W0511,R0801 --score=y --report=y
+    - if: steps.linting2.outputs.exitcode != '0'
       run: echo "I ran != 0 !" ; exit 1
-    - if: steps.linting.outputs.exitcode == '0'
+    - if: steps.linting2.outputs.exitcode == '0'
       run: echo "I ran == 0 !" ; exit 1
