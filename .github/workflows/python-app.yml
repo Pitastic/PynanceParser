@@ -77,4 +77,6 @@ jobs:
       id: linting2
       continue-on-error: true
       run: |
-        pylint . --recursive=y --disable=W0511,R0801 --score=y --report=y ; if [[ $? -gt 7 ]]; then exit 0; fi
+        set +e
+        pylint . --recursive=y --disable=W0511,R0801 --score=y --report=y
+        if [[ $? -gt 7 ]]; then exit 0; fi
