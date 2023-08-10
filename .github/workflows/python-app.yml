@@ -59,9 +59,9 @@ jobs:
         pylint . --recursive=y --disable=W0511,R0801 --score=y --report=y ; echo "::set-output name=linter::$?" ; echo "::set-output name=foo::bar"
     - name: Pass or fail
       run: |
-        echo "${{ steps.linting.output.linter }}"
-        echo "${{ steps.linting.output.foo }}"
-        if [[ ${{ steps.linting.output.linter }} != 0 ]]; then
+        echo "${{ steps.linting.outputs.linter }}"
+        echo "${{ steps.linting.outpust.foo }}"
+        if [[ ${{ steps.linting.outputs.linter }} != 0 ]]; then
           if [[ ${{ steps.linting.output.linter }} -gt 7 ]]; then
             # anything below Warning level
             echo "Exit 0!"
