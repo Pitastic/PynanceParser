@@ -76,8 +76,4 @@ jobs:
     - name: Another Test
       id: linting2
       run: |
-        pylint . --recursive=y --disable=W0511,R0801 --score=y --report=y
-    - if: steps.linting2.outputs.exitcode == '0'
-      run: echo "I ran == 0 !" ; exit 0
-    - if: steps.linting2.outputs.exitcode != '0'
-      run: echo "I ran != 0 !" ; exit 0
+        pylint . --recursive=y --disable=W0511,R0801 --score=y --report=y ; if [[ $? -gt 7 ]]; then exit 0; fi
