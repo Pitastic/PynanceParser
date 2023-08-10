@@ -75,7 +75,6 @@ jobs:
     #    fi
     - name: Another Test
     - if: steps.linting.outputs.exitcode != '0'
-      run: echo "I ran !" ; exit 1
-    - name: Another Test
+      run: echo "I ran != 0 !" ; exit 1
     - if: steps.linting.outputs.exitcode == '0'
-      run: echo "I ran !" ; exit 1
+      run: echo "I ran == 0 !" ; exit 1
