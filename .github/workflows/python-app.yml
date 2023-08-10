@@ -75,10 +75,9 @@ jobs:
     #    fi
     - name: Another Test
       id: linting2
-      continue-on-error: true
       run: |
         pylint . --recursive=y --disable=W0511,R0801 --score=y --report=y
-    - if: steps.linting2.outputs.exitcode != '0'
-      run: echo "I ran != 0 !" ; exit 1
     - if: steps.linting2.outputs.exitcode == '0'
-      run: echo "I ran == 0 !" ; exit 1
+      run: echo "I ran == 0 !" ; exit 0
+    - if: steps.linting2.outputs.exitcode != '0'
+      run: echo "I ran != 0 !" ; exit 0
