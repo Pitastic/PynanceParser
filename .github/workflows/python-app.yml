@@ -56,10 +56,11 @@ jobs:
       continue-on-error: true
       run: |
         # stop on linter problems above 
-        pylint . --recursive=y --disable=W0511,R0801 --score=y --report=y ; echo "linter=$?" >> "$GITHUB_ENV"
+        pylint . --recursive=y --disable=W0511,R0801 --score=y --report=y ; echo "linter=$?" >> "$GITHUB_ENV" ; echo "foo=Bar" >> "$GITHUB_ENV"
     - name: Pass or fail
       run: |
         echo $linter
+        echo $foo
         if [[ $linter != 0 ]]; then
           if [[ $linter -gt 7 ]]; then
             # anything below Warning level
