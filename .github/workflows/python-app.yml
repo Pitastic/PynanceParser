@@ -60,7 +60,7 @@ jobs:
     - name: Pass or fail
       run: |
         echo "${{ steps.linting.outputs.linter }}"
-        echo "${{ steps.linting.outpust.foo }}"
+        echo "${{ steps.linting.outputs.foo }}"
         if [[ ${{ steps.linting.outputs.linter }} != 0 ]]; then
           if [[ ${{ steps.linting.output.linter }} -gt 7 ]]; then
             # anything below Warning level
