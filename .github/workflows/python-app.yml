@@ -56,7 +56,8 @@ jobs:
       continue-on-error: true
       run: |
         # stop on linter problems above 
-        echo linter=$(pylint . --recursive=y --disable=W0511,R0801 --score=y --report=y) >> $GITHUB_OUTPUT
+        pylint . --recursive=y --disable=W0511,R0801 --score=y --report=y
+        echo linter=$? >> $GITHUB_OUTPUT
     - name: Pass or fail
       run: |
         if [[ ${{ steps.linting.outputs.linter }} != 0 ]]; then
