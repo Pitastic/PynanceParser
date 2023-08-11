@@ -92,15 +92,7 @@ jobs:
           echo "### :no_entry: Too many linting errors! - **${score} / 10**" >> $GITHUB_STEP_SUMMARY
           exit $exitcode
         fi
-    - name: Commit Pylint Badge
-      run: |
-        if [[ `git status --porcelain` ]]; then
-          git config --global user.email "no-reply@github.com"
-          git config --global user.name "GitHub Actions"
-          git add README.md
-          git commit -m "Update Pylint Badge"
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ GITHUB_WORKFLOW_REF }}
-          git push
-        fi
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    # Auto-Commit Badge Changes
+    - uses: stefanzweifel/git-auto-commit-action@v4
+      with:
+        commit_message: Add PyLint Badge
