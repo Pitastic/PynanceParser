@@ -1,5 +1,7 @@
 # PynanceParser
 
+![pylint](https://img.shields.io/badge/linting-pylint-green)
+
 Abruf, Analyse und Darstellung von Kontoumsätzen bei mehreren Banken.
 
 ## Features
