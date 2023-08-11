@@ -55,18 +55,19 @@ jobs:
       id: linting
       run: |
         set +e
-        pylint . --recursive=y --disable=W0511,R0801 --score=y --report=y
+        pylint_output=$(pylint . --recursive=y --disable=W0511,R0801 --score=y)
         exitcode=$?
+        score=$(sed -n '$s/[^0-9]*\([0-9.]*\).*/\1/p' <<< "$pylint_output")
         if [[ $exitcode -eq 0 ]]; then
-          echo "Excellent!"
+          echo ":sparkles: Excellent! :rocket: ${score} / 10" >> $GITHUB_STEP_SUMMARY
           exit 0
         elif \
            [[ $exitcode -lt 8 ]] || \
            [[ $exitcode -ge 9 && $exitcode -le 15 ]] || \
            [[ $exitcode -ge 17 && $exitcode -le 23 ]]; then
-          echo "Tolerating minor linting issues (code: ${exitcode})..."
+          echo ":shushing_face: tolerated (code: ${exitcode}) - ${score} / 10" >> $GITHUB_STEP_SUMMARY
           exit 0
         else
-          echo "Too many linting errors!"
+          echo ":no_entry: Too many linting errors! - ${score} / 10" >> $GITHUB_STEP_SUMMARY
           exit $exitcode
         fi
