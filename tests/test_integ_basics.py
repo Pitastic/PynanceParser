@@ -62,7 +62,7 @@ class TestIntegration(cphelper.CPWebCase):
 
     def test_truncate(self):
         """Leert die Datenbank und dient als Hilfsfunktion für folgende Tests"""
-        r = requests.get('http://127.0.0.1:54583/truncateDatabase')
+        r = requests.get('http://127.0.0.1:54583/truncateDatabase', timeout=5)
         #print("Truncating DB...", r.text, r.status_code)
         assert r.status_code == 200, "Fehler beim Leeren der Datenbank"
 
@@ -74,7 +74,7 @@ class TestIntegration(cphelper.CPWebCase):
         # Clear DB
         self.test_truncate()
         # Cleared DB ?
-        response0 = requests.get(f"{self.uri}/view?iban={cherrypy.config['iban']}")
+        response0 = requests.get(f"{self.uri}/view?iban={cherrypy.config['iban']}", timeout=5)
         assert "<td class=" not in response0.text, \
             "Die Datenbank war zum Start des Tests nicht leer"
 
@@ -87,7 +87,7 @@ class TestIntegration(cphelper.CPWebCase):
         content = get_testfile_contents('commerzbank.csv', binary=True)
         files = {'tx_file': ('commerzbank.csv', content)}
         # Post File
-        response = requests.post(f"{self.uri}/upload", files=files)
+        response = requests.post(f"{self.uri}/upload", files=files, timeout=5)
 
         # Check Response
         assert response.status_code == 201, \
@@ -96,8 +96,8 @@ class TestIntegration(cphelper.CPWebCase):
             "Angaben zum Upload wurden nicht gefunden"
 
         # Aufruf der Transaktionen auf verschiedene Weisen
-        response1 = requests.get(f"{self.uri}/view", params={})
-        response2 = requests.get(f"{self.uri}/view?iban={cherrypy.config['iban']}")
+        response1 = requests.get(f"{self.uri}/view", params={}, timeout=5)
+        response2 = requests.get(f"{self.uri}/view?iban={cherrypy.config['iban']}", timeout=5)
         assert response1.status_code == response2.status_code == 200, \
             "Die Ergebnisseite mit den Transaktionen ist nicht (richtig) erreichbar"
         result = response2.text
@@ -136,7 +136,7 @@ class TestIntegration(cphelper.CPWebCase):
         # Clear DB
         self.test_truncate()
         # Cleared DB ?
-        response0 = requests.get(f"{self.uri}/view?iban={cherrypy.config['iban']}")
+        response0 = requests.get(f"{self.uri}/view?iban={cherrypy.config['iban']}", timeout=5)
         assert "<td class=" not in response0.text, \
             "Die Datenbank war zum Start des Tests nicht leer"
 
@@ -145,12 +145,12 @@ class TestIntegration(cphelper.CPWebCase):
         files = {'tx_file': ('commerzbank.csv', content)}
 
         # Post File 1
-        response1 = requests.post(f"{self.uri}/upload", files=files)
+        response1 = requests.post(f"{self.uri}/upload", files=files, timeout=5)
         status_code_1 = response1.status_code
         assert status_code_1 == 201
 
         # Post File 2
-        response2 = requests.post(f"{self.uri}/upload", files=files)
+        response2 = requests.post(f"{self.uri}/upload", files=files, timeout=5)
         status_code_2 = response2.status_code
         # Same TX: Keine neuen Einträge angelegt:
         assert status_code_2 == 304, \
@@ -158,7 +158,7 @@ class TestIntegration(cphelper.CPWebCase):
             "dürfen keine neuen Datensätze angelegt werden")
 
         # Double-Check: Anzahl der Einträge
-        response3 = requests.get(f"{self.uri}/view?iban={cherrypy.config['iban']}")
+        response3 = requests.get(f"{self.uri}/view?iban={cherrypy.config['iban']}", timeout=5)
         result = response3.text
         soup = BeautifulSoup(result,features="html.parser")
         rows = soup.css.select('table .td-hash')

@@ -1,3 +1,6 @@
+#!/usr/bin/python3 # pylint: disable=invalid-name
+"""Testmodul für die Interaktion mit der Datenbank"""
+
 import os
 import sys
 import json
@@ -12,6 +15,7 @@ from handler.MongoDb import MongoDbHandler
 
 
 class TestDbHandler():
+    """PyTest Klasse für die Tests des in der Config hinterlegten Datenbank-Handlers"""
 
     def setup_class(self):
         """Vorbereitung der Testklasse"""
@@ -268,3 +272,5 @@ def check_entry(tx_entry, key_vals=None):
         if tx_entry.get(key) is None:
             continue
         assert tx_entry[key] == val, f"Der Schlüssel {key} hat den falschen Wert"
+
+    return True

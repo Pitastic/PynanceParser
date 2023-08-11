@@ -5,10 +5,9 @@ import random
 import cherrypy
 
 
-class Tagger(object):
-    """
-    Handler für die Untersuchung und Markierung von Umsätzen.
-    """
+class Tagger():
+    """Handler für die Untersuchung und Markierung von Umsätzen."""
+
     def __init__(self):
         pass
 

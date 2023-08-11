@@ -19,10 +19,9 @@ from reader.Generic import Reader as Generic
 from reader.Commerzbank import Reader as Commerzbank
 
 
-class UserInterface(object):
-    """
-    Basisklasse mit Methoden für den Programmablauf.
-    """
+class UserInterface():
+    """Basisklasse mit Methoden für den Programmablauf"""
+
     def __init__(self):
         """
         Initialisiert eine Instanz der Basisklasse und lädt die Konfiguration sowie die Logunktion.

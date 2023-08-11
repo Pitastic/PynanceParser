@@ -1,3 +1,6 @@
+#!/usr/bin/python3 # pylint: disable=invalid-name
+"""Testmodul für das Einlesen von Daten mit Hilfe des generischen Readers"""
+
 import os
 import sys
 import cherrypy
@@ -11,6 +14,7 @@ from reader.Generic import Reader as Generic
 
 
 class TestReaderGeneric():
+    """PyTest Klasse für die Tests am generischen Reader"""
 
     def setup_class(self):
         """Vorbereitung der Testklasse"""
@@ -25,7 +29,7 @@ class TestReaderGeneric():
             "Unable to read Test Config"
 
         # Instanz von Reader
-        self.Reader = Generic()
+        self.Reader = Generic() # pylint: disable=invalid-name
         assert self.Reader, "Reader Klasse konnte nicht instanziiert werden"
 
 

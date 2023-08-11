@@ -14,7 +14,6 @@ class Reader(Generic):
         Initialisiert eine Instanz der Reader-Klasse für Kontoumsätze der Commerzbank.
         """
         super().__init__()
-        return
 
     def from_pdf(self, filepath):
         """
