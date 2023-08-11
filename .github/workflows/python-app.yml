@@ -59,15 +59,16 @@ jobs:
         exitcode=$?
         score=$(sed -n '$s/[^0-9]*\([0-9.]*\).*/\1/p' <<< "$pylint_output")
         if [[ $exitcode -eq 0 ]]; then
-          echo ":sparkles: Excellent! :rocket: ${score} / 10" >> $GITHUB_STEP_SUMMARY
+          echo ":sparkles: Excellent! :rocket: *${score} / 10*" >> $GITHUB_STEP_SUMMARY
           exit 0
         elif \
            [[ $exitcode -lt 8 ]] || \
            [[ $exitcode -ge 9 && $exitcode -le 15 ]] || \
            [[ $exitcode -ge 17 && $exitcode -le 23 ]]; then
-          echo ":shushing_face: tolerated (code: ${exitcode}) - ${score} / 10" >> $GITHUB_STEP_SUMMARY
+          echo ":shushing_face: tolerated (code: ${exitcode}) - *${score} / 10*" >> $GITHUB_STEP_SUMMARY
+          echo "$pylint_output"
           exit 0
         else
-          echo ":no_entry: Too many linting errors! - ${score} / 10" >> $GITHUB_STEP_SUMMARY
+          echo ":no_entry: Too many linting errors! - *${score} / 10*" >> $GITHUB_STEP_SUMMARY
           exit $exitcode
         fi
