@@ -64,11 +64,11 @@ jobs:
         #
         # -- Set Badge in Readme
         #
-        if [[ $score -le 5 ]]; then
+        if [[ $(echo "$score <= 5" | bc) -eq 1 ]]; then
           badge='https://img.shields.io/badge/linting-pylint-red'
-        elif [[ $score -le 8 ]]; then
+        elif [[ $(echo "$score <= 8" | bc) -eq 1 ]]; then
           badge='https://img.shields.io/badge/linting-pylint-orange'
-        elif [[ $score -lt 10 ]]; then
+        elif [[ $(echo "$score < 10" | bc) -eq 1 ]]; then
           badge='https://img.shields.io/badge/linting-pylint-yellow'
         else
           badge='https://img.shields.io/badge/linting-pylint-green'
@@ -93,11 +93,13 @@ jobs:
         fi
     - name: Commit Pylint Badge
       run: |
-        git config --global user.email "no-reply@github.com"
-        git config --global user.name "GitHub Actions"
-        git add README.md
-        git commit -m "Update Pylint Badge"
-        git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
-        git push
+        if [[ `git status --porcelain` ]]; then
+          git config --global user.email "no-reply@github.com"
+          git config --global user.name "GitHub Actions"
+          git add README.md
+          git commit -m "Update Pylint Badge"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+          git push
+        fi
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
