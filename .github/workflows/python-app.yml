@@ -69,7 +69,7 @@ jobs:
           badge="https://img.shields.io/badge/pylint-$score-red"
         elif [[ $(echo "$score <= 8" | bc) -eq 1 ]]; then
           badge="https://img.shields.io/badge/pylint-$score-orange"
-        elif [[ $(echo "$score < 10" | bc) -eq 1 ]]; then
+        elif [[ $(echo "$score < 9.9" | bc) -eq 1 ]]; then
           badge="https://img.shields.io/badge/pylint-$score-yellow"
         else
           badge="https://img.shields.io/badge/pylint-$score-green"
