@@ -66,13 +66,13 @@ jobs:
         # -- Set Badge in Readme
         #
         if [[ $(echo "$score <= 5" | bc) -eq 1 ]]; then
-          badge='https://img.shields.io/badge/linting-pylint-red'
+          badge="https://img.shields.io/badge/pylint-$score-red"
         elif [[ $(echo "$score <= 8" | bc) -eq 1 ]]; then
-          badge='https://img.shields.io/badge/linting-pylint-orange'
+          badge="https://img.shields.io/badge/pylint-$score-orange"
         elif [[ $(echo "$score < 10" | bc) -eq 1 ]]; then
-          badge='https://img.shields.io/badge/linting-pylint-yellow'
+          badge="https://img.shields.io/badge/pylint-$score-yellow"
         else
-          badge='https://img.shields.io/badge/linting-pylint-green'
+          badge="https://img.shields.io/badge/pylint-$score-green"
         fi
         sed -i -E s"|(\[pylint\]).*$|\1($badge)|" README.md
         #
