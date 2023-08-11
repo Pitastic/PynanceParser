@@ -55,20 +55,49 @@ jobs:
       id: linting
       run: |
         set +e
+        #
+        # -- Lint and parse Output
+        #
         pylint_output=$(pylint . --recursive=y --disable=W0511,R0801 --score=y)
         exitcode=$?
         score=$(sed -n '$s/[^0-9]*\([0-9.]*\).*/\1/p' <<< "$pylint_output")
+        #
+        # -- Set Badge in Readme
+        #
+        if [[ $score -le 5 ]]; then
+          badge='https://img.shields.io/badge/linting-pylint-red'
+        elif [[ $score -le 8 ]]; then
+          badge='https://img.shields.io/badge/linting-pylint-orange'
+        elif [[ $score -lt 10 ]]; then
+          badge='https://img.shields.io/badge/linting-pylint-yellow'
+        else
+          badge='https://img.shields.io/badge/linting-pylint-green'
+        fi
+        sed -E s"|(\[pylint\]).*$|\1($badge)|" README.md
+        #
+        # -- Exitcode and Summary
+        #
         if [[ $exitcode -eq 0 ]]; then
-          echo ":sparkles: Excellent! :rocket: *${score} / 10*" >> $GITHUB_STEP_SUMMARY
+          echo "### :sparkles: Excellent! :rocket: **${score} / 10**" >> $GITHUB_STEP_SUMMARY
           exit 0
         elif \
            [[ $exitcode -lt 8 ]] || \
            [[ $exitcode -ge 9 && $exitcode -le 15 ]] || \
            [[ $exitcode -ge 17 && $exitcode -le 23 ]]; then
-          echo ":shushing_face: tolerated (code: ${exitcode}) - *${score} / 10*" >> $GITHUB_STEP_SUMMARY
+          echo "### :shushing_face: tolerated (code: ${exitcode}) - **${score} / 10**" >> $GITHUB_STEP_SUMMARY
           echo "$pylint_output"
           exit 0
         else
-          echo ":no_entry: Too many linting errors! - *${score} / 10*" >> $GITHUB_STEP_SUMMARY
+          echo "### :no_entry: Too many linting errors! - **${score} / 10**" >> $GITHUB_STEP_SUMMARY
           exit $exitcode
         fi
+    - name: Commit Pylint Badge
+      run: |
+        git config --global user.email "no-reply@github.com"
+        git config --global user.name "GitHub Actions"
+        git add README.md
+        git commit -m "Update Pylint Badge"
+        git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+        git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
