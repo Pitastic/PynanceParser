@@ -2,6 +2,7 @@
 """Ausgelagerter Handler für die Umsatzuntersuchung."""
 
 import random
+import re
 import cherrypy
 
 
@@ -10,6 +11,29 @@ class Tagger():
 
     def __init__(self):
         pass
+
+    def parse(self, input_data):
+        """
+        Untersucht die Daten eines Standard-Objekts (hauptsächlich den Text)
+        und identifiziert spezielle Angaben anhand von Mustern.
+        Alle Treffer werden unter dem Schlüssel 'parsed' jedem Eintrag hinzugefügt.
+        """
+        # RegExes
+        # Der Key wird als Bezeichner für das Ergebnis verwendet.
+        # Jeder RegEx muss genau eine Gruppe matchen.
+        parse_regexes = {
+            'Mandatsreferenz': re.compile(r"Mandatsref\:\s?([A-z0-9]*)"),
+            'Gläubiger-ID': re.compile(r"([A-Z]{2}[0-9]{2}[0-9A-Z]{3}[0-9]{11})"),
+            'Gläubiger-ID-2': re.compile(r"([A-Z]{2}[0-9]{2}[0-9A-Z]{3}[0-9]{19})"),
+        }
+
+        for d in input_data:
+            for name, regex in parse_regexes.items():
+                re_match = regex.search(d['text_tx'])
+                if re_match:
+                    d['parsed'][name] = re_match.group(1)
+
+        return input_data
 
     def tag_regex(self, data, take_all=False):
         """

@@ -82,30 +82,11 @@ class UserInterface():
         return 0
 
     def parse(self, input_data=None):
-        """
-        Untersucht die Daten eines Standard-Objekts (hauptsächlich den Text)
-        und identifiziert spezielle Angaben anhand von Mustern.
-        Alle Treffer werden unter dem Schlüssel 'parsed' jedem Eintrag hinzugefügt.
-        """
-        # RegExes
-        # Der Key wird als Bezeichner für das Ergebnis verwendet.
-        # Jeder RegEx muss genau eine Gruppe matchen.
-        parse_regexes = {
-            'Mandatsreferenz': re.compile(r"Mandatsref\:\s?([A-z0-9]*)"),
-            'Gläubiger': re.compile(r"([A-Z]{2}[0-9]{2}[A-Z]{3}0[0-9]{10})")
-        }
-
+        """Hanlder für den gleichnamigen Methodenaufruf beim Taggers"""
         # Parsing Data
         if input_data is None:
             input_data = self.data
-
-        for d in input_data:
-            for name, regex in parse_regexes.items():
-                re_match = regex.search(d['text_tx'])
-                if re_match:
-                    d['parsed'][name] = re_match.group(1)
-
-        return input_data
+        return self.tagger.parse(input_data)
 
     def flush_to_db(self):
         """

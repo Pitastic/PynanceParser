@@ -29,8 +29,8 @@ class TestReaderGeneric():
             "Unable to read Test Config"
 
         # Instanz von Reader
-        self.Reader = Generic() # pylint: disable=invalid-name
-        assert self.Reader, "Reader Klasse konnte nicht instanziiert werden"
+        self.reader = Generic()
+        assert self.reader, "Reader Klasse konnte nicht instanziiert werden"
 
 
     def test_read_from_csv(self):
@@ -39,7 +39,7 @@ class TestReaderGeneric():
             os.path.dirname(os.path.abspath(__file__)),
             'commerzbank.csv'
         )
-        transaction_list = self.Reader.from_csv(uri)
+        transaction_list = self.reader.from_csv(uri)
         # Check Reader Ergebnisse
         check_transaktion_list(transaction_list)
 
