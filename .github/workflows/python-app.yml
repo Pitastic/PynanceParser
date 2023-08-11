@@ -40,7 +40,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v3
     - name: Set up Python 3.10
       uses: actions/setup-python@v3
       with:
@@ -98,7 +99,7 @@ jobs:
           git config --global user.name "GitHub Actions"
           git add README.md
           git commit -m "Update Pylint Badge"
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ GITHUB_WORKFLOW_REF }}
           git push
         fi
       env:
