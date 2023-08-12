@@ -33,9 +33,11 @@ jobs:
         pip install -r tests/requirements.txt
 
     # Actions
-    - name: Test, Lint and Badge (pytest, pylint)
+    - name: Test, Lint and Badge
       run: |
         set +e
+
+        echo "This is PR: ${{ github.event.pull_request.number }}"
 
         #
         # -- Test and parse Output
