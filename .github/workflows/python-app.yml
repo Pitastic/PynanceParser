@@ -11,7 +11,7 @@ on:
     branches: [ "master" ]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
 
@@ -33,7 +33,7 @@ jobs:
         pip install -r tests/requirements.txt
     - name: Test with pytest
       run: |
-        pytest
+        pytest -sv
 
   PyLint:
 
@@ -63,19 +63,6 @@ jobs:
         exitcode=$?
         score=$(sed -n '$s/[^0-9]*\([0-9.]*\).*/\1/p' <<< "$pylint_output")
         #
-        # -- Set Badge in Readme
-        #
-        if [[ $(echo "$score <= 5" | bc) -eq 1 ]]; then
-          badge="https://img.shields.io/badge/pylint-$score-red"
-        elif [[ $(echo "$score <= 8" | bc) -eq 1 ]]; then
-          badge="https://img.shields.io/badge/pylint-$score-orange"
-        elif [[ $(echo "$score < 9.9" | bc) -eq 1 ]]; then
-          badge="https://img.shields.io/badge/pylint-$score-yellow"
-        else
-          badge="https://img.shields.io/badge/pylint-$score-green"
-        fi
-        sed -i -E s"|(\[pylint\]).*$|\1($badge)|" README.md
-        #
         # -- Exitcode and Summary
         #
         if [[ $exitcode -eq 0 ]]; then
@@ -92,7 +79,3 @@ jobs:
           echo "### :no_entry: Too many linting errors! - **${score} / 10**" >> $GITHUB_STEP_SUMMARY
           exit $exitcode
         fi
-    # Auto-Commit Badge Changes
-    - uses: stefanzweifel/git-auto-commit-action@v4
-      with:
-        commit_message: Add PyLint Badge
