@@ -57,11 +57,11 @@ jobs:
         # -- Set Badge in Readme (Pytest)
         #
         if [[ $(echo "$test_failed >= 2" | bc) -eq 1 ]]; then
-          test_badge="https://img.shields.io/badge/pytest-passed ($test_passed/$all_tests)-red"
+          test_badge="https://img.shields.io/badge/pytest-passed%20$test_passed/$all_tests-red"
         elif [[ $(echo "$test_failed == 1" | bc) -eq 1 ]]; then
-          test_badge="https://img.shields.io/badge/pytest-passed ($test_passed/$all_tests)-orange"
+          test_badge="https://img.shields.io/badge/pytest-passed%20$test_passed/$all_tests-orange"
         else
-          test_badge="https://img.shields.io/badge/pytest-passed ($test_passed/$all_tests)-green"
+          test_badge="https://img.shields.io/badge/pytest-passed%20$test_passed/$all_tests-green"
         fi
         sed -i -E s"|(\[pytest\]).*$|\1($test_badge)|" README.md
 
