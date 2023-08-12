@@ -89,7 +89,7 @@ class TestDbHandler():
     def test_select_filter(self):
         """Testet das Auslesen von einzelnen und mehreren Datensätzen mit Filter"""
         # Selektieren mit Filter (by Hash)
-        query = {'key': 'hash', 'value': '13d505688ab3b940dbed47117ffddf95'}
+        query = {'key': 'uuid', 'value': '13d505688ab3b940dbed47117ffddf95'}
         result_filtered = self.db_handler.select(cherrypy.config['iban'],
                                                 condition=query)
         assert len(result_filtered) == 1, \
@@ -189,7 +189,7 @@ class TestDbHandler():
         # Update some records and multiple fields
         data = {'currency': 'USD', 'primary_tag': 'Updated'}
         query = [
-            {'key': 'hash', 'value': '13d505688ab3b940dbed47117ffddf95'},
+            {'key': 'uuid', 'value': '13d505688ab3b940dbed47117ffddf95'},
             {'key': 'text_tx', 'value': 'Wucherpfennig', 'compare': 'like'}
         ]
         update_two = self.db_handler.update(data, condition=query, multi='OR')
@@ -213,7 +213,7 @@ class TestDbHandler():
     def test_delete(self):
         """Testet das Löschen von Datensätzen"""
         # Einzelnen Datensatz löschen
-        query = {'key': 'hash', 'value': '13d505688ab3b940dbed47117ffddf95'}
+        query = {'key': 'uuid', 'value': '13d505688ab3b940dbed47117ffddf95'}
         delete_one = self.db_handler.delete(condition=query)
         assert delete_one == 1, \
             f'Es wurde nicht die richtige Anzahl an Datensätzen gelöscht: {delete_one}'
@@ -256,7 +256,7 @@ def check_entry(tx_entry, key_vals=None):
         key_vals, dict: key:value-Pairs die so vorkommen müssen
     """
     required_keys = [
-        'hash',
+        'uuid',
         'date_tx', 'text_tx', 'betrag', 'iban',
         'parsed', 'date_wert', 'art', 'currency',
         'primary_tag', 'secondary_tag'

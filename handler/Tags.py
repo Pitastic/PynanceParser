@@ -35,12 +35,18 @@ class Tagger():
 
         return input_data
 
-    def tag_regex(self, data, take_all=False):
+    def tag_regex(self, db_handler, ruleset, priority='normal', dry_run=False):
         """
         Automatische Kategorisierung anhand von hinterlegten RegExes je Kategorie.
 
         Args:
-            take_all, bool(False): Switch um nur ungetaggte oder alle Datensätze zu untersuchen.
+            db_handler, object: Instance for DB interaction (read/write)
+            ruleset, dict: Rules to be applied on users transactions
+            priority, str(normal): Mode which transactions should be updated and how to handle double-tags
+                - unset: Only update TX without category
+                - normal (default): Decide by priority value (higher wins)
+                - high: Overwrite any category with new findings
+            dry_run, bool(False): Switch to show, which TX would be updated. Do not update.
         Returns:
             Anzahl der getaggten Datensätze
         """

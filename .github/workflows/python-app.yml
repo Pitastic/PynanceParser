@@ -33,7 +33,26 @@ jobs:
         pip install -r tests/requirements.txt
     - name: Test with pytest
       run: |
-        pytest -sv
+        test_output="$(pytest -rN)"
+          
+        test_failed=$(sed -n '$s/^=*\s*\([0-9]*\)\sfailed.*/\1/p' <<< "$test_output" |tail -n1)
+        if [[ -z $test_failed ]]; then test_failed=0 ; fi
+        
+        test_passed=$(sed -n -E 's|^=*\s([0-9]+\sfailed,\s)?(([0-9]*)\spassed,\s)?.*|\3|p' <<< "$test_output" | tail -n1)
+        if [[ -z $test_passed ]]; then test_passed=0 ; fi
+
+        test_skipped=$(tail -n1 <<< "$test_output" | rev |sed -E 's|^(.*deppiks\s([0-9]*))?.*|\2|')
+        if [[ -z $test_skipped ]]; then echo test_skipped=0 ; fi
+
+        all_tests=$(expr ${test_passed} + ${test_failed})
+
+        echo "### Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| :checkered_flag: | :arrow_right_hook: | :x: |" >> $GITHUB_STEP_SUMMARY
+        echo "| ------------- | ------------- | ------------- |" >> $GITHUB_STEP_SUMMARY
+        echo "| $test_passed  | $test_skipped  | $test_failed  |" >> $GITHUB_STEP_SUMMARY
+
+        echo "$test_output"
 
   PyLint:
 

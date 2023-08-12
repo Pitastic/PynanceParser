@@ -44,6 +44,14 @@ class UserInterface():
         # Weitere Attribute
         self.data = None
         self.reader = None
+        #TODO: Usermanagement, #7
+        # Jeder User soll seine eigene Collection haben.
+        # Die Collection beinhaltet Dokumente als Settings, Regeln
+        # oder Transaktionen zu verschiedenen Konten des Benutzers.
+        # Im Init und/oder als Decorator jeder Funktion muss der User
+        # aus der Session ermittelt werden. Fallback ist der in der Config
+        # hinterlegte Deafult-User, sofern Authentification noch nicht
+        # implementiert ist.
 
     def read_input(self, uri, bank='Generic', data_format=None):
         """
@@ -84,6 +92,7 @@ class UserInterface():
     def parse(self, input_data=None):
         """Hanlder für den gleichnamigen Methodenaufruf beim Taggers"""
         # Parsing Data
+        #TODO: Daten nicht aus self.data, sondern DB nach Signal, #8
         if input_data is None:
             input_data = self.data
         return self.tagger.parse(input_data)
@@ -177,13 +186,13 @@ class UserInterface():
             <th>Datum</th> <th>Betrag</th> <th>Tag (pri)</th> <th>Tag (sec.)</th> <th>Parsed</th> <th>Hash</th>
         </tr></thead><tbody>"""
         for r in rows:
-            out += f"""<tr id="tr-{r['hash']}">
+            out += f"""<tr id="tr-{r['uuid']}">
             <td class="td-date">{r['date_tx']}</td> <td class="td-betrag">{r['betrag']} {r['currency']}</td>
             <td class="td-tag1">{r['primary_tag']}</td> <td class="td-tag2">{r['secondary_tag']}</td>
             <td class="td-parsed">"""
             for parse_element in r['parsed']:
                 out += f"<p>{parse_element}</p>"
-            out += f"</td><td class='td-hash'>{r['hash']}</td>"
+            out += f"</td><td class='td-uuid'>{r['uuid']}</td>"
             out += "</tr>"
         out += """</tbody></table>"""
         return out

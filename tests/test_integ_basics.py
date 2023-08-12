@@ -161,7 +161,7 @@ class TestIntegration(cphelper.CPWebCase):
         response3 = requests.get(f"{self.uri}/view?iban={cherrypy.config['iban']}", timeout=5)
         result = response3.text
         soup = BeautifulSoup(result,features="html.parser")
-        rows = soup.css.select('table .td-hash')
+        rows = soup.css.select('table .td-uuid')
 
         assert len(rows) == 5, f"Es wurden zu viele Einträge ({len(rows)}) angelegt"
 

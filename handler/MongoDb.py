@@ -28,7 +28,7 @@ class MongoDbHandler(BaseDb):
         Erstellt eine Collection je Konto und legt Indexes/Constraints fest
         """
         self.connection[cherrypy.config['iban']].create_index(
-            [("hash", pymongo.TEXT)], unique=True
+            [("uuid", pymongo.TEXT)], unique=True
         )
 
     def select(self, collection=None, condition=None, multi='AND'):

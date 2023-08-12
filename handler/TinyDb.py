@@ -95,7 +95,7 @@ class TinyDbHandler(BaseDb):
             # Pop duplicates from list
             unique_data = []
             for d in data:
-                if d.get('hash') not in duplicates:
+                if d.get('uuid') not in duplicates:
                     # Add to unique
                     unique_data.append(d)
 
@@ -108,9 +108,9 @@ class TinyDbHandler(BaseDb):
             return len(result)
 
         # INSERT One
-        if data.get('hash') in duplicates:
+        if data.get('uuid') in duplicates:
             # Don't insert duplicate
-            cherrypy.log(f'Not inserting Duplicate \'{data.get("hash")}\'')
+            cherrypy.log(f'Not inserting Duplicate \'{data.get("uuid")}\'')
             return 0
 
         result = self.connection.table(collection).insert(data)
@@ -294,11 +294,11 @@ class TinyDbHandler(BaseDb):
             list: Liste der IDs, die sich bereits in der Datenbank befinden
         """
         if isinstance(data, list):
-            query = [{'key': 'hash', 'value': d.get('hash')} for d in data]
+            query = [{'key': 'uuid', 'value': d.get('uuid')} for d in data]
         else:
-            query = {'key': 'hash', 'value': data.get('hash')}
+            query = {'key': 'uuid', 'value': data.get('uuid')}
 
         results = self.select(collection=collection, condition=query, multi='OR')
-        duplicate_ids = [r.get('hash') for r in results]
+        duplicate_ids = [r.get('uuid') for r in results]
 
         return duplicate_ids

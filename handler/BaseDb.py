@@ -39,7 +39,7 @@ class BaseDb():
         Args:
             tx_entries (dict | list of dicts): Liste mit Transaktionsobjekten
         Returns:
-            dict | list of dicts: Die um die IDs ('hash') erweiterte Eingabeliste
+            dict | list of dicts: Die um die IDs ('uuid') erweiterte Eingabeliste
         """
         no_special_chars = re.compile("[^A-Za-z0-9]")
 
@@ -56,7 +56,7 @@ class BaseDb():
                               str(transaction.get('betrag', '')) + \
                               tx_text
             md5_hash.update(combined_string.encode('utf-8'))
-            transaction['hash'] = md5_hash.hexdigest()
+            transaction['uuid'] = md5_hash.hexdigest()
 
         # Input List or single Dict
         if not isinstance(tx_entries, list):
