@@ -33,7 +33,10 @@ jobs:
         pip install -r tests/requirements.txt
     - name: Test with pytest
       run: |
+        set +e
+
         test_output="$(pytest -rN)"
+        exitcode=$?
           
         test_failed=$(sed -n '$s/^=*\s*\([0-9]*\)\sfailed.*/\1/p' <<< "$test_output" |tail -n1)
         if [[ -z $test_failed ]]; then test_failed=0 ; fi
@@ -53,6 +56,10 @@ jobs:
         echo "| $test_passed  | $test_skipped  | $test_failed  |" >> $GITHUB_STEP_SUMMARY
 
         echo "$test_output"
+        if [[ $exitcode != 0 ]]; then
+          exit $exitcode
+        fi
+        exit 0
 
   PyLint:
 
