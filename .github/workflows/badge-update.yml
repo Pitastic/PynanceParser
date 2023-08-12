@@ -33,14 +33,14 @@ jobs:
         pip install -r tests/requirements.txt
 
     # Actions
-    - name: Test, Lint and Badge (pytest, pylint)
+    - name: Test Lint and Badge
       run: |
         set +e
 
         #
         # -- Test and parse Output
         #
-        test_output="$(pytest -rN)
+        test_output="$(pytest -rN)"
         
         test_failed=$(sed -n '$s/^=*\s*\([0-9]*\)\sfailed.*/\1/p' <<< "$test_output" |tail -n1)
         if [[ -z $test_failed ]]; then test_failed=0 ; fi
@@ -57,11 +57,11 @@ jobs:
         # -- Set Badge in Readme (Pytest)
         #
         if [[ $(echo "$test_failed >= 2" | bc) -eq 1 ]]; then
-          test_badge="https://img.shields.io/badge/pytest-passed ($test_passed/$all_tests)-red"
+          test_badge="https://img.shields.io/badge/pytest-passed%20($test_passed/$all_tests)-red"
         elif [[ $(echo "$test_failed == 1" | bc) -eq 1 ]]; then
-          test_badge="https://img.shields.io/badge/pytest-passed ($test_passed/$all_tests)-orange"
+          test_badge="https://img.shields.io/badge/pytest-passed%20($test_passed/$all_tests)-orange"
         else
-          test_badge="https://img.shields.io/badge/pytest-passed ($test_passed/$all_tests)-green"
+          test_badge="https://img.shields.io/badge/pytest-passed%20($test_passed/$all_tests)-darkgreen"
         fi
         sed -i -E s"|(\[pytest\]).*$|\1($test_badge)|" README.md
 
@@ -81,7 +81,7 @@ jobs:
         elif [[ $(echo "$score < 9.9" | bc) -eq 1 ]]; then
           lint_badge="https://img.shields.io/badge/pylint-$score-yellow"
         else
-          lint_badge="https://img.shields.io/badge/pylint-$score-green"
+          lint_badge="https://img.shields.io/badge/pylint-$score-darkgreen"
         fi
         sed -i -E s"|(\[pylint\]).*$|\1($lint_badge)|" README.md
 
