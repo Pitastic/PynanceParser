@@ -63,7 +63,7 @@ jobs:
         elif [[ $(echo "$test_failed == 1" | bc) -eq 1 ]]; then
           test_badge="https://img.shields.io/badge/pytest-passed%20($test_passed/$all_tests)-orange"
         else
-          test_badge="https://img.shields.io/badge/pytest-passed%20($test_passed/$all_tests)-green"
+          test_badge="https://img.shields.io/badge/pytest-passed%20($test_passed/$all_tests)-darkgreen"
         fi
         sed -i -E s"|(\[pytest\]).*$|\1($test_badge)|" README.md
 
@@ -83,7 +83,7 @@ jobs:
         elif [[ $(echo "$score < 9.9" | bc) -eq 1 ]]; then
           lint_badge="https://img.shields.io/badge/pylint-$score-yellow"
         else
-          lint_badge="https://img.shields.io/badge/pylint-$score-green"
+          lint_badge="https://img.shields.io/badge/pylint-$score-darkgreen"
         fi
         sed -i -E s"|(\[pylint\]).*$|\1($lint_badge)|" README.md
 
