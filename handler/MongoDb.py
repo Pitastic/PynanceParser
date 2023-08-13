@@ -38,7 +38,7 @@ class MongoDbHandler(BaseDb):
         Args:
             collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
                                         Default: IBAN aus der Config.
-            condition (dict | list of dicts): Bedingung als Dictionary
+            condition (dict | list(dict)): Bedingung als Dictionary
                 - 'key', str    : Spalten- oder Schlüsselname,
                 - 'value', any  : Wert der bei 'key' verglichen werden soll
                 - 'compare', str: (optional, default '==')
@@ -68,7 +68,8 @@ class MongoDbHandler(BaseDb):
             collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
                                         Default: IBAN aus der Config.
         Returns:
-            int: Zahl der neu eingefügten IDs
+            dict:
+                - inserted, int: Zahl der neu eingefügten IDs
         """
         if collection is None:
             collection = cherrypy.config['iban']
@@ -81,18 +82,18 @@ class MongoDbHandler(BaseDb):
             # Insert Many (INSERT IGNORE)
             try:
                 result = collection.insert_many(data, ordered=False)
-                return len(result.inserted_ids)
+                return {'inserted': len(result.inserted_ids)}
             except pymongo.errors.BulkWriteError as e:
                 inserted = e.details.get('nInserted')
                 cherrypy.log(f"Dropping Duplicates, just INSERT {inserted}")
-                return inserted
+                return {'inserted': inserted}
 
         # INSERT One
         try:
             result = collection.insert_one(data)
-            return 1
+            return {'inserted': 1}
         except pymongo.errors.BulkWriteError:
-            return 0
+            return {'inserted': 0}
 
     def update(self, data, collection=None, condition=None, multi='AND'):
         """
@@ -102,7 +103,7 @@ class MongoDbHandler(BaseDb):
             data (dict): Aktualisierte Daten für die passenden Datensätze
             collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
                                    Default: IBAN aus der Config.
-            condition (dict | list of dicts): Bedingung als Dictionary
+            condition (dict | list(dict)): Bedingung als Dictionary
                 - 'key', str    : Spalten- oder Schlüsselname,
                 - 'value', any  : Wert der bei 'key' verglichen werden soll
                 - 'compare', str: (optional, default '==')
@@ -112,7 +113,8 @@ class MongoDbHandler(BaseDb):
             multi (str) : ['AND' | 'OR'] Wenn 'condition' eine Liste mit conditions ist,
                           werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
         Returns:
-            int: Anzahl der aktualisierten Datensätze
+            dict:
+                - updated, int: Anzahl der aktualisierten Datensätze
         """
         if collection is None:
             collection = cherrypy.config['iban']
@@ -122,7 +124,7 @@ class MongoDbHandler(BaseDb):
         query = self._form_complete_query(condition, multi)
 
         update_result = collection.update_many(query, {'$set': data})
-        return update_result.modified_count
+        return {'updated': update_result.modified_count}
 
     def delete(self, collection=None, condition=None, multi='AND'):
         """
@@ -141,7 +143,8 @@ class MongoDbHandler(BaseDb):
             multi (str) : ['AND' | 'OR'] Wenn 'condition' eine Liste mit conditions ist,
                           werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
         Returns:
-            int: Anzahl der gelöschten Datensätze
+            dict:
+                - deleted, int: Anzahl der gelöschten Datensätze
         """
         if collection is None:
             collection = cherrypy.config['iban']
@@ -151,7 +154,7 @@ class MongoDbHandler(BaseDb):
         query = self._form_complete_query(condition, multi)
 
         delete_result = collection.delete_many(query)
-        return delete_result.deleted_count
+        return {'deleted': delete_result.deleted_count}
 
     def truncate(self, collection=None):
         """
@@ -161,9 +164,10 @@ class MongoDbHandler(BaseDb):
             collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
                                    Default: None -> Default der delete Methode
         Returns:
-            int: Anzahl der gelöschten Datensätze                        
+            dict:
+                - deleted, int: Anzahl der gelöschten Datensätze
         """
-        return self.delete(collection=collection)
+        return {'deleted': self.delete(collection=collection)}
 
     def _form_condition(self, condition):
         """

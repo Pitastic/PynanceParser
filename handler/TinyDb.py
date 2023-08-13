@@ -43,7 +43,7 @@ class TinyDbHandler(BaseDb):
         Args:
             collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
                                    Default: IBAN aus der Config.
-            condition (dict | list of dicts): Bedingung als Dictionary
+            condition (dict | list(dicts)): Bedingung als Dictionary
                 - 'key', str    : Spalten- oder Schlüsselname,
                 - 'value', any  : Wert der bei 'key' verglichen werden soll
                 - 'compare', str: (optional, default '==')
@@ -76,7 +76,8 @@ class TinyDbHandler(BaseDb):
             collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
                                         Default: IBAN aus der Config.
         Returns:
-            int: Zahl der neu eingefügten IDs
+            dict:
+                - inserted, int: Zahl der neu eingefügten IDs
         """
         if collection is None:
             collection = cherrypy.config['iban']
@@ -101,20 +102,20 @@ class TinyDbHandler(BaseDb):
 
             # No non-duplicates in data
             if not data:
-                return 0
+                return {'inserted': 0}
 
             # Insert remaining data
             result = self.connection.table(collection).insert_multiple(unique_data)
-            return len(result)
+            return {'inserted': len(result)}
 
         # INSERT One
         if data.get('uuid') in duplicates:
             # Don't insert duplicate
             cherrypy.log(f'Not inserting Duplicate \'{data.get("uuid")}\'')
-            return 0
+            return {'inserted': 0}
 
         result = self.connection.table(collection).insert(data)
-        return 1
+        return {'inserted': 1}
 
     def update(self, data, collection=None, condition=None, multi='AND'):
         """
@@ -124,7 +125,7 @@ class TinyDbHandler(BaseDb):
             data (dict): Aktualisierte Daten für die passenden Datensätze
             collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
                                    Default: IBAN aus der Config.
-            condition (dict | list of dicts): Bedingung als Dictionary
+            condition (dict | list(dict)): Bedingung als Dictionary
                 - 'key', str    : Spalten- oder Schlüsselname,
                 - 'value', any  : Wert der bei 'key' verglichen werden soll
                 - 'compare', str: (optional, default '==')
@@ -134,7 +135,8 @@ class TinyDbHandler(BaseDb):
             multi (str) : ['AND' | 'OR'] Wenn 'condition' eine Liste mit conditions ist,
                           werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
         Returns:
-            int: Anzahl der aktualisierten Datensätze
+            dict:
+                - updated, int: Anzahl der aktualisierten Datensätze
         """
         if collection is None:
             collection = cherrypy.config['iban']
@@ -148,7 +150,7 @@ class TinyDbHandler(BaseDb):
 
         # run update
         update_result = collection.update(data, query)
-        return len(update_result)
+        return {'updated': len(update_result)}
 
     def delete(self, collection=None, condition=None, multi='AND'):
         """
@@ -157,7 +159,7 @@ class TinyDbHandler(BaseDb):
         Args:
             collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
                                    Default: IBAN aus der Config.
-            condition (dict | list of dicts): Bedingung als Dictionary
+            condition (dict | list(dict)): Bedingung als Dictionary
                 - 'key', str    : Spalten- oder Schlüsselname,
                 - 'value', any  : Wert der bei 'key' verglichen werden soll
                 - 'compare', str: (optional, default '==')
@@ -167,7 +169,8 @@ class TinyDbHandler(BaseDb):
             multi (str) : ['AND' | 'OR'] Wenn 'condition' eine Liste mit conditions ist,
                           werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
         Returns:
-            int: Anzahl der gelöschten Datensätze
+            dict:
+                - deleted, int: Anzahl der gelöschten Datensätze
         """
         if collection is None:
             collection = cherrypy.config['iban']
@@ -180,7 +183,7 @@ class TinyDbHandler(BaseDb):
             query = self._form_complete_query(condition, multi)
 
         deleted_ids = collection.remove(query)
-        return len(deleted_ids)
+        return {'deleted': len(deleted_ids)}
 
     def truncate(self, collection=None):
         """Löscht alle Datensätze aus einer Tabelle/Collection
@@ -189,13 +192,14 @@ class TinyDbHandler(BaseDb):
             collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
                                    Default: IBAN aus der Config.
         Returns:
-            int: Anzahl der gelöschten Datensätze                        
+            dict:
+                - deleted, int: Anzahl der gelöschten Datensätze
         """
         if collection is None:
             collection = cherrypy.config['iban']
         table = self.connection.table(collection)
         r = table.remove(lambda x: True)
-        return len(r)
+        return {'deleted': len(r)}
 
     def _form_where(self, condition):
         """

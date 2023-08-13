@@ -13,23 +13,96 @@ class BaseDb():
         raise NotImplementedError()
 
     def select(self, collection, condition, multi):
-        """Abfrage nach Werten aus der Datenbank"""
+        """
+        Selektiert Datensätze aus der Datenbank, die die angegebene Bedingung erfüllen.
+
+        Args:
+            collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
+                                   Default: IBAN aus der Config.
+            condition (dict | list(dict)): Bedingung als Dictionary
+                - 'key', str    : Spalten- oder Schlüsselname,
+                - 'value', any  : Wert der bei 'key' verglichen werden soll
+                - 'compare', str: (optional, default '==')
+                    - '[==, !=, <, >, <=, >=]': Wert asu DB [compare] value
+                    - 'like'    : Wert aus DB == *value* (case insensitive)
+                    - 'regex'   : value wird als RegEx behandelt
+            multi (str) : ['AND' | 'OR'] Wenn 'condition' eine Liste mit conditions ist,
+                          werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
+        Returns:
+            dict:
+                - result, list: Liste der ausgewählten Datensätze
+        """
         raise NotImplementedError()
 
     def insert(self, data, collection):
-        """Einfügen von Werten in die Datenbank"""
+        """
+        Fügt einen oder mehrere Datensätze in die Datenbank ein.
+
+        Args:
+            data (dict or list): Einzelner Datensatz oder eine Liste von Datensätzen
+            collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
+                                        Default: IBAN aus der Config.
+        Returns:
+            dict:
+                - inserted, int: Zahl der neu eingefügten IDs
+        """
         raise NotImplementedError()
 
     def update(self, data, collection, condition, multi):
-        """Aktualisieren von Werten in der Datenbank"""
+        """
+        Aktualisiert Datensätze in der Datenbank, die die angegebene Bedingung erfüllen.
+
+        Args:
+            data (dict): Aktualisierte Daten für die passenden Datensätze
+            collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
+                                   Default: IBAN aus der Config.
+            condition (dict | list(dict)): Bedingung als Dictionary
+                - 'key', str    : Spalten- oder Schlüsselname,
+                - 'value', any  : Wert der bei 'key' verglichen werden soll
+                - 'compare', str: (optional, default '==')
+                    - '[==, !=, <, >, <=, >=]': Wert asu DB [compare] value
+                    - 'like'    : Wert aus DB == *value* (case insensitive)
+                    - 'regex'   : value wird als RegEx behandelt
+            multi (str) : ['AND' | 'OR'] Wenn 'condition' eine Liste mit conditions ist,
+                          werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
+        Returns:
+            dict:
+                - updated, int: Anzahl der aktualisierten Datensätze
+        """
         raise NotImplementedError()
 
     def delete(self, collection, condition):
-        """Löschen von Werten aus der Datenbank"""
+        """
+        Löscht Datensätze in der Datenbank, die die angegebene Bedingung erfüllen.
+
+        Args:
+            collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
+                                   Default: IBAN aus der Config.
+            condition (dict | list(dict)): Bedingung als Dictionary
+                - 'key', str    : Spalten- oder Schlüsselname,
+                - 'value', any  : Wert der bei 'key' verglichen werden soll
+                - 'compare', str: (optional, default '==')
+                    - '[==, !=, <, >, <=, >=]': Wert asu DB [compare] value
+                    - 'like'    : Wert aus DB == *value* (case insensitive)
+                    - 'regex'   : value wird als RegEx behandelt
+            multi (str) : ['AND' | 'OR'] Wenn 'condition' eine Liste mit conditions ist,
+                          werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
+        Returns:
+            dict:
+                - deleted, int: Anzahl der gelöschten Datensätze
+        """
         raise NotImplementedError()
 
     def truncate(self, collection):
-        """Löschen aller Werten aus der Datenbank"""
+        """Löscht alle Datensätze aus einer Tabelle/Collection
+
+        Args:
+            collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
+                                   Default: IBAN aus der Config.
+        Returns:
+            dict:
+                - deleted, int: Anzahl der gelöschten Datensätze
+        """
         raise NotImplementedError()
 
     def _generate_unique(self, tx_entries):
@@ -37,9 +110,9 @@ class BaseDb():
         Erstellt einen einmaligen ID für jede Transaktion.
 
         Args:
-            tx_entries (dict | list of dicts): Liste mit Transaktionsobjekten
+            tx_entries (dict | list(dict)): Liste mit Transaktionsobjekten
         Returns:
-            dict | list of dicts: Die um die IDs ('uuid') erweiterte Eingabeliste
+            dict | list(dict): Die um die IDs ('uuid') erweiterte Eingabeliste
         """
         no_special_chars = re.compile("[^A-Za-z0-9]")
 
