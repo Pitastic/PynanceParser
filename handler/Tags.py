@@ -17,6 +17,13 @@ class Tagger():
         Untersucht die Daten eines Standard-Objekts (hauptsächlich den Text)
         und identifiziert spezielle Angaben anhand von Mustern.
         Alle Treffer werden unter dem Schlüssel 'parsed' jedem Eintrag hinzugefügt.
+
+        Args:
+            input_data, list(dict): Liste mit Transaktionen,
+                                    auf die das Parsing angewendet werden soll.
+
+        Returns:
+            list(dict): Updated input_data
         """
         # RegExes
         # Der Key wird als Bezeichner für das Ergebnis verwendet.
@@ -35,31 +42,32 @@ class Tagger():
 
         return input_data
 
-    def tag_regex(self, db_handler, ruleset, priority='normal', dry_run=False):
+    def tag_regex(self, db_handler, ruleset, priority=1, dry_run=False, priority_override=None):
         """
         Automatische Kategorisierung anhand von hinterlegten RegExes je Kategorie.
 
         Args:
             db_handler, object: Instance for DB interaction (read/write)
             ruleset, dict: Rules to be applied on users transactions
-            priority, str(normal): Mode which transactions should be updated and how to handle double-tags
-                - unset: Only update TX without category
-                - normal (default): Decide by priority value (higher wins)
-                - high: Overwrite any category with new findings
+            priority, int(1): Value of priority for this tagging run
+                              in comparison with already tagged transactions
+                              This value will be set as the new priority in DB
+            priority_override, int(None): Compare with priority but set this value instead.
             dry_run, bool(False): Switch to show, which TX would be updated. Do not update.
         Returns:
-            Anzahl der getaggten Datensätze
+            dict:
+            - tagged: int, Anzahl der getaggten Datensätze (0 bei dry_run)
+            - entries: list(dict),
+                - uuid: UUID
+                - primary_tag: Primäre Kategorie
+                - primary_rule: Regel, die zu diesem Tag geführt hat
+                - secondary_tag: Sekundäre Kategorie
+                - secondary_rule: Regel, die zu diesem Tag geführt hat
         """
-        #TODO: Fake Funktion
-        cherrypy.log("Tagging with RegExes....")
-        count = 0
-        for transaction in data:
-            if transaction.get('primary_tag') is None or take_all:
-                # Komplette Untersuchung
-                # Setzt 'primary' und 'secondary' (ggf. None) soweit erkannt
-                count = count + 1
-        cherrypy.log("Tagging with RegExes....DONE")
-        return random.randint(0, count)
+        #TODO: Pseudo Code only
+        #db_handler.select
+        return
+
 
     def tag_ai(self, data, take_all=False):
         """

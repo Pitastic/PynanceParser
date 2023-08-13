@@ -26,18 +26,25 @@ class UserInterface():
         """
         Initialisiert eine Instanz der Basisklasse und lädt die Konfiguration sowie die Logunktion.
         """
-        # Handler
         # Datenbankhandler
-        self.database = {
-            'tiny': TinyDbHandler,
-            'mongo': MongoDbHandler
-        }.get(cherrypy.config['database.backend'])
-        self.database = self.database()
+        if cherrypy.config['database.backend'] == 'tiny':
+            self.db_handler = TinyDbHandler()
+        elif cherrypy.config['database.backend'] == 'mongo':
+            self.db_handler = MongoDbHandler()
+        else:
+            raise NotImplementedError(("The configure database engine ",
+                                     f"{cherrypy.config['database.backend']} ",
+                                      "is not supported !"))
+        assert self.db_handler, \
+            (f"DbHandler {cherrypy.config['database.backend']} Klasse konnte nicht ",
+             "instanziiert werden")
+
         # Reader
         self.readers = {
             'Generic': Generic,
             'Commerzbank': Commerzbank,
         }
+
         # Tagger
         self.tagger = Tagger()
 
@@ -104,7 +111,7 @@ class UserInterface():
         Returns:
             int: Die Anzahl der eingefügten Datensätze
         """
-        inserted_rows = self.database.insert(self.data)
+        inserted_rows = self.db_handler.insert(self.data)
         self.data = None
         return inserted_rows
 
@@ -181,7 +188,7 @@ class UserInterface():
         Returns:
             html: Tabelle mit den Umsätzen
         """
-        rows = self.database.select(iban)
+        rows = self.db_handler.select(iban)
         out = """<table style="border: 1px solid black;"><thead><tr>
             <th>Datum</th> <th>Betrag</th> <th>Tag (pri)</th> <th>Tag (sec.)</th> <th>Parsed</th> <th>Hash</th>
         </tr></thead><tbody>"""
@@ -229,7 +236,7 @@ class UserInterface():
         Returns:
             Anzahl der gespeicherten Datensätzen
         """
-        updated_entries = self.database.update(
+        updated_entries = self.db_handler.update(
             {
                 'main_category': primary_tag,
                 'second_category': secondary_tag,
@@ -241,7 +248,7 @@ class UserInterface():
     @cherrypy.tools.json_out()
     def truncateDatabase(self, iban=None):
         """Leert die Datenbank"""
-        deleted_entries = self.database.truncate(iban)
+        deleted_entries = self.db_handler.truncate(iban)
         return { 'deleted': deleted_entries }
 
 if __name__ == '__main__':

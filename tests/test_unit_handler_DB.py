@@ -51,24 +51,28 @@ class TestDbHandler():
         """Testet das Einfügen von Datensätzen"""
         # Einzelner Datensatz
         data = generate_fake_data(1)[0]
-        id_count = self.db_handler.insert(data,
+        inserted_db = self.db_handler.insert(data,
                                         collection=cherrypy.config['iban'])
+        id_count = inserted_db.get('inserted')
         assert id_count == 1, \
             f"Es wurde nicht die erwartete Anzahl an Datensätzen eingefügt: {id_count}"
 
         # Zwischendurch leeren
-        delete_count = self.db_handler.truncate()
+        deleted_db = self.db_handler.truncate()
+        delete_count = deleted_db.get('deleted')
         assert delete_count == 1, "Die Datenbank konnte während des Tests nicht geleert werden"
 
         # Liste von Datensätzen
         data = generate_fake_data(4)
-        id_count = self.db_handler.insert(data, collection=cherrypy.config['iban'])
+        inserted_db = self.db_handler.insert(data, collection=cherrypy.config['iban'])
+        id_count = inserted_db.get('inserted')
         assert id_count == 4, \
             f"Es wurde nicht die erwartete Anzahl an Datensätzen eingefügt: {id_count}"
 
         # Keine Duplikate
         data = generate_fake_data(5)
-        id_count = self.db_handler.insert(data, collection=cherrypy.config['iban'])
+        inserted_db = self.db_handler.insert(data, collection=cherrypy.config['iban'])
+        id_count = inserted_db.get('inserted')
         assert id_count == 1, \
             f"Es wurden doppelte Datensätze eingefügt: {id_count}"
 
@@ -192,7 +196,8 @@ class TestDbHandler():
             {'key': 'uuid', 'value': '13d505688ab3b940dbed47117ffddf95'},
             {'key': 'text_tx', 'value': 'Wucherpfennig', 'compare': 'like'}
         ]
-        update_two = self.db_handler.update(data, condition=query, multi='OR')
+        updated_db = self.db_handler.update(data, condition=query, multi='OR')
+        update_two = updated_db.get('updated')
         assert update_two == 2, \
             f'Es wurde nicht die richtige Anzahl geupdated (update_two): {update_two}'
 
@@ -202,7 +207,8 @@ class TestDbHandler():
 
         # Update all with one field
         data = {'art': 'Überweisung'}
-        update_all = self.db_handler.update(data)
+        updated_db = self.db_handler.update(data)
+        update_all = updated_db.get('updated')
         assert update_all == 5, \
             f'Es wurde nicht die richtige Anzahl geupdated (update_all): {update_all}'
 
@@ -214,7 +220,8 @@ class TestDbHandler():
         """Testet das Löschen von Datensätzen"""
         # Einzelnen Datensatz löschen
         query = {'key': 'uuid', 'value': '13d505688ab3b940dbed47117ffddf95'}
-        delete_one = self.db_handler.delete(condition=query)
+        deleted_db = self.db_handler.delete(condition=query)
+        delete_one = deleted_db.get('deleted')
         assert delete_one == 1, \
             f'Es wurde nicht die richtige Anzahl an Datensätzen gelöscht: {delete_one}'
 
@@ -223,9 +230,10 @@ class TestDbHandler():
             {'key': 'currency', 'value': 'EUR'},
             {'key': 'currency', 'value': 'USD'}
         ]
-        delete_one = self.db_handler.delete(condition=query, multi='OR')
-        assert delete_one == 4, \
-            f'Es wurde nicht die richtige Anzahl an Datensätzen gelöscht: {delete_one}'
+        deleted_db = self.db_handler.delete(condition=query, multi='OR')
+        delete_many = deleted_db.get('deleted')
+        assert delete_many == 4, \
+            f'Es wurde nicht die richtige Anzahl an Datensätzen gelöscht: {delete_many}'
 
 
 def generate_fake_data(count):
