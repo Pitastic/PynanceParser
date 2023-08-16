@@ -18,7 +18,7 @@ class BaseDb():
 
         Args:
             collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
-                                   Default: IBAN aus der Config.
+                                        Default: IBAN aus der Config.
             condition (dict | list(dict)): Bedingung als Dictionary
                 - 'key', str    : Spalten- oder Schlüsselname,
                 - 'value', any  : Wert der bei 'key' verglichen werden soll
@@ -68,6 +68,7 @@ class BaseDb():
         Returns:
             dict:
                 - updated, int: Anzahl der aktualisierten Datensätze
+                - ids, list: UUIDs der updated Datensätz
         """
         raise NotImplementedError()
 

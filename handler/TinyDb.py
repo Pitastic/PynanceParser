@@ -150,7 +150,7 @@ class TinyDbHandler(BaseDb):
 
         # run update
         update_result = collection.update(data, query)
-        return {'updated': len(update_result)}
+        return { 'updated': len(update_result) }
 
     def delete(self, collection=None, condition=None, multi='AND'):
         """
@@ -213,34 +213,43 @@ class TinyDbHandler(BaseDb):
         if condition is None:
             return None
 
-        where_statement = None
         condition_method = condition.get('compare', '==')
+        condition_key = condition.get('key')
 
+        # Nested or Plain Key
+        if isinstance(condition_key, dict):
+            for key, val in condition_key.items():
+                where_statement = where(key)[val]
+                break
+        else:
+            where_statement = where(condition_key)
+
+        # RegEx Suche
         if condition_method == 'regex':
-            # RegEx Suche
-            return where(condition.get('key')) \
-                   .search(condition.get('value'))
+            where_statement = where_statement.search(condition.get('value'))
+            return where_statement
 
+        # Like Suche
         if condition_method == 'like':
-            # Like Suche
             def test_contains(value, search):
                 return search.lower() in value.lower()
-            return where(condition.get('key')) \
-                   .test(test_contains, condition.get('value'))
+
+            where_statement = where_statement.test(test_contains, condition.get('value'))
+            return where_statement
 
         # Standard Query
         if condition_method == '==':
-            where_statement = where(condition.get('key')) == condition.get('value')
+            where_statement = where_statement == condition.get('value')
         if condition_method == '!=':
-            where_statement = where(condition.get('key')) != condition.get('value')
+            where_statement = where_statement != condition.get('value')
         if condition_method == '>=':
-            where_statement = where(condition.get('key')) >= condition.get('value')
+            where_statement = where_statement >= condition.get('value')
         if condition_method == '<=':
-            where_statement = where(condition.get('key')) <= condition.get('value')
+            where_statement = where_statement <= condition.get('value')
         if condition_method == '>':
-            where_statement = where(condition.get('key')) > condition.get('value')
+            where_statement = where_statement > condition.get('value')
         if condition_method == '<':
-            where_statement = where(condition.get('key')) < condition.get('value')
+            where_statement = where_statement < condition.get('value')
 
         return where_statement
 

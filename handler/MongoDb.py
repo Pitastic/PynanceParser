@@ -167,7 +167,7 @@ class MongoDbHandler(BaseDb):
             dict:
                 - deleted, int: Anzahl der gelöschten Datensätze
         """
-        return {'deleted': self.delete(collection=collection)}
+        return self.delete(collection=collection)
 
     def _form_condition(self, condition):
         """
@@ -184,30 +184,37 @@ class MongoDbHandler(BaseDb):
 
         condition_method = condition.get('compare', '==')
 
+        # Regex Suche
         if condition_method.lower() == 'regex':
-            # Regex Suche
-            rx = re.compile(condition.get('value'))
-            query[condition.get('key')] = rx
+            stmt = re.compile(condition.get('value'))
 
+        # Like Suche
         if condition_method.lower() == 'like':
-            # Like Suche
             escaped_condition = re.escape(condition.get('value'))
-            rx = re.compile(f".*{escaped_condition}.*", re.IGNORECASE)
-            query[condition.get('key')] = rx
+            stmt = re.compile(f".*{escaped_condition}.*", re.IGNORECASE)
 
         # Standard Query
         if condition_method == '==':
-            query[condition.get('key')] = condition.get('value')
+            stmt = condition.get('value')
         if condition_method == '!=':
-            query[condition.get('key')] = {'$not': {'$eq': condition.get('value')}}
+            stmt = {'$not': {'$eq': condition.get('value')}}
         if condition_method == '>=':
-            query[condition.get('key')] = {'$gte': condition.get('value')}
+            stmt = {'$gte': condition.get('value')}
         if condition_method == '<=':
-            query[condition.get('key')] = {'$lte': condition.get('value')}
+            stmt = {'$lte': condition.get('value')}
         if condition_method == '>':
-            query[condition.get('key')] = {'$gt': condition.get('value')}
+            stmt = {'$gt': condition.get('value')}
         if condition_method == '<':
-            query[condition.get('key')] = {'$lt': condition.get('value')}
+            stmt = {'$lt': condition.get('value')}
+
+        # Nested or Plain Key
+        condition_key = condition.get('key')
+        if isinstance(condition_key, dict):
+            for key, val in condition_key.items():
+                query = { f'{key}.{val}' : stmt }
+                break
+        else:
+            query = { condition_key: stmt }
 
         return query
 

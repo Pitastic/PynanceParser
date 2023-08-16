@@ -216,6 +216,28 @@ class TestDbHandler():
         for entry in result_all:
             check_entry(entry, data)
 
+        # Update one set nested field
+        data = {'parsed': {'Mandatsreferenz': 'M1111111'}}
+        query = {'key': 'uuid', 'value': 'ba9e5795e4029213ae67ac052d378d84'}
+        updated_db = self.db_handler.update(data, condition=query)
+        update_nested = updated_db.get('updated')
+        assert update_nested == 1, \
+            f'Es wurde nicht die richtige Anzahl geupdated (update_nested): {update_nested}'
+
+        result_nested = self.db_handler.select(cherrypy.config['iban'], condition=query)
+        data['uuid'] = 'ba9e5795e4029213ae67ac052d378d84'
+        for entry in result_nested:
+            check_entry(entry, data)
+
+    def test_select_nested(self):
+        """Testet das Auslesen von verschachtelten Datenätzen"""
+        query = {'key': {'parsed': 'Mandatsreferenz'}, 'value': 'M1111111'}
+        result_filtered = self.db_handler.select(cherrypy.config['iban'], condition=query)
+        assert len(result_filtered) == 1, \
+            f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
+        for entry in result_filtered:
+            check_entry(entry, {'uuid': 'ba9e5795e4029213ae67ac052d378d84'})
+
     def test_delete(self):
         """Testet das Löschen von Datensätzen"""
         # Einzelnen Datensatz löschen
