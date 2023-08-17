@@ -45,19 +45,8 @@ class TestTagHandler():
         self.tagger = Tagger()
         assert self.tagger, "Tagger Klasse konnte nicht instanziiert werden"
 
-        # Starten von DbHandler
-        if cherrypy.config['database.backend'] == 'tiny':
-            self.db_handler = TinyDbHandler()
-        elif cherrypy.config['database.backend'] == 'mongo':
-            self.db_handler = MongoDbHandler()
-        else:
-            raise NotImplementedError(("The configure database engine ",
-                                     f"{cherrypy.config['database.backend']} ",
-                                      "is not supported !"))
-        assert self.db_handler, \
-            (f"DbHandler {cherrypy.config['database.backend']} Klasse konnte nicht ",
-            "instanziiert werden")
-        self.db_handler.truncate()
+        # Starten des Mock-DbHandlers
+        self.db_handler = MockDatabase()
 
         # Fake Daten laden
         path = os.path.join(
@@ -75,7 +64,7 @@ class TestTagHandler():
                 'secondary': 'Lebensmittel',
                 'regex': r"(EDEKA|Wucherpfennig|Penny|Aldi|Kaufland|netto)",
             },
-            'City Tax ': {
+            'City Tax': {
                 'primary': 'Haus und Grund',
                 'secondary': 'Stadtabgaben',
                 'parsed': {
@@ -98,38 +87,29 @@ class TestTagHandler():
                     f"Die Gläubiger-ID wurde in Eintrag {i} nicht erkannt: {entry}"
             else:
                 assert not entry.get('parsed'), \
-                    f"In Eintrag {i} gab es false-positives"
-
-        # Checks passed, save to DB
-        inserted_db = self.db_handler.insert(parsed_data)
-        assert inserted_db.get('inserted') > 0, \
-            "Die Testdaten konnten nicht in die DB eingefügt werden"
+                    f"In Eintrag {i} gab es False-Positives"
 
     def test_regex(self):
-        """Testet das Kategorisieren der Datensätzemit fest hinterlegten Regeln.
+        """Testet das Kategorisieren der Datensätze mit fest hinterlegten Regeln.
         Berücksichtigt alle Umsätze ohne Kategorie"""
         tagging_result = self.tagger.tag_regex(self.db_handler, ruleset=self.ruleset)
-        for i, entry in enumerate(tagging_result.get('entries')):
-            if entry.get('uuid') != 'print-for-now':
-                #TODO: Find uuids zu Results zum Testen
-                print(entry)
-
-        
+        assert tagging_result.get('Supermarkets').get('tagged') == 2, \
+            "Die Regel 'Supermarkets' hat nicht die richtige Anzahl an Einträgen getroffen"
+        assert tagging_result.get('City Tax').get('tagged') == 1, \
+            "Die Regel 'City Tax' hat nicht die richtige Anzahl an Einträgen getroffen"
 
     def test_regex_untagged(self):
         """Testet das Kategorisieren der Datensätzemit fest hinterlegten Regeln.
         Berücksichtigt alle Umsätze nud überschreibt auch vorhandene Kategorien."""
         # prio auf 4 aber override auf 1
-        #TODO: Change a Tag in self.data
-        #TODO: Delete a Tag in self.data
-        # Change Tagging rules to test overwrite
-        self.ruleset['City Tax']['secondary'] = 'Grundsteuer'
         tagging_result = self.tagger.tag_regex(self.db_handler, ruleset=self.ruleset, dry_run=True,
-                                               priority=9, priority_override=1)
+                                               prio=9, prio_set=1)
         assert tagging_result.get('tagged') == 0, \
             "Die Option dry_run hat trotzdem Datensätze verändert"
-        #TODO: Check 'Grundsteuer' is present with priority 1
-        assert True
+        assert len(tagging_result.get('Supermarkets').get('entries')) == 2, \
+            "Die Regel 'Supermarkets' hat nicht die richtige Anzahl an Einträgen getroffen"
+        assert len(tagging_result.get('City Tax').get('entries')) == 1, \
+            "Die Regel 'City Tax' hat nicht die richtige Anzahl an Einträgen getroffen"
 
     @pytest.mark.skip(reason="Currently not implemented yet")
     def test_regex_custom(self):
@@ -141,3 +121,114 @@ class TestTagHandler():
     def test_ai(self):
         """Testet das Kategorisieren der Datensätze mit Hilfe der KI"""
         return None
+
+class MockDatabase:
+    """
+    Mock the Database connection and work with fake entries.
+    """
+
+    def __init__(self):
+        """Konstruktor hinterlegt Variablen"""
+        self.query1 = [
+            {
+                'key': 'priority', 'value': 1,
+                'compare': '<'
+            }, {
+                'key': 'tx_text', 'value': '(EDEKA|Wucherpfennig|Penny|Aldi|Kaufland|netto)',
+                'compare': 'regex'
+            }
+            ]
+        self.query2 = [
+            {
+                'key': 'priority', 'value': 1,
+                'compare': '<'
+            }, {
+                'key': {'parsed': 'Gläubiger-ID'}, 'value': 'DE7000100000077777',
+                'compare': 'regex'
+            }
+        ]
+        self.db_all = [
+
+            {
+            'date_tx': 1672531200, 'date_wert': 1684195200, 'art': 'Überweisung',
+            'text_tx': ('Wucherpfennig sagt Danke 88//HANNOV 2023-01-01T08:59:42 '
+                        'KFN 9 VJ 7777 Kartenzahlung'),
+            'betrag': -11.63, 'iban': 'DE89370400440532013000', 'currency': 'USD',
+            'parsed': {}, 'primary_tag': 'Updated', 'secondary_tag': None,
+            'uuid': 'b5aaffc31fa63a466a8b55962995ebcc', 'prio': 0
+            },
+
+            {
+            'date_tx': 1672617600, 'date_wert': 1684108800, 'art': 'Überweisung',
+            'text_tx': ('MEIN GARTENCENTER//Berlin 2023-01-02T12:57:02 KFN 9 VJ 7777 '
+                        'Kartenzahlung'),
+            'betrag': -118.94, 'iban': 'DE89370400440532013000', 'currency': 'USD',
+            'parsed': {}, 'primary_tag': 'Updated', 'secondary_tag': None,
+            'uuid': '13d505688ab3b940dbed47117ffddf95', 'prio': 0
+            },
+
+            {
+            'date_tx': 1672704000, 'date_wert': 1684108800, 'art': 'Überweisung',
+            'text_tx': ('EDEKA, München//München/ 2023-01-03T14:39:49 KFN 9 VJ '
+                        '7777 Kartenzahlung'),
+            'betrag': -99.58, 'iban': 'DE89370400440532013000', 'currency': 'EUR',
+            'parsed': {}, 'primary_tag': None, 'secondary_tag': None,
+            'uuid': 'a8bd1aa187c952358c474ca4775dbff8', 'prio': 0
+            },
+
+            {
+            'date_tx': 1672790400, 'date_wert': 1684108800, 'art': 'Überweisung',
+            'text_tx': ('DM FIL.2222 F:1111//Frankfurt/DE 2023-01-04T13:22:16 KFN 9 VJ '
+                        '7777 Kartenzahlung'),
+            'betrag': -71.35, 'iban': 'DE89370400440532013000', 'currency': 'EUR',
+            'parsed': {}, 'primary_tag': None, 'secondary_tag': None,
+            'uuid': 'a1eb37e4ed4a22a38bdeef2f34fb76c3', 'prio': 0
+            },
+
+            {
+            'date_tx': 1672876800, 'date_wert': 1684108800, 'art': 'Überweisung',
+            'text_tx': ('Stadt Halle 0000005112 OBJEKT 0001 ABGABEN LT. BESCHEID '
+                        'End-to-End-Ref.: 2023-01-00111-9090-0000005112 '
+                        'Mandatsref: M1111111 Gläubiger-ID: DE7000100000077777 '
+                        'SEPA-BASISLASTSCHRIFT wiederholend'),
+            'betrag': -221.98, 'iban': 'DE89370400440532013000', 'currency': 'EUR',
+            'parsed': {'Mandatsreferenz': 'M1111111'}, 'primary_tag': None, 'secondary_tag': None,
+            'uuid': 'ba9e5795e4029213ae67ac052d378d84', 'prio': 0
+            }
+
+        ]
+
+    def select(self, collection=None, condition=None, multi=None): # pylint: disable=unused-argument
+        """
+        Nimmt alle Argumente der echten Funktion entgegen und gibt Fake-Daten zurück.
+        Condition wird für die Auswahl der Fake-Datensätze geprüft.
+
+        Returns:
+            dict:
+                - result, list: Liste der ausgewählten Fake-Datensätze
+        """
+        #TODO: Rückgabewert für die einzelnen Tests identifizieren und definieren
+        if condition == self.query1:
+            print("return 1")
+            return [self.db_all[0], self.db_all[2]]
+
+        if condition == self.query2:
+            print("return 2")
+            return [self.db_all[4]]
+
+        return []
+
+    def update(self, data, collection=None, condition=None, multi=None): # pylint: disable=unused-argument
+        """
+        Nimmt alle Argumente der echten Funktion entgegen und gibt Fake-Daten zurück.
+        Condition wird für die Auswahl der Fake-Datensätze geprüft.
+
+        Returns:
+            dict:
+                - updated, int: Anzahl der angeblich aktualisierten Datensätze
+        """
+        #TODO: Increment prio; Set Tags in self.db_all?
+        if condition.get('key') == 'uuid':
+            return 1
+
+        return

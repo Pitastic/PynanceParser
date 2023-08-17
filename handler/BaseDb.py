@@ -130,7 +130,12 @@ class BaseDb():
                               str(transaction.get('betrag', '')) + \
                               tx_text
             md5_hash.update(combined_string.encode('utf-8'))
+
+            # Store UUID
             transaction['uuid'] = md5_hash.hexdigest()
+
+            # Set start Tagging priority
+            transaction['prio'] = 0
 
         # Input List or single Dict
         if not isinstance(tx_entries, list):
