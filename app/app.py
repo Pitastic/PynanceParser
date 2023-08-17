@@ -113,7 +113,7 @@ class UserInterface():
         """
         inserted_rows = self.db_handler.insert(self.data)
         self.data = None
-        return inserted_rows
+        return inserted_rows.get('inserted')
 
     def _load_ruleset(self, rule_name=None):
         """

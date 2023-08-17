@@ -154,7 +154,7 @@ class TestIntegration(cphelper.CPWebCase):
         status_code_2 = response2.status_code
         # Same TX: Keine neuen Einträge angelegt:
         assert status_code_2 == 304, \
-            ("Beim zweiten Upload der gleichen Transaktionen",
+            ("Beim zweiten Upload der gleichen Transaktionen"
             "dürfen keine neuen Datensätze angelegt werden")
 
         # Double-Check: Anzahl der Einträge
