@@ -207,13 +207,10 @@ class MockDatabase:
             dict:
                 - result, list: Liste der ausgewählten Fake-Datensätze
         """
-        #TODO: Rückgabewert für die einzelnen Tests identifizieren und definieren
         if condition == self.query1:
-            print("return 1")
             return [self.db_all[0], self.db_all[2]]
 
         if condition == self.query2:
-            print("return 2")
             return [self.db_all[4]]
 
         return []
@@ -227,7 +224,6 @@ class MockDatabase:
             dict:
                 - updated, int: Anzahl der angeblich aktualisierten Datensätze
         """
-        #TODO: Increment prio; Set Tags in self.db_all?
         if condition.get('key') == 'uuid':
             return 1
 
