@@ -15,8 +15,7 @@ parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
 
 from handler.Tags import Tagger
-from handler.TinyDb import TinyDbHandler
-from handler.MongoDb import MongoDbHandler
+
 
 class TestTagHandler():
     """PyTest Klasse für Tests mit dem Tagger"""
@@ -115,12 +114,12 @@ class TestTagHandler():
     def test_regex_custom(self):
         """Testet das Kategorisieren der Datensätze mit Regeln,
         die vom Benutzer hinterlegt worden sind"""
-        return None
+        return
 
     @pytest.mark.skip(reason="Currently not implemented yet")
     def test_ai(self):
         """Testet das Kategorisieren der Datensätze mit Hilfe der KI"""
-        return None
+        return
 
 class MockDatabase:
     """

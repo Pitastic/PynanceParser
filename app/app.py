@@ -3,7 +3,6 @@
 
 import os
 import sys
-import re
 import cherrypy
 
 # Add Parent for importing Classes
@@ -274,7 +273,7 @@ class UserInterface():
             # Custom Rule
             if rule_name is None:
                 rule_name = 'Custom Rule'
-            rules = [{rule_name: rule}],
+            rules = [{rule_name: rule}]
 
             return self.tagger.tag_regex(self.db_handler, rules, **args)
 
@@ -288,8 +287,8 @@ class UserInterface():
             if rule_name:
                 raise KeyError((f'Eine Regel mit dem Namen {rule_name} '
                                 'konnte für den User nicht gefunden werden.'))
-            else:
-                raise ValueError('Es existieren noch keine Regeln für den Benutzer')
+
+            raise ValueError('Es existieren noch keine Regeln für den Benutzer')
 
         # Benutzer Regeln anwenden
         return self.tagger.tag_regex(self.db_handler, rules, **args)

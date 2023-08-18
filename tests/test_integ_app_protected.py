@@ -81,7 +81,7 @@ class TestUserInterfaceProtected():
 
         # Überprüfen
         assert inserted == 5, \
-            (f'Es wurden {len(r)} Einträge statt '
+            (f'Es wurden {inserted} Einträge statt '
             'der 5 erwarteten von UserInterface gespeichert')
 
         r = self.ui.db_handler.select()
