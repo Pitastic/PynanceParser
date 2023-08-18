@@ -1,11 +1,11 @@
 #!/usr/bin/python3 # pylint: disable=invalid-name
 """Basisc Module for easy Imports and Methods"""
 
-import os, sys
-import cherrypy
-from bs4 import BeautifulSoup
+import os
+import sys
 import requests
-import pytest
+from bs4 import BeautifulSoup
+import cherrypy
 import cherrypy.test.helper as cphelper
 
 # Add Parent for importing from 'app.py'
@@ -16,16 +16,7 @@ sys.path.append(parent_dir)
 from app.app import UserInterface
 
 
-@pytest.fixture(scope='function', autouse=True)
-def between_tests_cleaner(request):
-    def do_truncate():
-        r = requests.get('http://127.0.0.1:54583/truncateDatabase')
-        print("Truncating DB...", r.text, r.status_code)
-    request.addfinalizer(do_truncate)
-
-
-
-class TestClass(cphelper.CPWebCase):
+class TestIntegration(cphelper.CPWebCase):
     """Testen der Endpunkte und Basisfunktionen"""
 
     def setUp(self):
@@ -33,6 +24,7 @@ class TestClass(cphelper.CPWebCase):
         # Pass GC Test from CherryPy (will fail otherwise)
         self.do_gc_test = False
         self.uri = f"{self.scheme}://{self.interface()}:{self.PORT}"
+        assert cherrypy.config['iban'] != "", "IBAN not set in Config"
 
     @staticmethod
     def setup_server():
@@ -68,14 +60,23 @@ class TestClass(cphelper.CPWebCase):
         self.getPage(f"/view?iban={cherrypy.config['iban']}")
         self.assertStatus(200)
 
+    def test_truncate(self):
+        """Leert die Datenbank und dient als Hilfsfunktion für folgende Tests"""
+        r = requests.get('http://127.0.0.1:54583/truncateDatabase', timeout=5)
+        #print("Truncating DB...", r.text, r.status_code)
+        assert r.status_code == 200, "Fehler beim Leeren der Datenbank"
+
     def test_upload_csv_commerzbank(self):
         """
         Lädt Beispieldaten über das Formular hoch und überprüft
         ob die Datei angenommen wird und die Serverseitige Verarbeitung durchläuft.
         """
+        # Clear DB
+        self.test_truncate()
         # Cleared DB ?
-        response0 = requests.get(f"{self.uri}/view?iban={cherrypy.config['iban']}")
-        assert "<td class=" not in response0.text, "Die Datenbank war zum Start des Tests nicht leer"
+        response0 = requests.get(f"{self.uri}/view?iban={cherrypy.config['iban']}", timeout=5)
+        assert "<td class=" not in response0.text, \
+            "Die Datenbank war zum Start des Tests nicht leer"
 
         # Visit Form
         self.getPage("/")
@@ -83,20 +84,20 @@ class TestClass(cphelper.CPWebCase):
         self.assertInBody('type="submit')
 
         # Prepare File
-        content = getTestFileContents('commerzbank.csv', binary=True)
+        content = get_testfile_contents('commerzbank.csv', binary=True)
         files = {'tx_file': ('commerzbank.csv', content)}
         # Post File
-        response = requests.post(f"{self.uri}/upload", files=files)
+        response = requests.post(f"{self.uri}/upload", files=files, timeout=5)
 
         # Check Response
         assert response.status_code == 201, \
             "Die Seite hat den Upload nicht wie erwartet verarbeitet"
         assert 'tx_file filename: commerzbank.csv' in response.text, \
             "Angaben zum Upload wurden nicht gefunden"
-        
+
         # Aufruf der Transaktionen auf verschiedene Weisen
-        response1 = requests.get(f"{self.uri}/view", params={})
-        response2 = requests.get(f"{self.uri}/view?iban={cherrypy.config['iban']}")
+        response1 = requests.get(f"{self.uri}/view", params={}, timeout=5)
+        response2 = requests.get(f"{self.uri}/view?iban={cherrypy.config['iban']}", timeout=5)
         assert response1.status_code == response2.status_code == 200, \
             "Die Ergebnisseite mit den Transaktionen ist nicht (richtig) erreichbar"
         result = response2.text
@@ -107,61 +108,65 @@ class TestClass(cphelper.CPWebCase):
         soup = BeautifulSoup(result, features="html.parser")
 
         # 1. Example
-        hash = 'cf1fb4e6c131570e4f3b2ac857dead40'
-        row1 = soup.css.select(f'#tr-{hash}')
+        tx_hash = 'cf1fb4e6c131570e4f3b2ac857dead40'
+        row1 = soup.css.select(f'#tr-{tx_hash}')
         assert len(row1) == 1, \
             f"Es wurden {len(row1)} rows für das erste Beispiel gefunden"
 
         content = row1[0].css.filter('.td-betrag')[0].contents[0]
         assert content == '-11.63 EUR', \
-            f"Der Content von {hash} ist anders als erwartet: '{content}'"
+            f"Der Content von {tx_hash} ist anders als erwartet: '{content}'"
 
         # 2. Example
-        hash = '786e1d4e16832aa321a0176c854fe087'
-        row2 = soup.css.select(f'#tr-{hash}')
+        tx_hash = '786e1d4e16832aa321a0176c854fe087'
+        row2 = soup.css.select(f'#tr-{tx_hash}')
         assert len(row2) == 1, \
             f"Es wurden {len(row2)} rows für das zweite Beispiel gefunden"
 
         content = row2[0].css.filter('.td-betrag')[0].contents[0]
         assert content == '-221.98 EUR', \
-            f"Der Content von {hash} / 'betrag' ist anders als erwartet: '{content}'"
+            f"Der Content von {tx_hash} / 'betrag' ist anders als erwartet: '{content}'"
 
         content = [child.contents[0] for child in row2[0].select('.td-parsed p')]
         assert 'Mandatsreferenz' in content, \
-            f"Der Content von {hash} / 'parsed' ist anders als erwartet: '{content}'"
+            f"Der Content von {tx_hash} / 'parsed' ist anders als erwartet: '{content}'"
 
     def test_double_upload(self):
         """Lädt zwei Dateien hoch und prüft die unterschiedlichen HTTP Stati"""
+        # Clear DB
+        self.test_truncate()
         # Cleared DB ?
-        response0 = requests.get(f"{self.uri}/view?iban={cherrypy.config['iban']}")
-        assert "<td class=" not in response0.text, "Die Datenbank war zum Start des Tests nicht leer"
+        response0 = requests.get(f"{self.uri}/view?iban={cherrypy.config['iban']}", timeout=5)
+        assert "<td class=" not in response0.text, \
+            "Die Datenbank war zum Start des Tests nicht leer"
 
         # Prepare File 1
-        content = getTestFileContents('commerzbank.csv', binary=True)
+        content = get_testfile_contents('commerzbank.csv', binary=True)
         files = {'tx_file': ('commerzbank.csv', content)}
 
         # Post File 1
-        response1 = requests.post(f"{self.uri}/upload", files=files)
+        response1 = requests.post(f"{self.uri}/upload", files=files, timeout=5)
         status_code_1 = response1.status_code
-        assert status_code_1 == 200
+        assert status_code_1 == 201
 
         # Post File 2
-        response2 = requests.post(f"{self.uri}/upload", files=files)
+        response2 = requests.post(f"{self.uri}/upload", files=files, timeout=5)
         status_code_2 = response2.status_code
         # Same TX: Keine neuen Einträge angelegt:
-        assert status_code_2 == 200, \
-            "Beim zweiten Upload der gleichen Transaktionen dürfen keine neuen Datensätze angelegt werden"
+        assert status_code_2 == 304, \
+            ("Beim zweiten Upload der gleichen Transaktionen"
+            "dürfen keine neuen Datensätze angelegt werden")
 
         # Double-Check: Anzahl der Einträge
-        response3 = requests.get(f"{self.uri}/view?iban={cherrypy.config['iban']}")
+        response3 = requests.get(f"{self.uri}/view?iban={cherrypy.config['iban']}", timeout=5)
         result = response3.text
         soup = BeautifulSoup(result,features="html.parser")
-        rows = soup.css.select(f'table .td-hash')
+        rows = soup.css.select('table .td-uuid')
 
         assert len(rows) == 5, f"Es wurden zu viele Einträge ({len(rows)}) angelegt"
 
 
-def getTestFileContents(relative_path, binary=True):
+def get_testfile_contents(relative_path, binary=True):
     """
     Gibt den Dateiinhalt einer Beispieldatei zurück.
 

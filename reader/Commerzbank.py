@@ -9,12 +9,12 @@ class Reader(Generic):
     Reader um aus übermittelten Daten Kontoführungsinformationen auszulesen.
     Dieser Reader ist speziell für die Daten angepasst, wie sie bei der Commerzbank vorkommen.
     """
-    def __init__(self):
+    def __init__(self): # pylint: disable=useless-parent-delegation
         """
         Initialisiert eine Instanz der Reader-Klasse für Kontoumsätze der Commerzbank.
         """
+        #TODO: Es wird ggf. einen Usecase für super.__init__() in Zukunft geben
         super().__init__()
-        return
 
     def from_pdf(self, filepath):
         """

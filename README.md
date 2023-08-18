@@ -1,6 +1,9 @@
 # PynanceParser
 
-Abruf, Analyse und Darstellung von Kontoumsätzen bei mehreren Banken.
+![pytest](https://img.shields.io/badge/pytest-passed%20(21/21)-darkgreen)
+![pylint](https://img.shields.io/badge/pylint-9.99-darkgreen)
+
+Analyse und Darstellung von Kontoumsätzen bei mehreren Banken.
 
 ## Features
 
@@ -17,17 +20,17 @@ Importieren von Kontoumsätzen aus
 - Online Quellen
     - HTTP (Daten von APIs - keine Banken-APIs leider :man_shrugging: )
 
-Modulare Importer können nach und nach für verschiedene Banken oder spezielle Formate vorhanden sein.
+Modulare Importer können nach und nach für verschiedene Banken oder spezielle Formate entwickelt werden. Füge einen Importer für deine Bank hinzu :wink:
 
 ### Analyse
 
-- Automatisches Extrahieren und bewerten einer Transaktion durch Muster (RegEx)
-- Automatisches Kategorisieren anhand hinterlegter Regeln
+- Automatisches Extrahieren und bewerten einer Transaktion durch Muster *(RegEx parst Kerninformationen)*
+- Automatisches Kategorisieren anhand hinterlegter Regeln *(RegEx + Kerninformationen)*
 - Manuelles Kategorisieren
 
-Hinterlegte Regeln können die extrahierten Informationen, weitere Umsatzinformationen und weitere RegExes berücksichtigen oder anhand einer Ähnlichkeitssuche eines manuell herausgesuchten Umsatzes entscheiden.
+Hinterlegte Regeln können die extrahierten Informationen, weitere Umsatzinformationen und weitere RegExes berücksichtigen und ermöglichen so komplexe Bewertungen einfach zu erstellen.
 
-Die Klassifizierung wird dabei nach Haupt- und Unterkategorie vorgenommen und erfolgt für alle oder alle unkategorisierten Umsätze auf Wunsch, automatisch beim Import oder manuell für markierte Umsätze über die Obefläche.
+Eine Klassifizierung *(Tagging)* wird dabei nach Haupt- und Unterkategorie vorgenommen. Sie erfolgt bei einem Durchlauf optional für alle unkategorisierten Umsätze, auf alle oder auf einen Teil anhand einer festgelegten Priorität (der Kategorie).
 
 ### Darstellung
 
@@ -35,21 +38,28 @@ Die Klassifizierung wird dabei nach Haupt- und Unterkategorie vorgenommen und er
 - Statistiken
 - Verteilungen
 
-Listen und Diagramme zeigen dir, wo eigentlich das Geld geblieben ist :wink:
+Listen und Diagramme zeigen dir, wo eigentlich das Geld geblieben ist :thinking:
 
 ## Contribution
 
-Beiträge erwünscht.
+You're Welcome !
 
-Die Reader sind modular gestaltet um Code für verschiedene Banken einfach aufzunehmen.
+Erstelle einen Reader für verschiedene Formate deiner Bank.
 
-Für diese und andere Bereiche können gerne PullRequests gestellt werden, die allerdings alle PyTests bestehen müssen.
-
-Für neuen Code sollte ebenfalls ein Test geschrieben werden. Gegebenenfalls wird dies vor dem Merge aber auch vom Projekt übernommen.
+Dieses Repo ist test-driven. Vor dem Merge ist ein Unit- und ggf. Integrationtest erforderlich, der aber auch vom Kernprojekt erstellt werden kann.
 
 ## Setup
 
 ```
 pip install -r requirements.txt
-python3 src/app.py
+python3 app/app.py
+```
+
+### Testumgebung
+
+...zusätzlich zum Setup:
+
+```
+pip install -r tests/requirements.txt
+pytest
 ```

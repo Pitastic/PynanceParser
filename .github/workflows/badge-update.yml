@@ -1,0 +1,91 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# Finally the results are stored in a Badge in README.md
+
+name: Badge Updater
+
+on:
+  workflow_dispatch:
+  pull_request_target:
+    types:
+      - closed
+
+permissions:
+  contents: write
+
+jobs:
+
+  badge_updates:
+    if: github.event.pull_request.merged
+    runs-on: ubuntu-latest
+
+    steps:
+    # Prepare Image
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.10"
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest pylint
+        pip install -r requirements.txt
+        pip install -r tests/requirements.txt
+
+    # Actions
+    - name: Test Lint and Badge
+      run: |
+        set +e
+
+        #
+        # -- Test and parse Output
+        #
+        test_output="$(pytest -rN)"
+        
+        test_failed=$(sed -n '$s/^=*\s*\([0-9]*\)\sfailed.*/\1/p' <<< "$test_output" |tail -n1)
+        if [[ -z $test_failed ]]; then test_failed=0 ; fi
+        
+        test_passed=$(sed -n -E 's|^=*\s([0-9]+\sfailed,\s)?(([0-9]*)\spassed,\s)?.*|\3|p' <<< "$test_output" | tail -n1)
+        if [[ -z $test_passed ]]; then test_passed=0 ; fi
+
+        test_skipped=$(tail -n1 <<< "$test_output" | rev |sed -E 's|^(.*deppiks\s([0-9]*))?.*|\2|')
+        if [[ -z $test_skipped ]]; then echo test_skipped=0 ; fi
+
+        all_tests=$(expr ${test_passed} + ${test_failed})
+
+        #
+        # -- Set Badge in Readme (Pytest)
+        #
+        if [[ $(echo "$test_failed >= 2" | bc) -eq 1 ]]; then
+          test_badge="https://img.shields.io/badge/pytest-passed%20($test_passed/$all_tests)-red"
+        elif [[ $(echo "$test_failed == 1" | bc) -eq 1 ]]; then
+          test_badge="https://img.shields.io/badge/pytest-passed%20($test_passed/$all_tests)-orange"
+        else
+          test_badge="https://img.shields.io/badge/pytest-passed%20($test_passed/$all_tests)-darkgreen"
+        fi
+        sed -i -E s"|(\[pytest\]).*$|\1($test_badge)|" README.md
+
+        #
+        # -- Lint and parse Output
+        #
+        pylint_output=$(pylint . --recursive=y --disable=W0511,R0801 --score=y)
+        score=$(sed -n '$s/[^0-9]*\([0-9.]*\).*/\1/p' <<< "$pylint_output")
+
+        #
+        # -- Set Badge in Readme (Linter)
+        #
+        if [[ $(echo "$score <= 5" | bc) -eq 1 ]]; then
+          lint_badge="https://img.shields.io/badge/pylint-$score-red"
+        elif [[ $(echo "$score <= 8" | bc) -eq 1 ]]; then
+          lint_badge="https://img.shields.io/badge/pylint-$score-orange"
+        elif [[ $(echo "$score < 9.9" | bc) -eq 1 ]]; then
+          lint_badge="https://img.shields.io/badge/pylint-$score-yellow"
+        else
+          lint_badge="https://img.shields.io/badge/pylint-$score-darkgreen"
+        fi
+        sed -i -E s"|(\[pylint\]).*$|\1($lint_badge)|" README.md
+
+    # Auto-Commit Badge Changes
+    - uses: stefanzweifel/git-auto-commit-action@v4
+      with:
+        commit_message: "Adding Badges. Testdetails in #${{ github.event.pull_request.number }}"

@@ -1,5 +1,5 @@
 #!/usr/bin/python3 # pylint: disable=invalid-name
-"""Testmodul für das Einlesen von Daten mit Hilfe des generischen Readers"""
+"""Testmodul für das Einlesen von Daten mit Hilfe des Commerzbank Readers"""
 
 import os
 import sys
@@ -10,11 +10,11 @@ import pytest
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
 
-from reader.Generic import Reader as Generic
+from reader.Commerzbank import Reader as Generic
 
 
 class TestReaderGeneric():
-    """PyTest Klasse für die Tests am generischen Reader"""
+    """PyTest Klasse für die Tests am Commerzbank Reader"""
 
     def setup_class(self):
         """Vorbereitung der Testklasse"""
@@ -55,7 +55,7 @@ class TestReaderGeneric():
 
 
 def check_transaktion_list(tx_list):
-    """Helper zum prüfen der Parsingergebnisse"""
+    """Helper zum Prüfen der Parsingergebnisse"""
 
     for i, entry in enumerate(tx_list):
 
@@ -85,15 +85,15 @@ def check_transaktion_list(tx_list):
         iban = entry.get('iban')
         assert isinstance(iban, str) and len(iban), \
             f"'iban' wurde nicht oder falsch erkannt: {iban}"
-        # Wertstellung (optional, aber bei Generic mit dabei)
+        # Wertstellung (optional, aber bei Commerzbank mit dabei)
         assert isinstance(entry.get('date_wert'), float), (
             f"'date_wert' bei Zeile {i} nicht als Zeit in Sekunden (float) eingelesen: "
             f"{entry.get('date_wert')}")
-        # Buchungsart (optional, aber bei Generic mit dabei)
+        # Buchungsart (optional, aber bei Commerzbank mit dabei)
         buchungs_art = entry.get('art')
         assert isinstance(buchungs_art, str) and len(buchungs_art), \
             f"'art' wurde nicht oder falsch erkannt: {iban}"
-        # Währung (optional, aber bei Generic mit dabei)
+        # Währung (optional, aber bei Commerzbank mit dabei)
         currency = entry.get('currency')
         assert isinstance(currency, str) and len(currency) == 3, \
             f"'currency' wurde nicht oder falsch erkannt: {currency}"

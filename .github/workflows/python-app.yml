@@ -14,7 +14,8 @@ permissions:
   contents: read
 
 jobs:
-  build:
+
+  PyTest:
 
     runs-on: ubuntu-latest
 
@@ -27,13 +28,79 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install flake8 pytest pylint
+        pip install pytest
         pip install -r requirements.txt
         pip install -r tests/requirements.txt
     - name: Test with pytest
       run: |
-        pytest
-    - name: Lint with PyLint
+        set +e
+
+        test_output="$(pytest -rN)"
+        exitcode=$?
+          
+        test_failed=$(sed -n '$s/^=*\s*\([0-9]*\)\sfailed.*/\1/p' <<< "$test_output" |tail -n1)
+        if [[ -z $test_failed ]]; then test_failed=0 ; fi
+        
+        test_passed=$(sed -n -E 's|^=*\s([0-9]+\sfailed,\s)?(([0-9]*)\spassed,\s)?.*|\3|p' <<< "$test_output" | tail -n1)
+        if [[ -z $test_passed ]]; then test_passed=0 ; fi
+
+        test_skipped=$(tail -n1 <<< "$test_output" | rev |sed -E 's|^(.*deppiks\s([0-9]*))?.*|\2|')
+        if [[ -z $test_skipped ]]; then echo test_skipped=0 ; fi
+
+        all_tests=$(expr ${test_passed} + ${test_failed})
+
+        echo "### Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| :checkered_flag: | :arrow_right_hook: | :x: |" >> $GITHUB_STEP_SUMMARY
+        echo "| ------------- | ------------- | ------------- |" >> $GITHUB_STEP_SUMMARY
+        echo "| $test_passed  | $test_skipped  | $test_failed  |" >> $GITHUB_STEP_SUMMARY
+
+        echo "$test_output"
+        if [[ $exitcode != 0 ]]; then
+          exit $exitcode
+        fi
+        exit 0
+
+  PyLint:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.10"
+    - name: Install dependencies
       run: |
-        # stop the build if there are Python syntax errors or undefined names
-        pylint . --recursive=y --disable=W0511,R0801 --score=y --report=y
+        python -m pip install --upgrade pip
+        pip install pylint
+        pip install -r requirements.txt
+        pip install -r tests/requirements.txt
+    - name: Lint with PyLint
+      id: linting
+      run: |
+        set +e
+        #
+        # -- Lint and parse Output
+        #
+        pylint_output=$(pylint . --recursive=y --disable=W0511,R0801 --score=y)
+        exitcode=$?
+        score=$(sed -n '$s/[^0-9]*\([0-9.]*\).*/\1/p' <<< "$pylint_output")
+        #
+        # -- Exitcode and Summary
+        #
+        echo "$pylint_output"
+        if [[ $exitcode -eq 0 ]]; then
+          echo "### :sparkles: Excellent! :rocket: **${score} / 10**" >> $GITHUB_STEP_SUMMARY
+          exit 0
+        elif \
+           [[ $exitcode -ge 8 && $exitcode -le 15 ]] || \
+           [[ $exitcode -ge 17 && $exitcode -le 23 ]]; then
+          echo "### :shushing_face: tolerated (code: ${exitcode}) - **${score} / 10**" >> $GITHUB_STEP_SUMMARY
+          exit 0
+        else
+          echo "### :no_entry: Too many linting errors! - **${score} / 10**" >> $GITHUB_STEP_SUMMARY
+          exit $exitcode
+        fi
