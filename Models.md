@@ -26,3 +26,39 @@
     'priority': int,
 }
 ```
+
+## Datenbankeintrag für User Settings
+
+```
+{
+    'username': str,
+    'password': str,            # (Hashed)
+    'accounts': list(
+        str( IBAN )
+    ),
+
+    ----------- optional -----------
+
+    'preferences': dict( str : Any ),
+    'rules': dict(
+        str( Rulename ) : dict( ruleset )
+    )
+}
+```
+
+### Dictionary eines Rulesets
+
+```
+{
+    'primary': str,
+    'regex': r-str( RegEx ),    # (optional if parsed)
+    'parsed': dict(             # (optional if regex)
+        str( parsed-Key ) : r-str( RegEx )
+    )
+
+    ----------- optional -----------
+
+    'secondary': str,
+    'prioriry': int
+}
+```

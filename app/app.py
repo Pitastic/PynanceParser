@@ -124,7 +124,7 @@ class UserInterface():
                                        Default: Es werden alle Regeln geladen.
 
         Returns:
-            list(dict): Liste von Filterregeln
+            dict(dict): Liste von Filterregeln
         """
         #TODO: Fake Funktion
         test_rules = {
@@ -143,7 +143,7 @@ class UserInterface():
         }
 
         if rule_name:
-            return [test_rules.get(rule_name)]
+            return {rule_name: test_rules.get(rule_name)}
 
         return test_rules
 
