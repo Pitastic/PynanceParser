@@ -86,4 +86,4 @@ jobs:
     # Auto-Commit Badge Changes
     - uses: stefanzweifel/git-auto-commit-action@v4
       with:
-        commit_message: "Adding Badges. Testdetails in #${{ github.event.pull_request.number }}"
+        commit_message: "Adding Badges from last PR / Merge"
