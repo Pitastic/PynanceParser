@@ -165,6 +165,20 @@ class TestIntegration(cphelper.CPWebCase):
 
         assert len(rows) == 5, f"Es wurden zu viele Einträge ({len(rows)}) angelegt"
 
+    def test_tag_stored(self):
+        """Testet das Tagging, wenn es über den API Endpoint angesprochen wird"""
+        # Regel mit Namen aus der DB holen
+        parameters = {
+            'rule_name': 'Supermarkets',
+            'dry_run': True
+        }
+        r = requests.post(f"{self.uri}/view", params=parameters, timeout=5)
+        result = r.json()
+        assert result.get('tagged') == 0, \
+            f"Trotz 'dry_run' wurden {result.get('tagged')} Einträge getaggt"
+        tagged_entries = result.get('Supermarkets', {}).get('entries')
+        assert len(tagged_entries) == 2, \
+            f"Die Regel 'Supermarkets' hat {len(tagged_entries)} statt 2 Transactionen getroffen"
 
 def get_testfile_contents(relative_path, binary=True):
     """

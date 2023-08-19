@@ -251,6 +251,12 @@ class UserInterface():
                                    Default: Ist rule_name ohne rule angegeben, wird
                                    eine Regel mit diesem Namen aus der Benutzerdatenbank
                                    geladen. Ein Fehlen dieser Regel wirft eine Exception.
+            prio, int(1): Value of priority for this tagging run
+                          in comparison with already tagged transactions
+                          This value will be set as the new priority in DB
+            prio_set, int(None): Compare with priority but set this value instead.
+                                 Default: prio.
+            dry_run, bool(False): Switch to show, which TX would be updated. Do not update.
         Returns:
             json dict:
                 - tagged (int): Summe aller erfolgreichen Taggings (0 bei dry_run)
