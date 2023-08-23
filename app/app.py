@@ -3,6 +3,8 @@
 
 import os
 import sys
+import inspect
+from functools import wraps
 import cherrypy
 
 # Add Parent for importing Classes
@@ -16,6 +18,70 @@ from handler.Tags import Tagger
 
 from reader.Generic import Reader as Generic
 from reader.Commerzbank import Reader as Commerzbank
+
+def user_input_type_converter(original_func):
+    """Converts function args as annotated"""
+
+    @wraps(original_func)
+    def wrapper(*args, **kwargs):
+
+        converter = {
+            'bool': bool,
+            'int': int,
+            'float': float,
+            'str': str
+        }
+
+        parameters = inspect.signature(original_func).parameters
+
+        # Positional Args
+        positional_args = []
+        for i, arg in enumerate(args):
+            param_name = list(parameters.keys())[i]
+            param_type = parameters[param_name].annotation
+
+            # Type defined and Input is wrong
+            if not isinstance(arg, param_type) and param_type.__name__ != '_empty':
+                conv = converter.get(param_type.__name__)
+                try:
+                    arg = conv(arg)
+                except (TypeError, ValueError) as ex:
+                    msg = (
+                        f'Parameter "{param_name}" is not '
+                        f'of type "{param_type.__name__}" '
+                        'and could not be converted into this type! - '
+                        f'{str(ex)}')
+                    cherrypy.log.error(msg)
+                    cherrypy.response.status = 400
+                    return {'error': msg}
+
+            positional_args.append(arg)
+
+        # Keyword Args
+        keyword_args = {}
+        for param_name, arg in kwargs.items():
+            param_type = parameters[param_name].annotation
+
+            # Type defined and Input is wrong
+            if not isinstance(arg, param_type) and param_type.__name__ != '_empty':
+                conv = converter.get(param_type.__name__)
+                try:
+                    arg = conv(arg)
+                except (TypeError, ValueError) as ex:
+                    msg = (
+                        f'Parameter "{param_name}" is not '
+                        f'of type "{param_type.__name__}" '
+                        'and could not be converted into this type! - '
+                        f'{str(ex)}')
+                    cherrypy.log.error(msg)
+                    cherrypy.response.status = 400
+                    return {'error': msg}
+
+            keyword_args[param_name] = arg
+
+        return original_func(*positional_args, **keyword_args)
+
+    return wrapper
 
 
 class UserInterface():
@@ -147,6 +213,7 @@ class UserInterface():
         return test_rules
 
     @cherrypy.expose
+    @user_input_type_converter
     def index(self):
         """
         Startseite mit Navigation und Uploadformular.
@@ -164,6 +231,7 @@ class UserInterface():
         """
 
     @cherrypy.expose
+    @user_input_type_converter
     def upload(self, tx_file):
         """
         Endpunkt für das Annehmen hochgeladener Kontoumsatzdateien.
@@ -210,7 +278,8 @@ class UserInterface():
         return out.format(size=size, filename=tx_file.filename, content_type=tx_file.content_type)
 
     @cherrypy.expose
-    def view(self, iban=None):
+    @user_input_type_converter
+    def view(self, iban: str = None):
         """
         Anzeige aller Umsätze zu einer IBAN
 
@@ -236,8 +305,11 @@ class UserInterface():
         return out
 
     @cherrypy.expose
+    @user_input_type_converter
     @cherrypy.tools.json_out()
-    def tag(self, rule_name=None, rule=None, prio=None, prio_set=None, dry_run=True):
+    def tag(self,
+            rule_name: str = None, rule: dict = None,
+            prio: int = None, prio_set: int = None, dry_run: bool = True):
         """
         Kategorisiert die Kontoumsätze und aktualisiert die Daten in der Instanz.
 
@@ -269,9 +341,9 @@ class UserInterface():
             'dry_run': dry_run
         }
         if prio is not None:
-            args['prior'] = prio
+            args['prio'] = prio
         if prio_set is not None:
-            args['prio_setr'] = prio_set
+            args['prio_set'] = prio_set
 
         # RegEx Tagging (specific rule or all)
         if rule is not None:
@@ -300,6 +372,7 @@ class UserInterface():
         return self.tagger.tag_regex(self.db_handler, rules, **args)
 
     @cherrypy.expose
+    @user_input_type_converter
     @cherrypy.tools.json_out()
     def setManualTag(self, t_id, primary_tag, secondary_tag=None):
         """
@@ -321,8 +394,9 @@ class UserInterface():
         return {'updated': updated_entries}
 
     @cherrypy.expose
+    @user_input_type_converter
     @cherrypy.tools.json_out()
-    def truncateDatabase(self, iban=None):
+    def truncateDatabase(self, iban: str = None):
         """Leert die Datenbank"""
         deleted_entries = self.db_handler.truncate(iban)
         return { 'deleted': deleted_entries }

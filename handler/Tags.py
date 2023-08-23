@@ -76,7 +76,7 @@ class Tagger():
 
             # Updated Category
             new_category = {
-                'priority': prio,
+                'prio': prio,
                 'primary_tag': rule.get('primary', 'sonstiges'),
                 'secondary_tag': rule.get('secondary', 'sonstiges'),
             }
@@ -93,7 +93,7 @@ class Tagger():
             # -- Add Text RegExes
             if rule.get('regex') is not None:
                 rule_args['condition'].append({
-                    'key': 'tx_text',
+                    'key': 'text_tx',
                     'value': rule.get('regex'),
                     'compare': 'regex'
                 })
@@ -170,7 +170,6 @@ class Tagger():
                 - entries (list): UUIDs die selektiert wurden (auch bei dry_run)
         """
         cherrypy.log("Tagging with AI....")
-        prio = prio if prio_set is None else prio_set
 
         # Allgemeine Startfilter für die Condition
         query_args = self._form_tag_query(prio, collection=collection)
@@ -196,10 +195,11 @@ class Tagger():
 
                 uuid = entry.get('uuid')
                 query = {'key': 'uuid', 'value': uuid}
+                new_prio = prio if prio_set is None else prio_set
 
                 # Updated Category
                 new_category = {
-                    'priority': prio,
+                    'prio': new_prio,
                     'primary_tag': entry.get('primary'),
                     'secondary_tag': entry.get('secondary', 'sonstiges'),
                 }
@@ -237,7 +237,7 @@ class Tagger():
         # Allgemeine Startfilter für die Condition
         query_args = {
             'condition': [{
-                'key': 'priority',
+                'key': 'prio',
                 'value': prio,
                 'compare': '<'
             }],

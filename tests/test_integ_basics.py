@@ -170,9 +170,11 @@ class TestIntegration(cphelper.CPWebCase):
         # Regel mit Namen aus der DB holen
         parameters = {
             'rule_name': 'Supermarkets',
+            'prio': 9,
+            'prio_set': 2,
             'dry_run': True
         }
-        r = requests.post(f"{self.uri}/view", params=parameters, timeout=5)
+        r = requests.post(f"{self.uri}/tag", params=parameters, timeout=5)
         result = r.json()
         assert result.get('tagged') == 0, \
             f"Trotz 'dry_run' wurden {result.get('tagged')} Einträge getaggt"
