@@ -3,6 +3,7 @@
 
 import os
 import sys
+import json
 import requests
 from bs4 import BeautifulSoup
 import cherrypy
@@ -167,11 +168,9 @@ class TestIntegration(cphelper.CPWebCase):
 
     def test_tag_stored(self):
         """Testet das Tagging, wenn es über den API Endpoint angesprochen wird"""
-        # Regel mit Namen aus der DB holen
+        # Regel mit Namen aus der SystemDB holen
         parameters = {
             'rule_name': 'Supermarkets',
-            'prio': 9,
-            'prio_set': 2,
             'dry_run': True
         }
         r = requests.post(f"{self.uri}/tag", params=parameters, timeout=5)
@@ -181,6 +180,42 @@ class TestIntegration(cphelper.CPWebCase):
         tagged_entries = result.get('Supermarkets', {}).get('entries')
         assert len(tagged_entries) == 2, \
             f"Die Regel 'Supermarkets' hat {len(tagged_entries)} statt 2 Transactionen getroffen"
+
+        # Regel mit Namen aus der UserDB holen
+        parameters = {
+            'rule_name': 'City Tax',
+            'dry_run': True
+        }
+        r = requests.post(f"{self.uri}/tag", params=parameters, timeout=5)
+        result = r.json()
+        assert result.get('tagged') == 0, \
+            f"Trotz 'dry_run' wurden {result.get('tagged')} Einträge getaggt"
+        tagged_entries = result.get('City Tax', {}).get('entries')
+        assert len(tagged_entries) == 1, \
+            f"Die Regel 'City Tax' hat {len(tagged_entries)} statt 1 Transactionen getroffen"
+
+        #TODO: Eigene Regel taggen lassen
+        #parameters = {
+        #    'rule_name': 'My Rule',
+        #    #TODO: Nested is a Problem ! - Comes like a List
+        #    'rule': json.dumps({
+        #        'primary': 'Haus',
+        #        'secondary': 'Garten',
+        #        'regex': r'\sGARTEN\w',
+        #    }),
+        #    'prio': 9,
+        #    'prio_set': 3,
+        #    'dry_run': False
+        #}
+        #r = requests.post(f"{self.uri}/tag", params=parameters, timeout=5)
+        #result = r.json()
+        #assert result.get('tagged') == 1, \
+        #    f"Es wurden {result.get('tagged')} statt 1 Eintrag getaggt"
+        #tagged_entries = result.get('My Rule', {}).get('entries')
+        #assert len(tagged_entries) == 1, \
+        #    f"Die Regel 'My Rule' hat {len(tagged_entries)} statt 1 Transactionen getroffen"
+
+
 
 def get_testfile_contents(relative_path, binary=True):
     """

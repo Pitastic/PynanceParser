@@ -4,6 +4,7 @@
 import os
 import sys
 import inspect
+import json
 from functools import wraps
 import cherrypy
 
@@ -29,7 +30,9 @@ def user_input_type_converter(original_func):
             'bool': bool,
             'int': int,
             'float': float,
-            'str': str
+            'str': str,
+            'list': json.loads,
+            'dict': json.loads
         }
 
         parameters = inspect.signature(original_func).parameters
@@ -180,24 +183,30 @@ class UserInterface():
         self.data = None
         return inserted_rows.get('inserted')
 
-    def _load_ruleset(self, rule_name=None):
+    def _load_ruleset(self, rule_name=None, namespace='both'):
         """
         Load Rules from the Settings of for the requesting User.
 
         Args:
             rule_name (str, optional): Lädt die Regel mit diesem Namen.
                                        Default: Es werden alle Regeln geladen.
-
+            namespace (str, system|user|both): Unterscheidung aus weclhem Set Regeln
+                                               geladen oder gesucht werden soll.
+                                               - system: nur allgemeine Regeln
+                                               - user: nur private Regeln
+                                               - both (default): alle Regeln
         Returns:
             dict(dict): Liste von Filterregeln
         """
         #TODO: Fake Funktion
-        test_rules = {
+        system_rules = {
             'Supermarkets': {
                 'primary': 'Lebenserhaltungskosten',
                 'secondary': 'Lebensmittel',
                 'regex': r"(EDEKA|Wucherpfennig|Penny|Aldi|Kaufland|netto)",
             },
+        }
+        user_rules = {
             'City Tax': {
                 'primary': 'Haus und Grund',
                 'secondary': 'Stadtabgaben',
@@ -208,9 +217,28 @@ class UserInterface():
         }
 
         if rule_name:
-            return {rule_name: test_rules.get(rule_name)}
 
-        return test_rules
+            # Bestimmte Regel laden
+            if namespace in ['system', 'both']:
+                # Allgemein
+                rule = system_rules.get(rule_name)
+            if namespace == 'both':
+                # oder speziell (falls vorhanden)
+                rule = user_rules.get(rule_name, rule)
+            if namespace == 'user':
+                # Nur User
+                rule = user_rules.get(rule_name)
+
+            return {rule_name: rule}
+
+        # Alle Regeln einzelner namespaces
+        if namespace == 'system':
+            return system_rules
+        if namespace == 'user':
+            return user_rules
+
+        # Alle Regeln aller namespaces
+        return {**system_rules, **user_rules}
 
     @cherrypy.expose
     @user_input_type_converter
