@@ -21,18 +21,16 @@ from reader.Generic import Reader as Generic
 from reader.Commerzbank import Reader as Commerzbank
 
 def user_input_type_converter(original_func):
-    """Converts function args as annotated"""
+    """Converts function args in simple types as annotated"""
 
     @wraps(original_func)
     def wrapper(*args, **kwargs):
 
         converter = {
-            'bool': bool,
+            'bool': lambda x: False if x is None else bool(json.loads(x.lower())),
             'int': int,
             'float': float,
-            'str': str,
-            'list': json.loads,
-            'dict': json.loads
+            'str': str
         }
 
         parameters = inspect.signature(original_func).parameters
@@ -196,7 +194,7 @@ class UserInterface():
                                                - user: nur private Regeln
                                                - both (default): alle Regeln
         Returns:
-            dict(dict): Liste von Filterregeln
+            list(dict): Liste von Filterregeln
         """
         #TODO: Fake Funktion
         system_rules = {
@@ -238,7 +236,8 @@ class UserInterface():
             return user_rules
 
         # Alle Regeln aller namespaces
-        return {**system_rules, **user_rules}
+        system_rules.update(user_rules)
+        return system_rules
 
     @cherrypy.expose
     @user_input_type_converter
@@ -336,33 +335,38 @@ class UserInterface():
     @user_input_type_converter
     @cherrypy.tools.json_out()
     def tag(self,
-            rule_name: str = None, rule: dict = None,
-            prio: int = None, prio_set: int = None, dry_run: bool = True):
+            rule_name: str = None, rule_primary: str = None, rule_secondary: str = None,
+            rule_regex: str = None, rule_parsed_keys: list = (), rule_parsed_vals: list = (),
+            prio: int = 1, prio_set: int = None, dry_run: bool = False) -> dict:
         """
         Kategorisiert die Kontoumsätze und aktualisiert die Daten in der Instanz.
 
         Args:
-            rule_name (str | ai, optional): Name der anzuwendenden Taggingregel.
-                                            Reserviertes Keyword 'ai' führt nur
-                                            das AI Tagging aus. Default: Es werden
-                                            alle Regeln des Benutzers ohne das AI
-                                            Tagging angewendet.
-            rule (dict, optional): Regel mit der getaggt werden soll.
-                                   Default: Ist rule_name ohne rule angegeben, wird
-                                   eine Regel mit diesem Namen aus der Benutzerdatenbank
-                                   geladen. Ein Fehlen dieser Regel wirft eine Exception.
-            prio, int(1): Value of priority for this tagging run
-                          in comparison with already tagged transactions
-                          This value will be set as the new priority in DB
-            prio_set, int(None): Compare with priority but set this value instead.
-                                 Default: prio.
-            dry_run, bool(False): Switch to show, which TX would be updated. Do not update.
+            rule_name:      Name der anzuwendenden Taggingregel.
+                            Reserviertes Keyword 'ai' führt nur das AI Tagging aus.
+                            Default: Es werden alle Regeln des Benutzers ohne das
+                            AI Tagging angewendet.
+            rule_primary:   Name der zu setzenden Primärkategory.
+                            Default: Standardname
+            rule_primary:   Name der zu setzenden Sekundärkategory.
+                            Default: Standardname
+            rule_regex:     Regulärer Ausdrück für die Suche im Transaktionstext.
+                            Default: Wildcard
+            rule_parsed_keys:   Liste mit Keys zur Prüfung in geparsten Daten.
+            rule_parsed_vals:   Liste mit Values zur Prüfung in geparsten Daten.
+            prio:           Value of priority for this tagging run
+                            in comparison with already tagged transactions
+                            This value will be set as the new priority in DB.
+                            Default: 1
+            prio_set:       Compare with priority but set this value instead.
+                            Default: prio.
+            dry_run:        Switch to show, which TX would be updated. Do not update.
+                            Default: False
         Returns:
-            json dict:
-                - tagged (int): Summe aller erfolgreichen Taggings (0 bei dry_run)
-                - Regelname (dict):
-                    - tagged (int): Anzahl der getaggten Datensätze (0 bei dry_run)
-                    - entries (list): UUIDs die selektiert wurden (auch bei dry_run)
+            - tagged (int): Summe aller erfolgreichen Taggings (0 bei dry_run)
+            - Regelname (dict):
+                - tagged (int): Anzahl der getaggten Datensätze (0 bei dry_run)
+                - entries (list): UUIDs die selektiert wurden (auch bei dry_run)
         """
         # Tagging Methoden Argumente
         args = {
@@ -374,18 +378,36 @@ class UserInterface():
             args['prio_set'] = prio_set
 
         # RegEx Tagging (specific rule or all)
-        if rule is not None:
+        if rule_regex is not None or rule_parsed_keys:
 
             # Custom Rule
+            rule = {
+                'primary': rule_primary,
+                'secondary': rule_secondary,
+                'regex': rule_regex
+            }
+
+            if len(rule_parsed_keys) != len(rule_parsed_vals):
+                msg = 'Parse-Keys and -Vals were submitted in unequal length !'
+                cherrypy.log.error(msg)
+                cherrypy.response.status = 400
+                return {'error': msg}
+
+            for i, parse_key in enumerate(rule_parsed_keys):
+                rule['parsed'][parse_key] = rule_parsed_vals[i]
+
             if rule_name is None:
                 rule_name = 'Custom Rule'
-            rules = [{rule_name: rule}]
 
-            return self.tagger.tag_regex(self.db_handler, rules, **args)
+            rules = {rule_name: rule}
+
+            return self.tagger.tag_regex(self.db_handler,
+                                         rules, prio=prio, prio_set=prio_set, dry_run=dry_run)
 
         if rule_name == 'ai':
             # AI only
-            return self.tagger.tag_ai(self.db_handler, rules, **args)
+            return self.tagger.tag_ai(self.db_handler,
+                                      rules, prio=prio, prio_set=prio_set, dry_run=dry_run)
 
         # Benutzer Regeln laden
         rules = self._load_ruleset(rule_name)
@@ -397,7 +419,8 @@ class UserInterface():
             raise ValueError('Es existieren noch keine Regeln für den Benutzer')
 
         # Benutzer Regeln anwenden
-        return self.tagger.tag_regex(self.db_handler, rules, **args)
+        return self.tagger.tag_regex(self.db_handler,
+                                     rules, prio=prio, prio_set=prio_set, dry_run=dry_run)
 
     @cherrypy.expose
     @user_input_type_converter

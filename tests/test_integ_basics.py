@@ -171,7 +171,8 @@ class TestIntegration(cphelper.CPWebCase):
         # Regel mit Namen aus der SystemDB holen
         parameters = {
             'rule_name': 'Supermarkets',
-            'dry_run': True
+            'dry_run': True,
+            'prio': 2
         }
         r = requests.post(f"{self.uri}/tag", params=parameters, timeout=5)
         result = r.json()
@@ -184,7 +185,8 @@ class TestIntegration(cphelper.CPWebCase):
         # Regel mit Namen aus der UserDB holen
         parameters = {
             'rule_name': 'City Tax',
-            'dry_run': True
+            'dry_run': True,
+            'prio': 2
         }
         r = requests.post(f"{self.uri}/tag", params=parameters, timeout=5)
         result = r.json()
@@ -194,26 +196,23 @@ class TestIntegration(cphelper.CPWebCase):
         assert len(tagged_entries) == 1, \
             f"Die Regel 'City Tax' hat {len(tagged_entries)} statt 1 Transactionen getroffen"
 
-        #TODO: Eigene Regel taggen lassen
-        #parameters = {
-        #    'rule_name': 'My Rule',
-        #    #TODO: Nested is a Problem ! - Comes like a List
-        #    'rule': json.dumps({
-        #        'primary': 'Haus',
-        #        'secondary': 'Garten',
-        #        'regex': r'\sGARTEN\w',
-        #    }),
-        #    'prio': 9,
-        #    'prio_set': 3,
-        #    'dry_run': False
-        #}
-        #r = requests.post(f"{self.uri}/tag", params=parameters, timeout=5)
-        #result = r.json()
-        #assert result.get('tagged') == 1, \
-        #    f"Es wurden {result.get('tagged')} statt 1 Eintrag getaggt"
-        #tagged_entries = result.get('My Rule', {}).get('entries')
-        #assert len(tagged_entries) == 1, \
-        #    f"Die Regel 'My Rule' hat {len(tagged_entries)} statt 1 Transactionen getroffen"
+        # Eigene Regel taggen lassen
+        parameters = {
+            'rule_name': 'My Rule',
+            'rule_primary': 'Haus',
+            'rule_secondary': 'Garten',
+            'rule_regex': r'\sGARTEN\w',
+            'prio': 9,
+            'prio_set': 3,
+            'dry_run': False
+        }
+        r = requests.post(f"{self.uri}/tag", params=parameters, timeout=5)
+        result = r.json()
+        assert result.get('tagged') == 1, \
+            f"Es wurden {result.get('tagged')} statt 1 Eintrag getaggt"
+        tagged_entries = result.get('My Rule', {}).get('entries')
+        assert len(tagged_entries) == 1, \
+            f"Die Regel 'My Rule' hat {len(tagged_entries)} statt 1 Transactionen getroffen"
 
 
 

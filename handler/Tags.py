@@ -128,7 +128,7 @@ class Tagger():
                 rule_result['entries'].append(uuid)
 
                 # Update Request
-                if not dry_run:
+                if dry_run is False:
 
                     query = {'key': 'uuid', 'value': uuid}
                     updated = db_handler.update(data=new_category, condition=query)
@@ -138,13 +138,11 @@ class Tagger():
                         cherrypy.log.error((f"Bei Rule '{rule_name}' konnte der Eintrag "
                                             f"'{uuid}' nicht geupdated werden - skipping..."))
                         continue
-
-                    rule_result['tagged'] += updated
+                    rule_result['tagged'] += updated.get('updated')
 
             # Store Result for this Rule
             result['tagged'] += rule_result.get('tagged')
             result[rule_name] = rule_result
-
         return result
 
 
