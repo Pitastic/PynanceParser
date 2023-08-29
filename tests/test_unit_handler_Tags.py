@@ -130,16 +130,16 @@ class MockDatabase:
         """Konstruktor hinterlegt Variablen"""
         self.query1 = [
             {
-                'key': 'priority', 'value': 1,
+                'key': 'prio', 'value': 1,
                 'compare': '<'
             }, {
-                'key': 'tx_text', 'value': '(EDEKA|Wucherpfennig|Penny|Aldi|Kaufland|netto)',
+                'key': 'text_tx', 'value': '(EDEKA|Wucherpfennig|Penny|Aldi|Kaufland|netto)',
                 'compare': 'regex'
             }
             ]
         self.query2 = [
             {
-                'key': 'priority', 'value': 1,
+                'key': 'prio', 'value': 1,
                 'compare': '<'
             }, {
                 'key': {'parsed': 'Gläubiger-ID'}, 'value': 'DE7000100000077777',
@@ -224,6 +224,6 @@ class MockDatabase:
                 - updated, int: Anzahl der angeblich aktualisierten Datensätze
         """
         if condition.get('key') == 'uuid':
-            return 1
+            return {'updated': 1}
 
-        return
+        return {'updated': 0}

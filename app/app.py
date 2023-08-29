@@ -3,6 +3,9 @@
 
 import os
 import sys
+import inspect
+import json
+from functools import wraps
 import cherrypy
 
 # Add Parent for importing Classes
@@ -16,6 +19,70 @@ from handler.Tags import Tagger
 
 from reader.Generic import Reader as Generic
 from reader.Commerzbank import Reader as Commerzbank
+
+def user_input_type_converter(original_func):
+    """Converts function args in simple types as annotated"""
+
+    @wraps(original_func)
+    def wrapper(*args, **kwargs):
+
+        converter = {
+            'bool': lambda x: False if x is None else bool(json.loads(x.lower())),
+            'int': int,
+            'float': float,
+            'str': str
+        }
+
+        parameters = inspect.signature(original_func).parameters
+
+        # Positional Args
+        positional_args = []
+        for i, arg in enumerate(args):
+            param_name = list(parameters.keys())[i]
+            param_type = parameters[param_name].annotation
+
+            # Type defined and Input is wrong
+            if not isinstance(arg, param_type) and param_type.__name__ != '_empty':
+                conv = converter.get(param_type.__name__)
+                try:
+                    arg = conv(arg)
+                except (TypeError, ValueError) as ex:
+                    msg = (
+                        f'Parameter "{param_name}" is not '
+                        f'of type "{param_type.__name__}" '
+                        'and could not be converted into this type! - '
+                        f'{str(ex)}')
+                    cherrypy.log.error(msg)
+                    cherrypy.response.status = 400
+                    return {'error': msg}
+
+            positional_args.append(arg)
+
+        # Keyword Args
+        keyword_args = {}
+        for param_name, arg in kwargs.items():
+            param_type = parameters[param_name].annotation
+
+            # Type defined and Input is wrong
+            if not isinstance(arg, param_type) and param_type.__name__ != '_empty':
+                conv = converter.get(param_type.__name__)
+                try:
+                    arg = conv(arg)
+                except (TypeError, ValueError) as ex:
+                    msg = (
+                        f'Parameter "{param_name}" is not '
+                        f'of type "{param_type.__name__}" '
+                        'and could not be converted into this type! - '
+                        f'{str(ex)}')
+                    cherrypy.log.error(msg)
+                    cherrypy.response.status = 400
+                    return {'error': msg}
+
+            keyword_args[param_name] = arg
+
+        return original_func(*positional_args, **keyword_args)
+
+    return wrapper
 
 
 class UserInterface():
@@ -114,24 +181,30 @@ class UserInterface():
         self.data = None
         return inserted_rows.get('inserted')
 
-    def _load_ruleset(self, rule_name=None):
+    def _load_ruleset(self, rule_name=None, namespace='both'):
         """
         Load Rules from the Settings of for the requesting User.
 
         Args:
             rule_name (str, optional): Lädt die Regel mit diesem Namen.
                                        Default: Es werden alle Regeln geladen.
-
+            namespace (str, system|user|both): Unterscheidung aus weclhem Set Regeln
+                                               geladen oder gesucht werden soll.
+                                               - system: nur allgemeine Regeln
+                                               - user: nur private Regeln
+                                               - both (default): alle Regeln
         Returns:
-            dict(dict): Liste von Filterregeln
+            list(dict): Liste von Filterregeln
         """
         #TODO: Fake Funktion
-        test_rules = {
+        system_rules = {
             'Supermarkets': {
                 'primary': 'Lebenserhaltungskosten',
                 'secondary': 'Lebensmittel',
                 'regex': r"(EDEKA|Wucherpfennig|Penny|Aldi|Kaufland|netto)",
             },
+        }
+        user_rules = {
             'City Tax': {
                 'primary': 'Haus und Grund',
                 'secondary': 'Stadtabgaben',
@@ -142,11 +215,32 @@ class UserInterface():
         }
 
         if rule_name:
-            return {rule_name: test_rules.get(rule_name)}
 
-        return test_rules
+            # Bestimmte Regel laden
+            if namespace in ['system', 'both']:
+                # Allgemein
+                rule = system_rules.get(rule_name)
+            if namespace == 'both':
+                # oder speziell (falls vorhanden)
+                rule = user_rules.get(rule_name, rule)
+            if namespace == 'user':
+                # Nur User
+                rule = user_rules.get(rule_name)
+
+            return {rule_name: rule}
+
+        # Alle Regeln einzelner namespaces
+        if namespace == 'system':
+            return system_rules
+        if namespace == 'user':
+            return user_rules
+
+        # Alle Regeln aller namespaces
+        system_rules.update(user_rules)
+        return system_rules
 
     @cherrypy.expose
+    @user_input_type_converter
     def index(self):
         """
         Startseite mit Navigation und Uploadformular.
@@ -164,6 +258,7 @@ class UserInterface():
         """
 
     @cherrypy.expose
+    @user_input_type_converter
     def upload(self, tx_file):
         """
         Endpunkt für das Annehmen hochgeladener Kontoumsatzdateien.
@@ -210,7 +305,8 @@ class UserInterface():
         return out.format(size=size, filename=tx_file.filename, content_type=tx_file.content_type)
 
     @cherrypy.expose
-    def view(self, iban=None):
+    @user_input_type_converter
+    def view(self, iban: str = None):
         """
         Anzeige aller Umsätze zu einer IBAN
 
@@ -236,50 +332,82 @@ class UserInterface():
         return out
 
     @cherrypy.expose
+    @user_input_type_converter
     @cherrypy.tools.json_out()
-    def tag(self, rule_name=None, rule=None, prio=None, prio_set=None, dry_run=True):
+    def tag(self,
+            rule_name: str = None, rule_primary: str = None, rule_secondary: str = None,
+            rule_regex: str = None, rule_parsed_keys: list = (), rule_parsed_vals: list = (),
+            prio: int = 1, prio_set: int = None, dry_run: bool = False) -> dict:
         """
         Kategorisiert die Kontoumsätze und aktualisiert die Daten in der Instanz.
 
         Args:
-            rule_name (str | ai, optional): Name der anzuwendenden Taggingregel.
-                                            Reserviertes Keyword 'ai' führt nur
-                                            das AI Tagging aus. Default: Es werden
-                                            alle Regeln des Benutzers ohne das AI
-                                            Tagging angewendet.
-            rule (dict, optional): Regel mit der getaggt werden soll.
-                                   Default: Ist rule_name ohne rule angegeben, wird
-                                   eine Regel mit diesem Namen aus der Benutzerdatenbank
-                                   geladen. Ein Fehlen dieser Regel wirft eine Exception.
+            rule_name:      Name der anzuwendenden Taggingregel.
+                            Reserviertes Keyword 'ai' führt nur das AI Tagging aus.
+                            Default: Es werden alle Regeln des Benutzers ohne das
+                            AI Tagging angewendet.
+            rule_primary:   Name der zu setzenden Primärkategory.
+                            Default: Standardname
+            rule_primary:   Name der zu setzenden Sekundärkategory.
+                            Default: Standardname
+            rule_regex:     Regulärer Ausdrück für die Suche im Transaktionstext.
+                            Default: Wildcard
+            rule_parsed_keys:   Liste mit Keys zur Prüfung in geparsten Daten.
+            rule_parsed_vals:   Liste mit Values zur Prüfung in geparsten Daten.
+            prio:           Value of priority for this tagging run
+                            in comparison with already tagged transactions
+                            This value will be set as the new priority in DB.
+                            Default: 1
+            prio_set:       Compare with priority but set this value instead.
+                            Default: prio.
+            dry_run:        Switch to show, which TX would be updated. Do not update.
+                            Default: False
         Returns:
-            json dict:
-                - tagged (int): Summe aller erfolgreichen Taggings (0 bei dry_run)
-                - Regelname (dict):
-                    - tagged (int): Anzahl der getaggten Datensätze (0 bei dry_run)
-                    - entries (list): UUIDs die selektiert wurden (auch bei dry_run)
+            - tagged (int): Summe aller erfolgreichen Taggings (0 bei dry_run)
+            - Regelname (dict):
+                - tagged (int): Anzahl der getaggten Datensätze (0 bei dry_run)
+                - entries (list): UUIDs die selektiert wurden (auch bei dry_run)
         """
         # Tagging Methoden Argumente
         args = {
             'dry_run': dry_run
         }
         if prio is not None:
-            args['prior'] = prio
+            args['prio'] = prio
         if prio_set is not None:
-            args['prio_setr'] = prio_set
+            args['prio_set'] = prio_set
 
         # RegEx Tagging (specific rule or all)
-        if rule is not None:
+        if rule_regex is not None or rule_parsed_keys:
 
             # Custom Rule
+            rule = {
+                'primary': rule_primary,
+                'secondary': rule_secondary,
+                'regex': rule_regex
+            }
+
+            if len(rule_parsed_keys) != len(rule_parsed_vals):
+                msg = 'Parse-Keys and -Vals were submitted in unequal length !'
+                cherrypy.log.error(msg)
+                cherrypy.response.status = 400
+                return {'error': msg}
+
+            for i, parse_key in enumerate(rule_parsed_keys):
+                rule['parsed'][parse_key] = rule_parsed_vals[i]
+
             if rule_name is None:
                 rule_name = 'Custom Rule'
-            rules = [{rule_name: rule}]
 
-            return self.tagger.tag_regex(self.db_handler, rules, **args)
+            rules = {rule_name: rule}
+
+            return self.tagger.tag_regex(self.db_handler,
+                                         rules, prio=prio, prio_set=prio_set, dry_run=dry_run)
 
         if rule_name == 'ai':
             # AI only
-            return self.tagger.tag_ai(self.db_handler, rules, **args)
+            return self.tagger.tag_ai(self.db_handler,
+                                      rules, prio=prio, prio_set=prio_set, dry_run=dry_run)
 
         # Benutzer Regeln laden
         rules = self._load_ruleset(rule_name)
@@ -291,9 +419,11 @@ class UserInterface():
             raise ValueError('Es existieren noch keine Regeln für den Benutzer')
 
         # Benutzer Regeln anwenden
-        return self.tagger.tag_regex(self.db_handler, rules, **args)
+        return self.tagger.tag_regex(self.db_handler,
+                                     rules, prio=prio, prio_set=prio_set, dry_run=dry_run)
 
     @cherrypy.expose
+    @user_input_type_converter
     @cherrypy.tools.json_out()
     def setManualTag(self, t_id, primary_tag, secondary_tag=None):
         """
@@ -315,8 +445,9 @@ class UserInterface():
         return {'updated': updated_entries}
 
     @cherrypy.expose
+    @user_input_type_converter
     @cherrypy.tools.json_out()
-    def truncateDatabase(self, iban=None):
+    def truncateDatabase(self, iban: str = None):
         """Leert die Datenbank"""
         deleted_entries = self.db_handler.truncate(iban)
         return { 'deleted': deleted_entries }

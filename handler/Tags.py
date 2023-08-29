@@ -76,7 +76,7 @@ class Tagger():
 
             # Updated Category
             new_category = {
-                'priority': prio,
+                'prio': prio,
                 'primary_tag': rule.get('primary', 'sonstiges'),
                 'secondary_tag': rule.get('secondary', 'sonstiges'),
             }
@@ -93,7 +93,7 @@ class Tagger():
             # -- Add Text RegExes
             if rule.get('regex') is not None:
                 rule_args['condition'].append({
-                    'key': 'tx_text',
+                    'key': 'text_tx',
                     'value': rule.get('regex'),
                     'compare': 'regex'
                 })
@@ -116,6 +116,7 @@ class Tagger():
             # Nothing to update
             if not matched:
                 cherrypy.log(f"Rule '{rule_name}' trifft nichts.")
+                result[rule_name] = rule_result
                 continue
 
             # Create updated Data and get UUIDs
@@ -128,7 +129,7 @@ class Tagger():
                 rule_result['entries'].append(uuid)
 
                 # Update Request
-                if not dry_run:
+                if dry_run is False:
 
                     query = {'key': 'uuid', 'value': uuid}
                     updated = db_handler.update(data=new_category, condition=query)
@@ -138,13 +139,11 @@ class Tagger():
                         cherrypy.log.error((f"Bei Rule '{rule_name}' konnte der Eintrag "
                                             f"'{uuid}' nicht geupdated werden - skipping..."))
                         continue
-
-                    rule_result['tagged'] += updated
+                    rule_result['tagged'] += updated.get('updated')
 
             # Store Result for this Rule
             result['tagged'] += rule_result.get('tagged')
             result[rule_name] = rule_result
-
         return result
 
 
@@ -170,7 +169,6 @@ class Tagger():
                 - entries (list): UUIDs die selektiert wurden (auch bei dry_run)
         """
         cherrypy.log("Tagging with AI....")
-        prio = prio if prio_set is None else prio_set
 
         # Allgemeine Startfilter für die Condition
         query_args = self._form_tag_query(prio, collection=collection)
@@ -196,10 +194,11 @@ class Tagger():
 
                 uuid = entry.get('uuid')
                 query = {'key': 'uuid', 'value': uuid}
+                new_prio = prio if prio_set is None else prio_set
 
                 # Updated Category
                 new_category = {
-                    'priority': prio,
+                    'prio': new_prio,
                     'primary_tag': entry.get('primary'),
                     'secondary_tag': entry.get('secondary', 'sonstiges'),
                 }
@@ -237,7 +236,7 @@ class Tagger():
         # Allgemeine Startfilter für die Condition
         query_args = {
             'condition': [{
-                'key': 'priority',
+                'key': 'prio',
                 'value': prio,
                 'compare': '<'
             }],
