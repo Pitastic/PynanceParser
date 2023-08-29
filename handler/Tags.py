@@ -116,6 +116,7 @@ class Tagger():
             # Nothing to update
             if not matched:
                 cherrypy.log(f"Rule '{rule_name}' trifft nichts.")
+                result[rule_name] = rule_result
                 continue
 
             # Create updated Data and get UUIDs

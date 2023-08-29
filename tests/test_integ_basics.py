@@ -3,7 +3,6 @@
 
 import os
 import sys
-import json
 import requests
 from bs4 import BeautifulSoup
 import cherrypy
@@ -196,9 +195,29 @@ class TestIntegration(cphelper.CPWebCase):
         assert len(tagged_entries) == 1, \
             f"Die Regel 'City Tax' hat {len(tagged_entries)} statt 1 Transactionen getroffen"
 
-        # Eigene Regel taggen lassen
+    def test_own_rules(self):
+        """Eigene Regeln übermitteln; mit und ohne Treffer"""
+
+        # Eigene Regel taggen lassen (niedrige Prio)
         parameters = {
-            'rule_name': 'My Rule',
+            'rule_name': 'My low Rule',
+            'rule_primary': 'Lebensmittel',
+            'rule_secondary': 'Supermarkt',
+            'rule_regex': r'EDEKA',
+            'dry_run': False
+        }
+        r = requests.post(f"{self.uri}/tag", params=parameters, timeout=5)
+        result = r.json()
+        # Es sollte eine Transaktion zutreffen, die wegen zu niedriger Prio nicht selektiert wird
+        assert result.get('tagged') == 0, \
+            f"Es wurden {result.get('tagged')} statt 0 Einträge im dry_run getaggt"
+        tagged_entries = result.get('My low Rule').get('entries')
+        assert len(tagged_entries) == 0, \
+            f"Die Regel 'My low Rule' hat {len(tagged_entries)} statt 0 Transactionen getroffen"
+
+        # Eigene Regel taggen lassen (hohe Prio)
+        parameters = {
+            'rule_name': 'My high Rule',
             'rule_primary': 'Haus',
             'rule_secondary': 'Garten',
             'rule_regex': r'\sGARTEN\w',
@@ -210,9 +229,9 @@ class TestIntegration(cphelper.CPWebCase):
         result = r.json()
         assert result.get('tagged') == 1, \
             f"Es wurden {result.get('tagged')} statt 1 Eintrag getaggt"
-        tagged_entries = result.get('My Rule', {}).get('entries')
+        tagged_entries = result.get('My high Rule', {}).get('entries')
         assert len(tagged_entries) == 1, \
-            f"Die Regel 'My Rule' hat {len(tagged_entries)} statt 1 Transactionen getroffen"
+            f"Die Regel 'My high Rule' hat {len(tagged_entries)} statt 1 Transactionen getroffen"
 
 
 

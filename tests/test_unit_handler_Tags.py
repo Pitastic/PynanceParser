@@ -224,6 +224,6 @@ class MockDatabase:
                 - updated, int: Anzahl der angeblich aktualisierten Datensätze
         """
         if condition.get('key') == 'uuid':
-            return 1
+            return {'updated': 1}
 
-        return
+        return {'updated': 0}

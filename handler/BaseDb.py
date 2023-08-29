@@ -68,7 +68,6 @@ class BaseDb():
         Returns:
             dict:
                 - updated, int: Anzahl der aktualisierten Datensätze
-                - ids, list: UUIDs der updated Datensätz
         """
         raise NotImplementedError()
 
