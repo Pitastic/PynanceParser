@@ -6,12 +6,11 @@ import sys
 import inspect
 import json
 from functools import wraps
-import cherrypy
+from flask import Flask, request, jsonify, render_template_string
 
 # Add Parent for importing Classes
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
-
 
 from handler.TinyDb import TinyDbHandler
 from handler.MongoDb import MongoDbHandler
@@ -19,6 +18,7 @@ from handler.Tags import Tagger
 
 from reader.Generic import Reader as Generic
 from reader.Commerzbank import Reader as Commerzbank
+
 
 def user_input_type_converter(original_func):
     """Converts function args in simple types as annotated"""
@@ -52,9 +52,8 @@ def user_input_type_converter(original_func):
                         f'of type "{param_type.__name__}" '
                         'and could not be converted into this type! - '
                         f'{str(ex)}')
-                    cherrypy.log.error(msg)
-                    cherrypy.response.status = 400
-                    return {'error': msg}
+                    app.logger.error(msg)
+                    return jsonify({'error': msg}), 400
 
             positional_args.append(arg)
 
@@ -74,9 +73,8 @@ def user_input_type_converter(original_func):
                         f'of type "{param_type.__name__}" '
                         'and could not be converted into this type! - '
                         f'{str(ex)}')
-                    cherrypy.log.error(msg)
-                    cherrypy.response.status = 400
-                    return {'error': msg}
+                    app.logger.error(msg)
+                    return jsonify({'error': msg}), 400
 
             keyword_args[param_name] = arg
 
@@ -92,17 +90,30 @@ class UserInterface():
         """
         Initialisiert eine Instanz der Basisklasse und lädt die Konfiguration sowie die Logunktion.
         """
+        # Global Config
+        config_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            'config.json'
+        )
+        app.config.from_json(config_path)
+        if app.config.get('DATABASE_BACKEND') is None:
+            raise IOError(f"Config Pfad '{config_path}' konnte nicht geladen werden !")
+
+        app = Flask(__name__)
+
         # Datenbankhandler
-        if cherrypy.config['database.backend'] == 'tiny':
+        if app.config['DATABASE_BACKEND'] == 'tiny':
             self.db_handler = TinyDbHandler()
-        elif cherrypy.config['database.backend'] == 'mongo':
+
+        elif app.config['DATABASE_BACKEND'] == 'mongo':
             self.db_handler = MongoDbHandler()
+
         else:
             raise NotImplementedError(("The configure database engine ",
-                                     f"{cherrypy.config['database.backend']} ",
+                                     f"{app.config['DATABASE_BACKEND']} ",
                                       "is not supported !"))
         assert self.db_handler, \
-            (f"DbHandler {cherrypy.config['database.backend']} Klasse konnte nicht ",
+            (f"DbHandler {app.config['DATABASE_BACKEND']} Klasse konnte nicht ",
              "instanziiert werden")
 
         # Reader
@@ -117,6 +128,7 @@ class UserInterface():
         # Weitere Attribute
         self.data = None
         self.reader = None
+
         #TODO: Usermanagement, #7
         # Jeder User soll seine eigene Collection haben.
         # Die Collection beinhaltet Dokumente als Settings, Regeln
@@ -239,7 +251,7 @@ class UserInterface():
         system_rules.update(user_rules)
         return system_rules
 
-    @cherrypy.expose
+    @app.route('/')
     @user_input_type_converter
     def index(self):
         """
@@ -250,15 +262,15 @@ class UserInterface():
         """
         return """<html><body>
             <h2>Upload a file</h2>
-            <form action="upload" method="post" enctype="multipart/form-data">
+            <form action="/upload" method="post" enctype="multipart/form-data">
             filename: <input type="file" name="tx_file" /><br />
             <input type="submit" />
             </form>
         </body></html>
         """
 
-    @cherrypy.expose
     @user_input_type_converter
+    @app.route('/upload', methods=['POST'])
     def upload(self, tx_file):
         """
         Endpunkt für das Annehmen hochgeladener Kontoumsatzdateien.
@@ -269,6 +281,7 @@ class UserInterface():
         Returns:
             html: Informationen zur Datei und Ergebnis der Untersuchung.
         """
+        tx_file = request.files['tx_file']
         out = """<html>
         <body>
             tx_file length: {size}<br />
@@ -280,7 +293,7 @@ class UserInterface():
         path = '/tmp/test.file'
         with open(path, 'wb') as f:
             while True:
-                data = tx_file.file.read(8192)
+                data = tx_file.read(8192)
                 if not data:
                     break
                 size += len(data)
@@ -298,13 +311,11 @@ class UserInterface():
         os.remove(path)
 
         if inserted:
-            cherrypy.response.status = 201 # created
+            return out.format(size=size, filename=tx_file.filename, content_type=tx_file.content_type), 201
         else:
-            cherrypy.response.status = 304 # not modified
+            return out.format(size=size, filename=tx_file.filename, content_type=tx_file.content_type), 304
 
-        return out.format(size=size, filename=tx_file.filename, content_type=tx_file.content_type)
-
-    @cherrypy.expose
+    @app.route('/view', methods=['GET'])
     @user_input_type_converter
     def view(self, iban: str = None):
         """
@@ -331,13 +342,9 @@ class UserInterface():
         out += """</tbody></table>"""
         return out
 
-    @cherrypy.expose
+    @app.route('/tag', methods=['POST'])
     @user_input_type_converter
-    @cherrypy.tools.json_out()
-    def tag(self,
-            rule_name: str = None, rule_primary: str = None, rule_secondary: str = None,
-            rule_regex: str = None, rule_parsed_keys: list = (), rule_parsed_vals: list = (),
-            prio: int = 1, prio_set: int = None, dry_run: bool = False) -> dict:
+    def tag(self, request):
         """
         Kategorisiert die Kontoumsätze und aktualisiert die Daten in der Instanz.
 
@@ -368,6 +375,17 @@ class UserInterface():
                 - tagged (int): Anzahl der getaggten Datensätze (0 bei dry_run)
                 - entries (list): UUIDs die selektiert wurden (auch bei dry_run)
         """
+        data = request.json
+        rule_name = data.get('rule_name')
+        rule_primary = data.get('rule_primary')
+        rule_secondary = data.get('rule_secondary')
+        rule_regex = data.get('rule_regex')
+        rule_parsed_keys = data.get('rule_parsed_keys', [])
+        rule_parsed_vals = data.get('rule_parsed_vals', [])
+        prio = data.get('prio', 1)
+        prio_set = data.get('prio_set')
+        dry_run = data.get('dry_run', False)
+
         # Tagging Methoden Argumente
         args = {
             'dry_run': dry_run
@@ -389,9 +407,8 @@ class UserInterface():
 
             if len(rule_parsed_keys) != len(rule_parsed_vals):
                 msg = 'Parse-Keys and -Vals were submitted in unequal length !'
-                cherrypy.log.error(msg)
-                cherrypy.response.status = 400
-                return {'error': msg}
+                app.logger.error(msg)
+                return jsonify({'error': msg}), 400
 
             for i, parse_key in enumerate(rule_parsed_keys):
                 rule['parsed'][parse_key] = rule_parsed_vals[i]
@@ -401,13 +418,13 @@ class UserInterface():
 
             rules = {rule_name: rule}
 
-            return self.tagger.tag_regex(self.db_handler,
-                                         rules, prio=prio, prio_set=prio_set, dry_run=dry_run)
+            return jsonify(self.tagger.tag_regex(self.db_handler,
+                                                 rules, prio=prio, prio_set=prio_set, dry_run=dry_run))
 
         if rule_name == 'ai':
             # AI only
-            return self.tagger.tag_ai(self.db_handler,
-                                      rules, prio=prio, prio_set=prio_set, dry_run=dry_run)
+            return jsonify(self.tagger.tag_ai(self.db_handler,
+                                              rules, prio=prio, prio_set=prio_set, dry_run=dry_run))
 
         # Benutzer Regeln laden
         rules = self._load_ruleset(rule_name)
@@ -419,13 +436,12 @@ class UserInterface():
             raise ValueError('Es existieren noch keine Regeln für den Benutzer')
 
         # Benutzer Regeln anwenden
-        return self.tagger.tag_regex(self.db_handler,
-                                     rules, prio=prio, prio_set=prio_set, dry_run=dry_run)
+        return jsonify(self.tagger.tag_regex(self.db_handler,
+                                             rules, prio=prio, prio_set=prio_set, dry_run=dry_run))
 
-    @cherrypy.expose
+    @app.route('/setManualTag', methods=['POST'])
     @user_input_type_converter
-    @cherrypy.tools.json_out()
-    def setManualTag(self, t_id, primary_tag, secondary_tag=None):
+    def setManualTag(self, request):
         """
         Setzt manuell eine Kategorie für einen bestimmten Eintrag.
 
@@ -436,34 +452,28 @@ class UserInterface():
         Returns:
             Anzahl der gespeicherten Datensätzen
         """
+        data = request.json
+        t_id = data['t_id']
+        primary_tag = data['primary_tag']
+        secondary_tag = data.get('secondary_tag')
+
         updated_entries = self.db_handler.update(
             {
                 'main_category': primary_tag,
                 'second_category': secondary_tag,
             },
             f'WHERE id = {t_id}')
-        return {'updated': updated_entries}
+        return jsonify({'updated': updated_entries})
 
-    @cherrypy.expose
+    @app.route('/truncateDatabase', methods=['POST'])
     @user_input_type_converter
-    @cherrypy.tools.json_out()
-    def truncateDatabase(self, iban: str = None):
+    def truncateDatabase(self, request):
         """Leert die Datenbank"""
+        data = request.json
+        iban = data.get('iban')
         deleted_entries = self.db_handler.truncate(iban)
-        return { 'deleted': deleted_entries }
+        return jsonify({'deleted': deleted_entries})
 
 if __name__ == '__main__':
-
-    # Global Config
-    config_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        'config.conf'
-    )
-    cherrypy.config.update(config_path)
-    if cherrypy.config.get('database.backend') is None:
-        raise IOError(f"Config Pfad '{config_path}' konnte nicht heladen werden !")
-
-    #cherrypy.quickstart(UserInterface(), '/', config_path)
-    cherrypy.tree.mount(UserInterface(), "/", config_path)
-    cherrypy.engine.start()
-    cherrypy.engine.block()
+    UserInterface()
+    UserInterface.app.run(host='0.0.0.0', port=8080)
