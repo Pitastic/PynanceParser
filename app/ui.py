@@ -21,70 +21,6 @@ from reader.Generic import Reader as Generic
 from reader.Commerzbank import Reader as Commerzbank
 
 
-
-def user_input_type_converter(original_func):
-    """Converts function args in simple types as annotated"""
-
-    @wraps(original_func)
-    def wrapper(self, *args, **kwargs):
-
-        converter = {
-            'bool': lambda x: False if x is None else bool(json.loads(x.lower())),
-            'int': int,
-            'float': float,
-            'str': str
-        }
-
-        parameters = inspect.signature(original_func).parameters
-
-        # Positional Args
-        positional_args = []
-        for i, arg in enumerate(args):
-            param_name = list(parameters.keys())[i]
-            param_type = parameters[param_name].annotation
-
-            # Type defined and Input is wrong
-            if not isinstance(arg, param_type) and param_type.__name__ != '_empty':
-                conv = converter.get(param_type.__name__)
-                try:
-                    arg = conv(arg)
-                except (TypeError, ValueError) as ex:
-                    msg = (
-                        f'Parameter "{param_name}" is not '
-                        f'of type "{param_type.__name__}" '
-                        'and could not be converted into this type! - '
-                        f'{str(ex)}')
-                    current_app.logger.error(msg)
-                    return jsonify({'error': msg}), 400
-
-            positional_args.append(arg)
-
-        # Keyword Args
-        keyword_args = {}
-        for param_name, arg in kwargs.items():
-            param_type = parameters[param_name].annotation
-
-            # Type defined and Input is wrong
-            if not isinstance(arg, param_type) and param_type.__name__ != '_empty':
-                conv = converter.get(param_type.__name__)
-                try:
-                    arg = conv(arg)
-                except (TypeError, ValueError) as ex:
-                    msg = (
-                        f'Parameter "{param_name}" is not '
-                        f'of type "{param_type.__name__}" '
-                        'and could not be converted into this type! - '
-                        f'{str(ex)}')
-                    current_app.logger.error(msg)
-                    return jsonify({'error': msg}), 400
-
-            keyword_args[param_name] = arg
-
-        return original_func(self, *positional_args, **keyword_args)
-
-    return wrapper
-
-
 class UserInterface():
     """Basisklasse mit Methoden für den Programmablauf"""
 
@@ -132,7 +68,6 @@ class UserInterface():
         # Define Routes
         with current_app.app_context():
 
-            @user_input_type_converter
             @current_app.route('/')
             def index():
                 """
@@ -150,7 +85,6 @@ class UserInterface():
                 </body></html>
                 """
 
-            @user_input_type_converter
             @current_app.route('/upload', methods=['POST'])
             def upload():
                 """
@@ -163,6 +97,7 @@ class UserInterface():
                     html: Informationen zur Datei und Ergebnis der Untersuchung.
                 """
                 tx_file = request.files['tx_file']
+                content_type = tx_file.content_type
                 out = """<html>
                 <body>
                     tx_file length: {size}<br />
@@ -173,15 +108,24 @@ class UserInterface():
                 size = 0
                 path = '/tmp/test.file'
                 with open(path, 'wb') as f:
+
                     while True:
                         data = tx_file.read(8192)
+
                         if not data:
                             break
+
                         size += len(data)
                         f.write(data)
 
                 # Daten einlesen und in Object speichern (Bank und Format default bzw. wird geraten)
-                self._read_input(path)
+                content_formats = {
+                    'application/json': 'json',
+                    'text/csv': 'csv',
+                    'application/pdf': 'pdf',
+                    'text/plain': 'text',
+                }
+                self._read_input(path, data_format=content_formats.get(content_type))
                 self._parse()
 
                 # Eingelesene Umsätze kategorisieren
@@ -192,13 +136,12 @@ class UserInterface():
                 os.remove(path)
 
                 if inserted:
-                    return out.format(size=size, filename=tx_file.filename, content_type=tx_file.content_type), 201
+                    return out.format(size=size, filename=tx_file.filename, content_type=content_type), 201
                 else:
-                    return out.format(size=size, filename=tx_file.filename, content_type=tx_file.content_type), 304
+                    return out.format(size=size, filename=tx_file.filename, content_type=content_type), 200
 
-            @current_app.route('/view', methods=['GET'])
-            @user_input_type_converter
-            def view(iban: str = None):
+            @current_app.route('/view/<iban>', methods=['GET'])
+            def view(iban: str=None):
                 """
                 Anzeige aller Umsätze zu einer IBAN
 
@@ -223,138 +166,126 @@ class UserInterface():
                 out += """</tbody></table>"""
                 return out
 
-            @current_app.route('/tag', methods=['POST'])
-            @user_input_type_converter
-            def tag():
-                """
-                Kategorisiert die Kontoumsätze und aktualisiert die Daten in der Instanz.
+    # TODO: @current_app.route('/tag', methods=['POST'])
+    def tag(self,
+        rule_name: str = None, rule_primary: str = None, rule_secondary: str = None,
+        rule_regex: str = None, rule_parsed_keys: list = (), rule_parsed_vals: list = (),
+        prio: int = 1, prio_set: int = None, dry_run: bool = False) -> dict:
+        """
+        Kategorisiert die Kontoumsätze und aktualisiert die Daten in der Instanz.
 
-                Args:
-                    rule_name:      Name der anzuwendenden Taggingregel.
-                                    Reserviertes Keyword 'ai' führt nur das AI Tagging aus.
-                                    Default: Es werden alle Regeln des Benutzers ohne das
-                                    AI Tagging angewendet.
-                    rule_primary:   Name der zu setzenden Primärkategory.
-                                    Default: Standardname
-                    rule_primary:   Name der zu setzenden Sekundärkategory.
-                                    Default: Standardname
-                    rule_regex:     Regulärer Ausdrück für die Suche im Transaktionstext.
-                                    Default: Wildcard
-                    rule_parsed_keys:   Liste mit Keys zur Prüfung in geparsten Daten.
-                    rule_parsed_vals:   Liste mit Values zur Prüfung in geparsten Daten.
-                    prio:           Value of priority for this tagging run
-                                    in comparison with already tagged transactions
-                                    This value will be set as the new priority in DB.
-                                    Default: 1
-                    prio_set:       Compare with priority but set this value instead.
-                                    Default: prio.
-                    dry_run:        Switch to show, which TX would be updated. Do not update.
-                                    Default: False
-                Returns:
-                    - tagged (int): Summe aller erfolgreichen Taggings (0 bei dry_run)
-                    - Regelname (dict):
-                        - tagged (int): Anzahl der getaggten Datensätze (0 bei dry_run)
-                        - entries (list): UUIDs die selektiert wurden (auch bei dry_run)
-                """
-                data = request.json
-                rule_name = data.get('rule_name')
-                rule_primary = data.get('rule_primary')
-                rule_secondary = data.get('rule_secondary')
-                rule_regex = data.get('rule_regex')
-                rule_parsed_keys = data.get('rule_parsed_keys', [])
-                rule_parsed_vals = data.get('rule_parsed_vals', [])
-                prio = data.get('prio', 1)
-                prio_set = data.get('prio_set')
-                dry_run = data.get('dry_run', False)
+        Args:
+            rule_name:      Name der anzuwendenden Taggingregel.
+                            Reserviertes Keyword 'ai' führt nur das AI Tagging aus.
+                            Default: Es werden alle Regeln des Benutzers ohne das
+                            AI Tagging angewendet.
+            rule_primary:   Name der zu setzenden Primärkategory.
+                            Default: Standardname
+            rule_primary:   Name der zu setzenden Sekundärkategory.
+                            Default: Standardname
+            rule_regex:     Regulärer Ausdrück für die Suche im Transaktionstext.
+                            Default: Wildcard
+            rule_parsed_keys:   Liste mit Keys zur Prüfung in geparsten Daten.
+            rule_parsed_vals:   Liste mit Values zur Prüfung in geparsten Daten.
+            prio:           Value of priority for this tagging run
+                            in comparison with already tagged transactions
+                            This value will be set as the new priority in DB.
+                            Default: 1
+            prio_set:       Compare with priority but set this value instead.
+                            Default: prio.
+            dry_run:        Switch to show, which TX would be updated. Do not update.
+                            Default: False
+        Returns:
+            - tagged (int): Summe aller erfolgreichen Taggings (0 bei dry_run)
+            - Regelname (dict):
+                - tagged (int): Anzahl der getaggten Datensätze (0 bei dry_run)
+                - entries (list): UUIDs die selektiert wurden (auch bei dry_run)
+        """
+        # Tagging Methoden Argumente
+        args = {
+            'dry_run': dry_run
+        }
+        if prio is not None:
+            args['prio'] = prio
+        if prio_set is not None:
+            args['prio_set'] = prio_set
 
-                # Tagging Methoden Argumente
-                args = {
-                    'dry_run': dry_run
-                }
-                if prio is not None:
-                    args['prio'] = prio
-                if prio_set is not None:
-                    args['prio_set'] = prio_set
+        # RegEx Tagging (specific rule or all)
+        if rule_regex is not None or rule_parsed_keys:
 
-                # RegEx Tagging (specific rule or all)
-                if rule_regex is not None or rule_parsed_keys:
+            # Custom Rule
+            rule = {
+                'primary': rule_primary,
+                'secondary': rule_secondary,
+                'regex': rule_regex
+            }
 
-                    # Custom Rule
-                    rule = {
-                        'primary': rule_primary,
-                        'secondary': rule_secondary,
-                        'regex': rule_regex
-                    }
+            if len(rule_parsed_keys) != len(rule_parsed_vals):
+                msg = 'Parse-Keys and -Vals were submitted in unequal length !'
+                current_app.logger.error(msg)
+                return jsonify({'error': msg}), 400
 
-                    if len(rule_parsed_keys) != len(rule_parsed_vals):
-                        msg = 'Parse-Keys and -Vals were submitted in unequal length !'
-                        current_app.logger.error(msg)
-                        return jsonify({'error': msg}), 400
+            for i, parse_key in enumerate(rule_parsed_keys):
+                rule['parsed'][parse_key] = rule_parsed_vals[i]
 
-                    for i, parse_key in enumerate(rule_parsed_keys):
-                        rule['parsed'][parse_key] = rule_parsed_vals[i]
+            if rule_name is None:
+                rule_name = 'Custom Rule'
 
-                    if rule_name is None:
-                        rule_name = 'Custom Rule'
+            rules = {rule_name: rule}
 
-                    rules = {rule_name: rule}
+            return jsonify(self.tagger.tag_regex(self.db_handler,
+                                                rules, prio=prio, prio_set=prio_set, dry_run=dry_run))
 
-                    return jsonify(self.tagger.tag_regex(self.db_handler,
-                                                        rules, prio=prio, prio_set=prio_set, dry_run=dry_run))
+        if rule_name == 'ai':
+            # AI only
+            return jsonify(self.tagger.tag_ai(self.db_handler,
+                                            rules, prio=prio, prio_set=prio_set, dry_run=dry_run))
 
-                if rule_name == 'ai':
-                    # AI only
-                    return jsonify(self.tagger.tag_ai(self.db_handler,
-                                                    rules, prio=prio, prio_set=prio_set, dry_run=dry_run))
+        # Benutzer Regeln laden
+        rules = self._load_ruleset(rule_name)
+        if not rules:
+            if rule_name:
+                raise KeyError((f'Eine Regel mit dem Namen {rule_name} '
+                                'konnte für den User nicht gefunden werden.'))
 
-                # Benutzer Regeln laden
-                rules = self._load_ruleset(rule_name)
-                if not rules:
-                    if rule_name:
-                        raise KeyError((f'Eine Regel mit dem Namen {rule_name} '
-                                        'konnte für den User nicht gefunden werden.'))
+            raise ValueError('Es existieren noch keine Regeln für den Benutzer')
 
-                    raise ValueError('Es existieren noch keine Regeln für den Benutzer')
+        # Benutzer Regeln anwenden
+        return jsonify(self.tagger.tag_regex(self.db_handler,
+                                            rules, prio=prio, prio_set=prio_set, dry_run=dry_run))
 
-                # Benutzer Regeln anwenden
-                return jsonify(self.tagger.tag_regex(self.db_handler,
-                                                    rules, prio=prio, prio_set=prio_set, dry_run=dry_run))
+    # TODO: @current_app.route('/setManualTag', methods=['POST'])
+    def setManualTag(self, t_id, primary_tag, secondary_tag=None):
+        """
+        Setzt manuell eine Kategorie für einen bestimmten Eintrag.
 
-            @current_app.route('/setManualTag', methods=['POST'])
-            @user_input_type_converter
-            def setManualTag():
-                """
-                Setzt manuell eine Kategorie für einen bestimmten Eintrag.
+        Args:
+            t_id, int: Datenbank ID der Transaktion, die getaggt werden soll
+            primary_tag, str: Bezeichnung der primären Kategorie
+            secondary_tag, str: Bezeichnung der sekundären Kategorie
+        Returns:
+            Anzahl der gespeicherten Datensätzen
+        """
+        data = request.json
+        t_id = data['t_id']
+        primary_tag = data['primary_tag']
+        secondary_tag = data.get('secondary_tag')
 
-                Args:
-                    t_id, int: Datenbank ID der Transaktion, die getaggt werden soll
-                    primary_tag, str: Bezeichnung der primären Kategorie
-                    secondary_tag, str: Bezeichnung der sekundären Kategorie
-                Returns:
-                    Anzahl der gespeicherten Datensätzen
-                """
-                data = request.json
-                t_id = data['t_id']
-                primary_tag = data['primary_tag']
-                secondary_tag = data.get('secondary_tag')
+        updated_entries = self.db_handler.update(
+            {
+                'main_category': primary_tag,
+                'second_category': secondary_tag,
+            },
+            f'WHERE id = {t_id}')
+        return jsonify({'updated': updated_entries})
 
-                updated_entries = self.db_handler.update(
-                    {
-                        'main_category': primary_tag,
-                        'second_category': secondary_tag,
-                    },
-                    f'WHERE id = {t_id}')
-                return jsonify({'updated': updated_entries})
-
-            @current_app.route('/truncateDatabase', methods=['POST'])
-            @user_input_type_converter
-            def truncateDatabase():
-                """Leert die Datenbank"""
-                data = request.json
-                iban = data.get('iban')
-                deleted_entries = self.db_handler.truncate(iban)
-                return jsonify({'deleted': deleted_entries})
-
+    # TODO: @current_app.route('/truncateDatabase', methods=['POST'])
+    def truncateDatabase(self, iban: str = None):
+        """Leert die Datenbank"""
+        data = request.json
+        iban = data.get('iban')
+        deleted_entries = self.db_handler.truncate(iban)
+        return jsonify({'deleted': deleted_entries})
 
     def _read_input(self, uri, bank='Generic', data_format=None):
         """
