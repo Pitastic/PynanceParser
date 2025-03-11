@@ -3,7 +3,8 @@
 
 import os
 import operator
-import cherrypy
+import logging
+from flask import current_app
 from tinydb import TinyDB, Query, where
 
 from handler.BaseDb import BaseDb
@@ -17,16 +18,16 @@ class TinyDbHandler(BaseDb):
         """
         Initialisiert den TinyDB-Handler und öffnet die Datenbank.
         """
-        cherrypy.log("Starting TinyDB Handler...")
+        logging.info("Starting TinyDB Handler...")
         try:
             self.connection = TinyDB(os.path.join(
-                cherrypy.config['database.uri'],
-                cherrypy.config['database.name']
+                current_app.config['DATABASE_URI'],
+                current_app.config['DATABASE_NAME']
             ))
             if not hasattr(self, 'connection'):
                 raise IOError('Es konnte kein Connection Objekt erstellt werden')
         except IOError as ex:
-            cherrypy.log.error(f"Fehler beim Verbindungsaufbau zur Datenbank: {ex}")
+            logging.error(f"Fehler beim Verbindungsaufbau zur Datenbank: {ex}")
         self.create()
 
     def create(self):
@@ -34,7 +35,7 @@ class TinyDbHandler(BaseDb):
         Erstellt einen Table je Konto und legt Indexes/Constraints fest
         """
         # Touch Table
-        self.connection.table(cherrypy.config['iban'])
+        self.connection.table(current_app.config['IBAN'])
 
     def select(self, collection=None, condition=None, multi='AND'):
         """
@@ -56,7 +57,7 @@ class TinyDbHandler(BaseDb):
             list: Liste der ausgewählten Datensätze
         """
         if collection is None:
-            collection = cherrypy.config['iban']
+            collection = current_app.config['IBAN']
         collection = self.connection.table(collection)
 
         # Form condition into a query
@@ -80,7 +81,7 @@ class TinyDbHandler(BaseDb):
                 - inserted, int: Zahl der neu eingefügten IDs
         """
         if collection is None:
-            collection = cherrypy.config['iban']
+            collection = current_app.config['IBAN']
 
         # Add generated IDs
         data = self._generate_unique(data)
@@ -111,7 +112,7 @@ class TinyDbHandler(BaseDb):
         # INSERT One
         if data.get('uuid') in duplicates:
             # Don't insert duplicate
-            cherrypy.log(f'Not inserting Duplicate \'{data.get("uuid")}\'')
+            logging.info(f'Not inserting Duplicate \'{data.get("uuid")}\'')
             return {'inserted': 0}
 
         result = self.connection.table(collection).insert(data)
@@ -139,7 +140,7 @@ class TinyDbHandler(BaseDb):
                 - updated, int: Anzahl der aktualisierten Datensätze
         """
         if collection is None:
-            collection = cherrypy.config['iban']
+            collection = current_app.config['IBAN']
         collection = self.connection.table(collection)
 
         # Form condition into a query and run
@@ -173,7 +174,7 @@ class TinyDbHandler(BaseDb):
                 - deleted, int: Anzahl der gelöschten Datensätze
         """
         if collection is None:
-            collection = cherrypy.config['iban']
+            collection = current_app.config['IBAN']
         collection = self.connection.table(collection)
 
         # Form condition into a query
@@ -196,7 +197,7 @@ class TinyDbHandler(BaseDb):
                 - deleted, int: Anzahl der gelöschten Datensätze
         """
         if collection is None:
-            collection = cherrypy.config['iban']
+            collection = current_app.config['IBAN']
         table = self.connection.table(collection)
         r = table.remove(lambda x: True)
         return {'deleted': len(r)}

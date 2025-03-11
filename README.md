@@ -51,6 +51,9 @@ Dieses Repo ist test-driven. Vor dem Merge ist ein Unit- und ggf. Integrationtes
 ## Setup
 
 ```
+python3 -m venv .venv
+source venv/bin/activate
+python -m ensurepip --upgrade # (optional)
 pip install -r requirements.txt
 python3 app/app.py
 ```

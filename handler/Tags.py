@@ -4,7 +4,7 @@
 import copy
 import random
 import re
-import cherrypy
+import logging
 
 
 class Tagger():
@@ -72,7 +72,7 @@ class Tagger():
         query_args = self._form_tag_query(prio, collection)
 
         for rule_name, rule in ruleset.items():
-            cherrypy.log(f"RegEx Tagging mit Rule {rule_name}...")
+            logging.info(f"RegEx Tagging mit Rule {rule_name}...")
 
             # Updated Category
             new_category = {
@@ -115,7 +115,7 @@ class Tagger():
 
             # Nothing to update
             if not matched:
-                cherrypy.log(f"Rule '{rule_name}' trifft nichts.")
+                logging.info(f"Rule '{rule_name}' trifft nichts.")
                 result[rule_name] = rule_result
                 continue
 
@@ -136,8 +136,8 @@ class Tagger():
 
                     # soft Exception Handling
                     if not updated:
-                        cherrypy.log.error((f"Bei Rule '{rule_name}' konnte der Eintrag "
-                                            f"'{uuid}' nicht geupdated werden - skipping..."))
+                        logging.error((f"Bei Rule '{rule_name}' konnte der Eintrag "
+                                       f"'{uuid}' nicht geupdated werden - skipping..."))
                         continue
                     rule_result['tagged'] += updated.get('updated')
 
@@ -168,7 +168,7 @@ class Tagger():
                 - tagged (int): Anzahl der getaggten Datensätze (0 bei dry_run)
                 - entries (list): UUIDs die selektiert wurden (auch bei dry_run)
         """
-        cherrypy.log("Tagging with AI....")
+        logging.info("Tagging with AI....")
 
         # Allgemeine Startfilter für die Condition
         query_args = self._form_tag_query(prio, collection=collection)
@@ -206,8 +206,8 @@ class Tagger():
 
                 # soft Exception Handling
                 if not updated:
-                    cherrypy.log.error(("Beim AI Tagging konnte der Eintrag "
-                                        f"'{uuid}' nicht geupdated werden - skipping..."))
+                    logging.error(("Beim AI Tagging konnte der Eintrag "
+                                   f"'{uuid}' nicht geupdated werden - skipping..."))
                     continue
 
                 tagged += updated
@@ -220,7 +220,7 @@ class Tagger():
             }
         }
 
-        cherrypy.log("Tagging with AI....DONE")
+        logging.info("Tagging with AI....DONE")
         return result
 
     def _form_tag_query(self, prio, collection=None):
