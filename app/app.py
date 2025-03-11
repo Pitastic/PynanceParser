@@ -5,8 +5,9 @@ import os
 import sys
 import inspect
 import json
+from logging.config import dictConfig
 from functools import wraps
-from flask import Flask, request, jsonify, render_template_string
+from flask import Flask, request, jsonify, render_template_string, current_app
 
 # Add Parent for importing Classes
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -52,7 +53,7 @@ def user_input_type_converter(original_func):
                         f'of type "{param_type.__name__}" '
                         'and could not be converted into this type! - '
                         f'{str(ex)}')
-                    app.logger.error(msg)
+                    current_app.logger.error(msg)
                     return jsonify({'error': msg}), 400
 
             positional_args.append(arg)
@@ -73,7 +74,7 @@ def user_input_type_converter(original_func):
                         f'of type "{param_type.__name__}" '
                         'and could not be converted into this type! - '
                         f'{str(ex)}')
-                    app.logger.error(msg)
+                    current_app.logger.error(msg)
                     return jsonify({'error': msg}), 400
 
             keyword_args[param_name] = arg
@@ -90,30 +91,19 @@ class UserInterface():
         """
         Initialisiert eine Instanz der Basisklasse und lädt die Konfiguration sowie die Logunktion.
         """
-        # Global Config
-        config_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            'config.json'
-        )
-        app.config.from_json(config_path)
-        if app.config.get('DATABASE_BACKEND') is None:
-            raise IOError(f"Config Pfad '{config_path}' konnte nicht geladen werden !")
-
-        app = Flask(__name__)
-
         # Datenbankhandler
-        if app.config['DATABASE_BACKEND'] == 'tiny':
+        if current_app.config['DATABASE_BACKEND'] == 'tiny':
             self.db_handler = TinyDbHandler()
 
-        elif app.config['DATABASE_BACKEND'] == 'mongo':
+        elif current_app.config['DATABASE_BACKEND'] == 'mongo':
             self.db_handler = MongoDbHandler()
 
         else:
             raise NotImplementedError(("The configure database engine ",
-                                     f"{app.config['DATABASE_BACKEND']} ",
+                                     f"{current_app.config['DATABASE_BACKEND']} ",
                                       "is not supported !"))
         assert self.db_handler, \
-            (f"DbHandler {app.config['DATABASE_BACKEND']} Klasse konnte nicht ",
+            (f"DbHandler {current_app.config['DATABASE_BACKEND']} Klasse konnte nicht ",
              "instanziiert werden")
 
         # Reader
@@ -251,7 +241,7 @@ class UserInterface():
         system_rules.update(user_rules)
         return system_rules
 
-    @app.route('/')
+    @current_app.route('/')
     @user_input_type_converter
     def index(self):
         """
@@ -270,7 +260,7 @@ class UserInterface():
         """
 
     @user_input_type_converter
-    @app.route('/upload', methods=['POST'])
+    @current_app.route('/upload', methods=['POST'])
     def upload(self, tx_file):
         """
         Endpunkt für das Annehmen hochgeladener Kontoumsatzdateien.
@@ -315,7 +305,7 @@ class UserInterface():
         else:
             return out.format(size=size, filename=tx_file.filename, content_type=tx_file.content_type), 304
 
-    @app.route('/view', methods=['GET'])
+    @current_app.route('/view', methods=['GET'])
     @user_input_type_converter
     def view(self, iban: str = None):
         """
@@ -342,9 +332,9 @@ class UserInterface():
         out += """</tbody></table>"""
         return out
 
-    @app.route('/tag', methods=['POST'])
+    @current_app.route('/tag', methods=['POST'])
     @user_input_type_converter
-    def tag(self, request):
+    def tag(self):
         """
         Kategorisiert die Kontoumsätze und aktualisiert die Daten in der Instanz.
 
@@ -407,7 +397,7 @@ class UserInterface():
 
             if len(rule_parsed_keys) != len(rule_parsed_vals):
                 msg = 'Parse-Keys and -Vals were submitted in unequal length !'
-                app.logger.error(msg)
+                current_app.logger.error(msg)
                 return jsonify({'error': msg}), 400
 
             for i, parse_key in enumerate(rule_parsed_keys):
@@ -439,9 +429,9 @@ class UserInterface():
         return jsonify(self.tagger.tag_regex(self.db_handler,
                                              rules, prio=prio, prio_set=prio_set, dry_run=dry_run))
 
-    @app.route('/setManualTag', methods=['POST'])
+    @current_app.route('/setManualTag', methods=['POST'])
     @user_input_type_converter
-    def setManualTag(self, request):
+    def setManualTag(self):
         """
         Setzt manuell eine Kategorie für einen bestimmten Eintrag.
 
@@ -465,15 +455,53 @@ class UserInterface():
             f'WHERE id = {t_id}')
         return jsonify({'updated': updated_entries})
 
-    @app.route('/truncateDatabase', methods=['POST'])
+    @current_app.route('/truncateDatabase', methods=['POST'])
     @user_input_type_converter
-    def truncateDatabase(self, request):
+    def truncateDatabase(self):
         """Leert die Datenbank"""
         data = request.json
         iban = data.get('iban')
         deleted_entries = self.db_handler.truncate(iban)
         return jsonify({'deleted': deleted_entries})
 
+
+def create_app() -> current_app:
+    """Creating an instance from Flask with the UserInterface as Host
+
+    Returns: FlaskApp
+    """
+    # Logging
+    loglevel = 'INFO'
+    dictConfig({
+        'version': 1,
+        'formatters': {'default': {
+            'format': '%(levelname)s (%(module)s): %(message)s',
+        }},
+        'handlers': {'wsgi': {
+            'class': 'logging.StreamHandler',
+            'stream': 'ext://flask.logging.wsgi_errors_stream',
+            'formatter': 'default'
+        }},
+        'root': {
+            'level': loglevel,
+            'handlers': ['wsgi']
+        }
+    })
+
+    app = Flask(__name__)
+
+    # Global Config
+    config_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        'config.json'
+    )
+    app.config.from_json(config_path)
+    if app.config.get('DATABASE_BACKEND') is None:
+        raise IOError(f"Config Pfad '{config_path}' konnte nicht geladen werden !")
+
+
+    return app
+
 if __name__ == '__main__':
-    UserInterface()
-    UserInterface.app.run(host='0.0.0.0', port=8080)
+    application = create_app()
+    application.run(host='0.0.0.0', port=8080)
