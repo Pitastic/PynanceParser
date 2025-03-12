@@ -5,12 +5,12 @@ import os
 from logging.config import dictConfig
 from flask import Flask
 
-from ui import UserInterface
+from .ui import UserInterface  # Changed to relative import
 
-
-def create_app() -> Flask:
+def create_app(config_path: str) -> Flask:
     """Creating an instance from Flask with the UserInterface as Host
-
+    Args:
+        config_path (str): Path to the Config File
     Returns: FlaskApp
     """
     # Logging
@@ -34,10 +34,6 @@ def create_app() -> Flask:
     app = Flask("PynanceParser")
 
     # Global Config
-    config_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        'config.py'
-    )
     app.config.from_pyfile(config_path)
     if app.config.get('DATABASE_BACKEND') is None:
         raise IOError(f"Config Pfad '{config_path}' konnte nicht geladen werden !")
@@ -48,5 +44,9 @@ def create_app() -> Flask:
     return app
 
 if __name__ == '__main__':
-    application = create_app()
+    config = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        'config.py'
+    )
+    application = create_app(config)
     application.run(host='0.0.0.0', port=8080, debug=True)
