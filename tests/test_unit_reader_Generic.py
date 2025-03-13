@@ -27,12 +27,12 @@ def test_read_from_csv(test_app):
 
 
 @pytest.mark.skip(reason="Currently not implemented yet")
-def test_read_from_pdf(test_app):
+def test_read_from_pdf():
     """Testet das Einlesen einer PDF Datei mit Kontoumsätzen"""
     return None
 
 
 @pytest.mark.skip(reason="Currently not implemented yet")
-def test_read_from_http(test_app):
+def test_read_from_http():
     """Testet das Einlesen Kontoumsätzen aus einer Online-Quelle"""
     return None
