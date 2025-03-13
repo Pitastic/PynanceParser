@@ -128,22 +128,27 @@ class UserInterface():
                 # Eingelesene Umsätze kategorisieren
                 self.tag()
 
-                # Verarbeitete Kontiumsätze in die DB speichern und vom Objekt und Dateisystem löschen
+                # Verarbeitete Kontiumsätze in die DB speichern
+                # und vom Objekt und Dateisystem löschen
                 inserted = self._flush_to_db()
                 os.remove(path)
 
                 if inserted:
-                    return out.format(size=size, filename=tx_file.filename, content_type=content_type), 201
+                    return out.format(size=size, filename=tx_file.filename,
+                                      content_type=content_type), 201
+
                 else:
-                    return out.format(size=size, filename=tx_file.filename, content_type=content_type), 200
+                    return out.format(size=size, filename=tx_file.filename,
+                                      content_type=content_type), 200
 
             @current_app.route('/view/<iban>', methods=['GET'])
-            def view(iban: str=None):
+            def view(iban: str=None) -> str:
                 """
                 Anzeige aller Umsätze zu einer IBAN
 
                 Args:
-                    iban (str): IBAN, zu der die Umsätze angezeigt werden sollen (default: aus Config)
+                    iban (str): IBAN, zu der die Umsätze angezeigt werden sollen
+                                (default: aus Config)
                 Returns:
                     html: Tabelle mit den Umsätzen
                 """
@@ -153,8 +158,10 @@ class UserInterface():
                 </tr></thead><tbody>"""
                 for r in rows:
                     out += f"""<tr id="tr-{r['uuid']}">
-                    <td class="td-date">{r['date_tx']}</td> <td class="td-betrag">{r['betrag']} {r['currency']}</td>
-                    <td class="td-tag1">{r['primary_tag']}</td> <td class="td-tag2">{r['secondary_tag']}</td>
+                    <td class="td-date">{r['date_tx']}</td>
+                    <td class="td-betrag">{r['betrag']} {r['currency']}</td>
+                    <td class="td-tag1">{r['primary_tag']}</td>
+                    <td class="td-tag2">{r['secondary_tag']}</td>
                     <td class="td-parsed">"""
                     for parse_element in r['parsed']:
                         out += f"<p>{parse_element}</p>"
@@ -230,13 +237,13 @@ class UserInterface():
 
             rules = {rule_name: rule}
 
-            return jsonify(self.tagger.tag_regex(self.db_handler,
-                                                rules, prio=prio, prio_set=prio_set, dry_run=dry_run))
+            return jsonify(self.tagger.tag_regex(self.db_handler, rules, prio=prio,
+                                                 prio_set=prio_set, dry_run=dry_run))
 
         if rule_name == 'ai':
             # AI only
-            return jsonify(self.tagger.tag_ai(self.db_handler,
-                                            rules, prio=prio, prio_set=prio_set, dry_run=dry_run))
+            return jsonify(self.tagger.tag_ai(self.db_handler, rules, prio=prio,
+                                              prio_set=prio_set, dry_run=dry_run))
 
         # Benutzer Regeln laden
         rules = self._load_ruleset(rule_name)
