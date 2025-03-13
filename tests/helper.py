@@ -105,6 +105,30 @@ def check_entry(tx_entry, key_vals=None):
     return True
 
 
+def get_testfile_contents(relative_path, binary=True):
+    """
+    Gibt den Dateiinhalt einer Beispieldatei zurück.
+
+    Args:
+        relative_path (str): Pfad oder Dateiname im Ordner 'testdata'
+        binary (bool): Content ist binary (default) oder str
+    Returns:
+        bytes/str: Inhalt der Datei
+    """
+    path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        relative_path
+    )
+    flag = 'r'
+    if binary:
+        flag = f'{flag}b'
+
+    with open(path, flag) as test_data:
+        content = test_data.read()
+
+    return content
+
+
 class MockDatabase:
     """
     Mock the Database connection and work with fake entries.

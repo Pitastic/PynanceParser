@@ -1,4 +1,3 @@
-
 #!/usr/bin/python3 # pylint: disable=invalid-name
 """Routen und Funktionen für das User Interface."""
 
