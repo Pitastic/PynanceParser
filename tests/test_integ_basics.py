@@ -211,6 +211,7 @@ def test_own_rules(test_app):
                 'rule_primary': 'Lebensmittel',
                 'rule_secondary': 'Supermarkt',
                 'rule_regex': r'EDEKA',
+                'prio': 0,
                 'dry_run': False
             }
             result = client.post("/tag", json=parameters)

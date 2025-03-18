@@ -3,7 +3,6 @@
 
 import sys
 import os
-import logging
 from flask import request, jsonify, current_app
 
 # Add Parent for importing Classes
@@ -126,10 +125,6 @@ class UserInterface():
 
                 # Read Input and Parse the contents
                 self._read_input(path, data_format=content_formats.get(content_type))
-
-                # Eingelesene Umsätze kategorisieren
-                tagging_result_stats = self.tagger.tag()
-                logging.info(f"Tagging Result: {tagging_result_stats}")
 
                 # Verarbeitete Kontiumsätze in die DB speichern
                 # und vom Objekt und Dateisystem löschen

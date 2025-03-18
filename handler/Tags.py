@@ -58,17 +58,17 @@ class Tagger():
                                 AI Tagging angewendet.
                 rule_primary:   Name der zu setzenden Primärkategory.
                                 Default: Standardname
-                rule_primary:   Name der zu setzenden Sekundärkategory.
+                rule_secondary  Name der zu setzenden Sekundärkategory.
                                 Default: Standardname
                 rule_regex:     Regulärer Ausdrück für die Suche im Transaktionstext.
                                 Default: Wildcard
                 rule_parsed_keys:   Liste mit Keys zur Prüfung in geparsten Daten.
                 rule_parsed_vals:   Liste mit Values zur Prüfung in geparsten Daten.
                 prio:           Value of priority for this tagging run
-                                in comparison with already tagged transactions
+                                in comparison with already tagged transactions (higher = important)
                                 This value will be set as the new priority in DB.
                                 Default: 1
-                prio_set:       Compare with priority but set this value instead.
+                prio_set:       Compare with 'prio' but set this value instead.
                                 Default: prio.
                 dry_run:        Switch to show, which TX would be updated. Do not update.
                                 Default: False
@@ -78,15 +78,6 @@ class Tagger():
                 - tagged (int): Anzahl der getaggten Datensätze (0 bei dry_run)
                 - entries (list): UUIDs die selektiert wurden (auch bei dry_run)
         """
-        # Tagging Methoden Argumente
-        args = {
-            'dry_run': dry_run
-        }
-        if prio is not None:
-            args['prio'] = prio
-        if prio_set is not None:
-            args['prio_set'] = prio_set
-
         # RegEx Tagging (specific rule or all)
         if rule_regex is not None or rule_parsed_keys:
 
@@ -120,6 +111,7 @@ class Tagger():
 
         # Benutzer Regeln laden
         rules = self._load_ruleset(rule_name)
+        logging.debug(f"Regeln geladen: {rules}")
         if not rules:
             if rule_name:
                 raise KeyError((f'Eine Regel mit dem Namen {rule_name} '
@@ -131,23 +123,21 @@ class Tagger():
         return self.tag_regex(rules, prio=prio, prio_set=prio_set, dry_run=dry_run)
 
 
-
-
     def tag_regex(self, ruleset: dict, collection: str=None, prio: int=1,
                   prio_set: int=None, dry_run: bool=False) -> dict:
         """
         Automatische Kategorisierung anhand von hinterlegten RegExes je Kategorie.
 
         Args:
-            ruleset, dict(dict): Named rules to be applied on users transactions
-            collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
-                                        Default: IBAN aus der Config.
-            prio, int(1): Value of priority for this tagging run
-                          in comparison with already tagged transactions
-                          This value will be set as the new priority in DB
-            prio_set, int(None): Compare with priority but set this value instead.
-                                 Default: prio.
-            dry_run, bool(False): Switch to show, which TX would be updated. Do not update.
+            ruleset:         Named rules to be applied on users transactions
+            collection:      Name der Collection, in die Werte eingefügt werden sollen.
+                             Default: IBAN aus der Config.
+            prio:            Value of priority for this tagging run
+                             in comparison with already tagged transactions (higher = important)
+                             This value will be set as the new priority in DB
+            prio_set:        Compare with 'prio' but set this value instead.
+                             Default: prio.
+            dry_run:         Switch to show, which TX would be updated. Do not update.
         Returns:
             dict:
             - tagged (int): Summe aller erfolgreichen Taggings (0 bei dry_run)
@@ -156,7 +146,7 @@ class Tagger():
                 - entries (list): UUIDs die selektiert wurden (auch bei dry_run)
         """
         result = { 'tagged': 0 }
-        prio = prio if prio_set is None else prio_set
+        prio_set = prio if prio_set is None else prio_set
 
         # Allgemeine Startfilter für die Condition
         query_args = self._form_tag_query(prio, collection)
@@ -166,7 +156,7 @@ class Tagger():
 
             # Updated Category
             new_category = {
-                'prio': prio,
+                'prio': prio_set,
                 'primary_tag': rule.get('primary', 'sonstiges'),
                 'secondary_tag': rule.get('secondary', 'sonstiges'),
             }
@@ -199,6 +189,7 @@ class Tagger():
                     })
 
             # Dry Run first (store results)
+            logging.debug(f"Query Args: {rule_args.get('condition')}")
             matched = self.db_handler.select(
                 collection=rule_args.get('collection'),
                 condition=rule_args.get('condition'),
@@ -245,14 +236,14 @@ class Tagger():
         Automatisches Tagging mit AI.
 
         Args:
-            collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
-                                        Default: IBAN aus der Config.
-            prio, int(1): Value of priority for this tagging run
-                          in comparison with already tagged transactions
-                          This value will be set as the new priority in DB
-            prio_set, int(None): Compare with priority but set this value instead.
-                                 Default: prio.
-            dry_run, bool(False): Switch to show, which TX would be updated. Do not update.
+            collection:     Name der Collection, in die Werte eingefügt werden sollen.
+                            Default: IBAN aus der Config.
+            prio:           Value of priority for this tagging run
+                            in comparison with already tagged transactions (higher = important)
+                            This value will be set as the new priority in DB
+            prio_set        Compare with priority but set this value instead.
+                            Default: prio.
+            dry_run         Switch to show, which TX would be updated. Do not update.
         Returns:
             dict:
             - tagged (int): Summe aller erfolgreichen Taggings (0 bei dry_run)

@@ -83,7 +83,7 @@ def test_regex_untagged(test_app):
     with test_app.app_context():
         # prio auf 4 aber override auf 1
         tagger = Tagger(MockDatabase())
-        tagging_result = tagger.tag_regex(ruleset=RULESET, dry_run=True, prio=9, prio_set=1)
+        tagging_result = tagger.tag_regex(ruleset=RULESET, dry_run=True, prio=1, prio_set=9)
 
         assert tagging_result.get('tagged') == 0, \
             "Die Option dry_run hat trotzdem Datensätze verändert"

@@ -18,7 +18,7 @@ def create_app(config_path: str) -> Flask:
     Returns: FlaskApp
     """
     # Logging
-    loglevel = 'INFO'
+    loglevel = 'DEBUG'
     dictConfig({
         'version': 1,
         'formatters': {'default': {
