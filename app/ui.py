@@ -99,7 +99,8 @@ class UserInterface():
                 <body>
                     tx_file length: {size}<br />
                     tx_file filename: {filename}<br />
-                    tx_file mime-type: {content_type}
+                    tx_file mime-type: {content_type}<br />
+                    inserted: {inserted}
                 </body>
                 </html>"""
                 size = 0
@@ -137,10 +138,10 @@ class UserInterface():
 
                 if inserted:
                     return out.format(size=size, filename=tx_file.filename,
-                                      content_type=content_type), 201
+                                      content_type=content_type, inserted=inserted), 201
 
                 return out.format(size=size, filename=tx_file.filename,
-                                    content_type=content_type), 304
+                                    content_type=content_type, inserted=inserted), 200
 
             @current_app.route('/view/', defaults={'iban': None}, methods=['GET'])
             @current_app.route('/view/<iban>', methods=['GET'])

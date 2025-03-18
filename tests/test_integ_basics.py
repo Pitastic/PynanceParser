@@ -147,7 +147,7 @@ def test_double_upload(test_app):
             result = client.post("/upload", data=files, content_type='multipart/form-data')
 
             # Check Response (same TX: Keine neuen Einträge angelegt)
-            assert result.status_code == 304, \
+            assert result.status_code == 200, \
                 ("Beim zweiten Upload der gleichen Transaktionen"
                 "dürfen keine neuen Datensätze angelegt werden")
 
