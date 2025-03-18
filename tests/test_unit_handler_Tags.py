@@ -13,6 +13,7 @@ import pytest
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
 
+from helper import MockDatabase
 from handler.Tags import Tagger
 
 
@@ -33,10 +34,10 @@ RULESET = {
 }
 
 
-def test_parsing_regex(mocked_db):
+def test_parsing_regex(test_app):
     """Testet das Parsen der Datensätze mit den fest hinterlegten RegExes"""
-    with mocked_db.app_context():
-        tagger = Tagger()
+    with test_app.app_context():
+        tagger = Tagger(MockDatabase())
 
         # Fake Daten laden
         path = os.path.join(
@@ -64,26 +65,25 @@ def test_parsing_regex(mocked_db):
                 assert not entry.get('parsed'), \
                     f"In Eintrag {i} gab es False-Positives"
 
-def test_regex(mocked_db):
+def test_regex(test_app):
     """Testet das Kategorisieren der Datensätze mit fest hinterlegten Regeln.
     Berücksichtigt alle Umsätze ohne Kategorie"""
-    with mocked_db.app_context():
-        tagger = Tagger()
-        tagging_result = tagger.tag_regex(mocked_db.host.db_handler, ruleset=RULESET)
+    with test_app.app_context():
+        tagger = Tagger(MockDatabase())
+        tagging_result = tagger.tag_regex(ruleset=RULESET)
 
         assert tagging_result.get('Supermarkets').get('tagged') == 2, \
             "Die Regel 'Supermarkets' hat nicht die richtige Anzahl an Einträgen getroffen"
         assert tagging_result.get('City Tax').get('tagged') == 1, \
             "Die Regel 'City Tax' hat nicht die richtige Anzahl an Einträgen getroffen"
 
-def test_regex_untagged(mocked_db):
+def test_regex_untagged(test_app):
     """Testet das Kategorisieren der Datensätzemit fest hinterlegten Regeln.
     Berücksichtigt alle Umsätze nud überschreibt auch vorhandene Kategorien."""
-    with mocked_db.app_context():
+    with test_app.app_context():
         # prio auf 4 aber override auf 1
-        tagger = Tagger()
-        tagging_result = tagger.tag_regex(mocked_db.host.db_handler, ruleset=RULESET,
-                                          dry_run=True, prio=9, prio_set=1)
+        tagger = Tagger(MockDatabase())
+        tagging_result = tagger.tag_regex(ruleset=RULESET, dry_run=True, prio=9, prio_set=1)
 
         assert tagging_result.get('tagged') == 0, \
             "Die Option dry_run hat trotzdem Datensätze verändert"

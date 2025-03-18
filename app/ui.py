@@ -3,6 +3,7 @@
 
 import sys
 import os
+import logging
 from flask import request, jsonify, current_app
 
 # Add Parent for importing Classes
@@ -46,7 +47,7 @@ class UserInterface():
         }
 
         # Tagger
-        self.tagger = Tagger()
+        self.tagger = Tagger(self.db_handler)
 
         # Weitere Attribute
         self.data = None
@@ -65,7 +66,7 @@ class UserInterface():
         with current_app.app_context():
 
             @current_app.route('/')
-            def index():
+            def index() -> str:
                 """
                 Startseite mit Navigation und Uploadformular.
 
@@ -121,11 +122,13 @@ class UserInterface():
                     'application/pdf': 'pdf',
                     'text/plain': 'text',
                 }
+
+                # Read Input and Parse the contents
                 self._read_input(path, data_format=content_formats.get(content_type))
-                self._parse()
 
                 # Eingelesene Umsätze kategorisieren
-                self.tag()
+                tagging_result_stats = self.tagger.tag()
+                logging.info(f"Tagging Result: {tagging_result_stats}")
 
                 # Verarbeitete Kontiumsätze in die DB speichern
                 # und vom Objekt und Dateisystem löschen
@@ -136,12 +139,12 @@ class UserInterface():
                     return out.format(size=size, filename=tx_file.filename,
                                       content_type=content_type), 201
 
-                else:
-                    return out.format(size=size, filename=tx_file.filename,
-                                      content_type=content_type), 200
+                return out.format(size=size, filename=tx_file.filename,
+                                    content_type=content_type), 304
 
+            @current_app.route('/view/', defaults={'iban': None}, methods=['GET'])
             @current_app.route('/view/<iban>', methods=['GET'])
-            def view(iban: str=None) -> str:
+            def view(iban):
                 """
                 Anzeige aller Umsätze zu einer IBAN
 
@@ -167,128 +170,49 @@ class UserInterface():
                     out += f"</td><td class='td-uuid'>{r['uuid']}</td>"
                     out += "</tr>"
                 out += """</tbody></table>"""
-                return out
+                return out, 200
 
-    # TODO: @current_app.route('/tag', methods=['POST'])
-    def tag(self,
-        rule_name: str = None, rule_primary: str = None, rule_secondary: str = None,
-        rule_regex: str = None, rule_parsed_keys: list = (), rule_parsed_vals: list = (),
-        prio: int = 1, prio_set: int = None, dry_run: bool = False) -> dict:
-        """
-        Kategorisiert die Kontoumsätze und aktualisiert die Daten in der Instanz.
+            @current_app.route('/truncateDatabase/', defaults={'iban': None}, methods=['GET'])
+            @current_app.route('/truncateDatabase/<iban>', methods=['GET'])
+            def truncateDatabase(iban):
+                """Leert die Datenbank"""
+                deleted_entries = self.db_handler.truncate(iban)
+                return jsonify({'deleted': deleted_entries}), 200
 
-        Args:
-            rule_name:      Name der anzuwendenden Taggingregel.
-                            Reserviertes Keyword 'ai' führt nur das AI Tagging aus.
-                            Default: Es werden alle Regeln des Benutzers ohne das
-                            AI Tagging angewendet.
-            rule_primary:   Name der zu setzenden Primärkategory.
-                            Default: Standardname
-            rule_primary:   Name der zu setzenden Sekundärkategory.
-                            Default: Standardname
-            rule_regex:     Regulärer Ausdrück für die Suche im Transaktionstext.
-                            Default: Wildcard
-            rule_parsed_keys:   Liste mit Keys zur Prüfung in geparsten Daten.
-            rule_parsed_vals:   Liste mit Values zur Prüfung in geparsten Daten.
-            prio:           Value of priority for this tagging run
-                            in comparison with already tagged transactions
-                            This value will be set as the new priority in DB.
-                            Default: 1
-            prio_set:       Compare with priority but set this value instead.
-                            Default: prio.
-            dry_run:        Switch to show, which TX would be updated. Do not update.
-                            Default: False
-        Returns:
-            - tagged (int): Summe aller erfolgreichen Taggings (0 bei dry_run)
-            - Regelname (dict):
-                - tagged (int): Anzahl der getaggten Datensätze (0 bei dry_run)
-                - entries (list): UUIDs die selektiert wurden (auch bei dry_run)
-        """
-        # Tagging Methoden Argumente
-        args = {
-            'dry_run': dry_run
-        }
-        if prio is not None:
-            args['prio'] = prio
-        if prio_set is not None:
-            args['prio_set'] = prio_set
+            @current_app.route('/tag', methods=['POST'])
+            def tag() -> dict:
+                """
+                Kategorisiert die Kontoumsätze und aktualisiert die Daten in der Instanz.
+                """
+                #TODO: Check *args, **kwargs provided
+                data = request.get_json(force=True)
+                result = self.tagger.tag(**data)
+                return jsonify(result)
 
-        # RegEx Tagging (specific rule or all)
-        if rule_regex is not None or rule_parsed_keys:
+            @current_app.route('/setManualTag', methods=['POST'])
+            def setManualTag(self, t_id, primary_tag, secondary_tag=None):
+                """
+                Setzt manuell eine Kategorie für einen bestimmten Eintrag.
 
-            # Custom Rule
-            rule = {
-                'primary': rule_primary,
-                'secondary': rule_secondary,
-                'regex': rule_regex
-            }
+                Args:
+                    t_id, int: Datenbank ID der Transaktion, die getaggt werden soll
+                    primary_tag, str: Bezeichnung der primären Kategorie
+                    secondary_tag, str: Bezeichnung der sekundären Kategorie
+                Returns:
+                    Anzahl der gespeicherten Datensätzen
+                """
+                data = request.json
+                t_id = data['t_id']
+                primary_tag = data['primary_tag']
+                secondary_tag = data.get('secondary_tag')
 
-            if len(rule_parsed_keys) != len(rule_parsed_vals):
-                msg = 'Parse-Keys and -Vals were submitted in unequal length !'
-                current_app.logger.error(msg)
-                return jsonify({'error': msg}), 400
-
-            for i, parse_key in enumerate(rule_parsed_keys):
-                rule['parsed'][parse_key] = rule_parsed_vals[i]
-
-            if rule_name is None:
-                rule_name = 'Custom Rule'
-
-            rules = {rule_name: rule}
-
-            return jsonify(self.tagger.tag_regex(self.db_handler, rules, prio=prio,
-                                                 prio_set=prio_set, dry_run=dry_run))
-
-        if rule_name == 'ai':
-            # AI only
-            return jsonify(self.tagger.tag_ai(self.db_handler, rules, prio=prio,
-                                              prio_set=prio_set, dry_run=dry_run))
-
-        # Benutzer Regeln laden
-        rules = self._load_ruleset(rule_name)
-        if not rules:
-            if rule_name:
-                raise KeyError((f'Eine Regel mit dem Namen {rule_name} '
-                                'konnte für den User nicht gefunden werden.'))
-
-            raise ValueError('Es existieren noch keine Regeln für den Benutzer')
-
-        # Benutzer Regeln anwenden
-        return jsonify(self.tagger.tag_regex(self.db_handler,
-                                            rules, prio=prio, prio_set=prio_set, dry_run=dry_run))
-
-    # TODO: @current_app.route('/setManualTag', methods=['POST'])
-    def setManualTag(self, t_id, primary_tag, secondary_tag=None):
-        """
-        Setzt manuell eine Kategorie für einen bestimmten Eintrag.
-
-        Args:
-            t_id, int: Datenbank ID der Transaktion, die getaggt werden soll
-            primary_tag, str: Bezeichnung der primären Kategorie
-            secondary_tag, str: Bezeichnung der sekundären Kategorie
-        Returns:
-            Anzahl der gespeicherten Datensätzen
-        """
-        data = request.json
-        t_id = data['t_id']
-        primary_tag = data['primary_tag']
-        secondary_tag = data.get('secondary_tag')
-
-        updated_entries = self.db_handler.update(
-            {
-                'main_category': primary_tag,
-                'second_category': secondary_tag,
-            },
-            f'WHERE id = {t_id}')
-        return jsonify({'updated': updated_entries})
-
-    # TODO: @current_app.route('/truncateDatabase', methods=['POST'])
-    def truncateDatabase(self, iban: str = None):
-        """Leert die Datenbank"""
-        data = request.json
-        iban = data.get('iban')
-        deleted_entries = self.db_handler.truncate(iban)
-        return jsonify({'deleted': deleted_entries})
+                updated_entries = self.db_handler.update(
+                    {
+                        'main_category': primary_tag,
+                        'second_category': secondary_tag,
+                    },
+                    f'WHERE id = {t_id}')
+                return jsonify({'updated': updated_entries})
 
     def _read_input(self, uri, bank='Generic', data_format=None):
         """
@@ -334,7 +258,7 @@ class UserInterface():
             input_data = self.data
         return self.tagger.parse(input_data)
 
-    def _flush_to_db(self):
+    def _flush_to_db(self) -> int:
         """
         Speichert die eingelesenen Kontodaten in der Datenbank und bereinigt den Objektspeicher.
 
@@ -344,61 +268,3 @@ class UserInterface():
         inserted_rows = self.db_handler.insert(self.data)
         self.data = None
         return inserted_rows.get('inserted')
-
-    def _load_ruleset(self, rule_name=None, namespace='both'):
-        """
-        Load Rules from the Settings of for the requesting User.
-
-        Args:
-            rule_name (str, optional): Lädt die Regel mit diesem Namen.
-                                       Default: Es werden alle Regeln geladen.
-            namespace (str, system|user|both): Unterscheidung aus weclhem Set Regeln
-                                               geladen oder gesucht werden soll.
-                                               - system: nur allgemeine Regeln
-                                               - user: nur private Regeln
-                                               - both (default): alle Regeln
-        Returns:
-            list(dict): Liste von Filterregeln
-        """
-        #TODO: Fake Funktion
-        system_rules = {
-            'Supermarkets': {
-                'primary': 'Lebenserhaltungskosten',
-                'secondary': 'Lebensmittel',
-                'regex': r"(EDEKA|Wucherpfennig|Penny|Aldi|Kaufland|netto)",
-            },
-        }
-        user_rules = {
-            'City Tax': {
-                'primary': 'Haus und Grund',
-                'secondary': 'Stadtabgaben',
-                'parsed': {
-                    'Gläubiger-ID': r'DE7000100000077777'
-                },
-            }
-        }
-
-        if rule_name:
-
-            # Bestimmte Regel laden
-            if namespace in ['system', 'both']:
-                # Allgemein
-                rule = system_rules.get(rule_name)
-            if namespace == 'both':
-                # oder speziell (falls vorhanden)
-                rule = user_rules.get(rule_name, rule)
-            if namespace == 'user':
-                # Nur User
-                rule = user_rules.get(rule_name)
-
-            return {rule_name: rule}
-
-        # Alle Regeln einzelner namespaces
-        if namespace == 'system':
-            return system_rules
-        if namespace == 'user':
-            return user_rules
-
-        # Alle Regeln aller namespaces
-        system_rules.update(user_rules)
-        return system_rules

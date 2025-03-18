@@ -2,10 +2,14 @@
 """Basisklasse mit Methoden für den Programmablauf."""
 
 import os
+import sys
 from logging.config import dictConfig
 from flask import Flask
 
-from .ui import UserInterface  # Changed to relative import
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.join(parent_dir))
+from app.ui import UserInterface
+
 
 def create_app(config_path: str) -> Flask:
     """Creating an instance from Flask with the UserInterface as Host

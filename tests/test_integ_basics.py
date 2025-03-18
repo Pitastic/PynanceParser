@@ -3,6 +3,7 @@
 
 import os
 import sys
+import io
 from bs4 import BeautifulSoup
 
 # Add Parent for importing from 'app.py'
@@ -11,26 +12,10 @@ sys.path.append(parent_dir)
 
 from helper import get_testfile_contents
 
-
-def test_reachable_endpoints(test_app):
-    """
-    Geht die Seiten der Ui durch und prüft,
-    ob diese generell erreichbar sind.
-    """
-    with test_app.app_context():
-
-        with test_app.test_client() as client:
-
-            # /index
-            result = client.get('/')
-            assert result.status_code == 200, "Der Statuscode der Startseite war falsch"
-
-            #/view
-            result = client.get('/view')
-            assert result.status_code == 200, "Der Statuscode der Ansicht war falsch"
-
-            result = client.get(f"/view?iban={test_app.host.config['iban']}")
-            assert result.status_code == 200, "Der Statuscode der IBAN war falsch"
+EXAMPLE_CSV = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)),
+    'commerzbank.csv'
+)
 
 
 def test_truncate(test_app):
@@ -38,7 +23,7 @@ def test_truncate(test_app):
     with test_app.app_context():
 
         with test_app.test_client() as client:
-            result = client.get('/truncateDatabase')
+            result = client.get('/truncateDatabase/')
             assert result.status_code == 200, "Fehler beim Leeren der Datenbank"
 
 
@@ -47,13 +32,14 @@ def test_upload_csv_commerzbank(test_app):
     Lädt Beispieldaten über das Formular hoch und überprüft
     ob die Datei angenommen wird und die Serverseitige Verarbeitung durchläuft.
     """
+    # Clear DB
+    test_truncate(test_app)
+
     with test_app.app_context():
-        # Clear DB
-        test_app.host.test_truncate()
 
         with test_app.test_client() as client:
             # Cleared DB ?
-            result = client.get(f"/view?iban={test_app.host.config['iban']}")
+            result = client.get(f"/view/{test_app.config['IBAN']}")
             assert "<td class=" not in result.text, \
                 "Die Datenbank war zum Start des Tests nicht leer"
 
@@ -64,10 +50,10 @@ def test_upload_csv_commerzbank(test_app):
                 "Submit button not found in the response"
 
             # Prepare File
-            content = get_testfile_contents('commerzbank.csv', binary=True)
-            files = {'tx_file': ('commerzbank.csv', content)}
+            content = get_testfile_contents(EXAMPLE_CSV, binary=True)
+            files = {'tx_file': (io.BytesIO(content), 'commerzbank.csv')}
             # Post File
-            result = client.post("/upload", files=files)
+            result = client.post("/upload", data=files, content_type='multipart/form-data')
 
             # Check Response
             assert result.status_code == 201, \
@@ -76,8 +62,8 @@ def test_upload_csv_commerzbank(test_app):
                 "Angaben zum Upload wurden nicht gefunden"
 
             # Aufruf der Transaktionen auf verschiedene Weisen
-            response1 = client.get("/view", params={}, timeout=5)
-            response2 = client.get(f"/view?iban={test_app.host.config['iban']}")
+            response1 = client.get("/view/")
+            response2 = client.get(f"/view/{test_app.config['IBAN']}")
             assert response1.status_code == response2.status_code == 200, \
                 "Die Ergebnisseite mit den Transaktionen ist nicht (richtig) erreichbar"
             assert response2.text == response1.text, \
@@ -111,23 +97,44 @@ def test_upload_csv_commerzbank(test_app):
             f"Der Content von {tx_hash} / 'parsed' ist anders als erwartet: '{content}'"
 
 
+def test_reachable_endpoints(test_app):
+    """
+    Geht die Seiten der Ui durch und prüft,
+    ob diese generell erreichbar sind.
+    """
+    with test_app.app_context():
+
+        with test_app.test_client() as client:
+
+            # /index
+            result = client.get('/')
+            assert result.status_code == 200, "Der Statuscode der Startseite war falsch"
+
+            #/view
+            result = client.get('/view/')
+            assert result.status_code == 200, "Der Statuscode der Ansicht war falsch"
+
+            result = client.get(f"/view/{test_app.config['IBAN']}")
+            assert result.status_code == 200, "Der Statuscode der IBAN war falsch"
+
+
 def test_double_upload(test_app):
     """Lädt zwei Dateien hoch und prüft die unterschiedlichen HTTP Stati"""
+    test_truncate(test_app)
     with test_app.app_context():
         # Clear DB
-        test_app.host.test_truncate()
 
         with test_app.test_client() as client:
             # Cleared DB ?
-            result = client.get(f"/view?iban={test_app.host.config['iban']}")
+            result = client.get(f"/view/{test_app.config['IBAN']}")
             assert "<td class=" not in result.text, \
                 "Die Datenbank war zum Start des Tests nicht leer"
 
             # Prepare File
-            content = get_testfile_contents('commerzbank.csv', binary=True)
-            files = {'tx_file': ('commerzbank.csv', content)}
+            content = get_testfile_contents(EXAMPLE_CSV, binary=True)
+            files = {'tx_file': (io.BytesIO(content), 'commerzbank.csv')}
             # Post File 1
-            result = client.post("/upload", files=files)
+            result = client.post("/upload", data=files, content_type='multipart/form-data')
 
             # Check Response
             assert result.status_code == 201, \
@@ -136,7 +143,8 @@ def test_double_upload(test_app):
                 "Angaben zum Upload wurden nicht gefunden"
 
             # Post File 2
-            result = client.post("/upload", files=files)
+            files = {'tx_file': (io.BytesIO(content), 'commerzbank.csv')}
+            result = client.post("/upload", data=files, content_type='multipart/form-data')
 
             # Check Response (same TX: Keine neuen Einträge angelegt)
             assert result.status_code == 304, \
@@ -144,7 +152,7 @@ def test_double_upload(test_app):
                 "dürfen keine neuen Datensätze angelegt werden")
 
             # Double-Check: Anzahl der Einträge
-            result = client.get(f"/view?iban={test_app.host.config['iban']}")
+            result = client.get(f"/view/{test_app.config['IBAN']}")
 
             soup = BeautifulSoup(result.text, features="html.parser")
             rows = soup.css.select('table .td-uuid')
@@ -164,8 +172,8 @@ def test_tag_stored(test_app):
                 'dry_run': True,
                 'prio': 2
             }
-            result = client.post("/tag", data=parameters)
-            result = result.json()
+            result = client.post("/tag", json=parameters)
+            result = result.json
 
             assert result.get('tagged') == 0, \
                 f"Trotz 'dry_run' wurden {result.get('tagged')} Einträge getaggt"
@@ -180,8 +188,8 @@ def test_tag_stored(test_app):
                 'dry_run': True,
                 'prio': 2
             }
-            result = client.post("/tag", data=parameters)
-            result = result.json()
+            result = client.post("/tag", json=parameters)
+            result = result.json
 
             assert result.get('tagged') == 0, \
                 f"Trotz 'dry_run' wurden {result.get('tagged')} Einträge getaggt"
@@ -205,8 +213,8 @@ def test_own_rules(test_app):
                 'rule_regex': r'EDEKA',
                 'dry_run': False
             }
-            result = client.post("/tag", data=parameters)
-            result = result.json()
+            result = client.post("/tag", json=parameters)
+            result = result.json
 
             # Es sollte eine Transaktion zutreffen,
             # die wegen zu niedriger Prio nicht selektiert wird
@@ -227,8 +235,8 @@ def test_own_rules(test_app):
                 'prio_set': 3,
                 'dry_run': False
             }
-            result = client.post("/tag", data=parameters)
-            result = result.json()
+            result = client.post("/tag", json=parameters)
+            result = result.json
 
             assert result.get('tagged') == 1, \
                 f"Es wurden {result.get('tagged')} statt 1 Eintrag getaggt"

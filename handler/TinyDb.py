@@ -4,8 +4,8 @@
 import os
 import operator
 import logging
-from flask import current_app
 from tinydb import TinyDB, Query, where
+from flask import current_app
 
 from handler.BaseDb import BaseDb
 
@@ -24,10 +24,13 @@ class TinyDbHandler(BaseDb):
                 current_app.config['DATABASE_URI'],
                 current_app.config['DATABASE_NAME']
             ))
+
             if not hasattr(self, 'connection'):
                 raise IOError('Es konnte kein Connection Objekt erstellt werden')
+
         except IOError as ex:
             logging.error(f"Fehler beim Verbindungsaufbau zur Datenbank: {ex}")
+
         self.create()
 
     def create(self):
@@ -102,7 +105,7 @@ class TinyDbHandler(BaseDb):
                     unique_data.append(d)
 
             # No non-duplicates in data
-            if not data:
+            if not unique_data:
                 return {'inserted': 0}
 
             # Insert remaining data
@@ -296,13 +299,13 @@ class TinyDbHandler(BaseDb):
 
         return query
 
-    def _double_check(self, collection, data):
+    def _double_check(self, collection: str, data: list|dict):
         """
         Prüft anhand der unique IDs einer Transaktion,
         ob diese schon in der Datenbank vorhanden ist
 
         Args:
-            collection (str, optional): Name der Collection, in der die Werte geprüft werden sollen.
+            collection (str): Name der Collection, in der die Werte geprüft werden sollen.
             data (dict | list of dicts): Zu prüfende Transaktionen (inkl. ID)
         Returns:
             list: Liste der IDs, die sich bereits in der Datenbank befinden

@@ -9,7 +9,7 @@ parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
 
 from helper import MockDatabase
-from app.app import create_app
+from app.server import create_app
 
 
 @pytest.fixture(scope="module")
