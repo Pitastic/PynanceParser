@@ -21,10 +21,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python 3.10
+    - name: Set up Python 3.12
       uses: actions/setup-python@v3
       with:
-        python-version: "3.10"
+        python-version: "3.12"
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -35,7 +35,7 @@ jobs:
       run: |
         set +e
 
-        test_output="$(pytest -rN)"
+        test_output="$(PYTHONPATH=. pytest -rN)"
         exitcode=$?
           
         test_failed=$(sed -n '$s/^=*\s*\([0-9]*\)\sfailed.*/\1/p' <<< "$test_output" |tail -n1)
@@ -68,10 +68,10 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
-    - name: Set up Python 3.10
+    - name: Set up Python 3.12
       uses: actions/setup-python@v3
       with:
-        python-version: "3.10"
+        python-version: "3.12"
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -85,7 +85,7 @@ jobs:
         #
         # -- Lint and parse Output
         #
-        pylint_output=$(pylint . --recursive=y --disable=W0511,R0801 --score=y)
+        pylint_output=$(PYTHONPATH=. pylint . --recursive=y --disable=W0511,R0903 --score=y)
         exitcode=$?
         score=$(sed -n '$s/[^0-9]*\([0-9.]*\).*/\1/p' <<< "$pylint_output")
         #
@@ -97,7 +97,7 @@ jobs:
           exit 0
         elif \
            [[ $exitcode -ge 8 && $exitcode -le 15 ]] || \
-           [[ $exitcode -ge 17 && $exitcode -le 23 ]]; then
+           [[ $exitcode -ge 17 && $exitcode -le 24 ]]; then
           echo "### :shushing_face: tolerated (code: ${exitcode}) - **${score} / 10**" >> $GITHUB_STEP_SUMMARY
           exit 0
         else

@@ -2,7 +2,8 @@
 """Datenbankhandler für die Interaktion mit einer MongoDB."""
 
 import re
-import cherrypy
+import logging
+from flask import current_app
 import pymongo
 
 from handler.BaseDb import BaseDb
@@ -16,18 +17,18 @@ class MongoDbHandler(BaseDb):
         """
         Initialisiert den MongoDB-Handler und Verbinden zum Datenbankserver.
         """
-        cherrypy.log("Starting MongoDB Handler...")
-        self.client = pymongo.MongoClient(cherrypy.config['database.uri'])
-        self.connection = self.client[cherrypy.config['database.name']]
+        logging.info("Starting MongoDB Handler...")
+        self.client = pymongo.MongoClient(current_app.config['DATABASE_URI'])
+        self.connection = self.client[current_app.config['DATABASE_NAME']]
         if self.connection is None:
-            raise IOError(f"Store {cherrypy.config['database.name']} not found !")
+            raise IOError(f"Store {current_app.config['DATABASE_NAME']} not found !")
         self.create()
 
     def create(self):
         """
         Erstellt eine Collection je Konto und legt Indexes/Constraints fest
         """
-        self.connection[cherrypy.config['iban']].create_index(
+        self.connection[current_app.config['IBAN']].create_index(
             [("uuid", pymongo.TEXT)], unique=True
         )
 
@@ -51,7 +52,7 @@ class MongoDbHandler(BaseDb):
             list: Liste der ausgewählten Datensätze
         """
         if collection is None:
-            collection = cherrypy.config['iban']
+            collection = current_app.config['IBAN']
         collection = self.connection[collection]
 
         # Form condition into a query
@@ -72,7 +73,7 @@ class MongoDbHandler(BaseDb):
                 - inserted, int: Zahl der neu eingefügten IDs
         """
         if collection is None:
-            collection = cherrypy.config['iban']
+            collection = current_app.config['IBAN']
         collection = self.connection[collection]
 
         # Add generated IDs
@@ -85,7 +86,7 @@ class MongoDbHandler(BaseDb):
                 return {'inserted': len(result.inserted_ids)}
             except pymongo.errors.BulkWriteError as e:
                 inserted = e.details.get('nInserted')
-                cherrypy.log(f"Dropping Duplicates, just INSERT {inserted}")
+                logging.info(f"Dropping Duplicates, just INSERT {inserted}")
                 return {'inserted': inserted}
 
         # INSERT One
@@ -117,7 +118,7 @@ class MongoDbHandler(BaseDb):
                 - updated, int: Anzahl der aktualisierten Datensätze
         """
         if collection is None:
-            collection = cherrypy.config['iban']
+            collection = current_app.config['IBAN']
         collection = self.connection[collection]
 
         # Form condition into a query
@@ -147,7 +148,7 @@ class MongoDbHandler(BaseDb):
                 - deleted, int: Anzahl der gelöschten Datensätze
         """
         if collection is None:
-            collection = cherrypy.config['iban']
+            collection = current_app.config['IBAN']
         collection = self.connection[collection]
 
         # Form condition into a query
@@ -194,8 +195,8 @@ class MongoDbHandler(BaseDb):
             stmt = re.compile(f".*{escaped_condition}.*", re.IGNORECASE)
 
         # Standard Query
-        if condition_method == '==':
-            stmt = condition.get('value')
+        stmt = condition.get('value') # default method '=='
+
         if condition_method == '!=':
             stmt = {'$not': {'$eq': condition.get('value')}}
         if condition_method == '>=':
