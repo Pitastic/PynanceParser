@@ -195,8 +195,8 @@ class MongoDbHandler(BaseDb):
             stmt = re.compile(f".*{escaped_condition}.*", re.IGNORECASE)
 
         # Standard Query
-        if condition_method == '==':
-            stmt = condition.get('value')
+        stmt = condition.get('value') # default method '=='
+
         if condition_method == '!=':
             stmt = {'$not': {'$eq': condition.get('value')}}
         if condition_method == '>=':
