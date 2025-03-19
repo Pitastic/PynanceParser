@@ -35,7 +35,10 @@ def create_app(config_path: str) -> Flask:
         }
     })
 
-    app = Flask("PynanceParser", template_folder=os.path.join(parent_dir, 'app', 'templates'))
+    app = Flask("PynanceParser",
+                template_folder=os.path.join(parent_dir, 'app', 'templates'),
+                static_folder=os.path.join(parent_dir, 'app', 'static')
+    )
 
     # Global Config
     app.config.from_pyfile(config_path)

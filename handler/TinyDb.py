@@ -144,11 +144,13 @@ class TinyDbHandler(BaseDb):
         """
         if collection is None:
             collection = current_app.config['IBAN']
+
         collection = self.connection.table(collection)
 
         # Form condition into a query and run
         if condition is None:
             query = Query().noop()
+
         else:
             query = self._form_complete_query(condition, multi)
 

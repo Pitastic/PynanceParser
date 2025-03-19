@@ -64,24 +64,45 @@ class UserInterface():
         # Define Routes
         with current_app.app_context():
 
-            @current_app.route('/')
-            def index() -> str:
+            @current_app.route('/', defaults={'iban': None}, methods=['GET'])
+            @current_app.route('/<iban>', methods=['GET'])
+            def index(iban) -> str:
                 """
                 Startseite mit Navigation und Uploadformular.
 
                 Returns:
                     html: Startseite mit Navigation
                 """
-                raw_html = """
-                    <h2>Upload a file</h2>
-                    <form action="/upload" method="post" enctype="multipart/form-data">
-                    filename: <input type="file" name="tx_file" /><br />
-                    <input type="submit" />
-                    </form>
-                """
-                return render_template('index.html', content=raw_html)
+                # Table with Transactions
+                rows = self.db_handler.select(iban)
+                table_view = """<table style="border: 1px solid black;"><thead><tr>
+                    <th>Datum</th> <th>Betrag</th> <th>Tag (pri)</th> <th>Tag (sec.)</th> <th>Parsed</th> <th>Hash</th>
+                </tr></thead><tbody>"""
 
-            @current_app.route('/upload', methods=['POST'])
+                for r in rows:
+                    table_view += f"""<tr id="tr-{r['uuid']}">
+                    <td class="td-date">{r['date_tx']}</td>
+                    <td class="td-betrag">{r['betrag']} {r['currency']}</td>
+                    <td class="td-tag1">{r['primary_tag']}</td>
+                    <td class="td-tag2">{r['secondary_tag']}</td>
+                    <td class="td-parsed">"""
+
+                    for parse_element in r['parsed']:
+                        table_view += f"<p>{parse_element}</p>"
+
+                    table_view += f"</td><td class='td-uuid'>{r['uuid']}</td>"
+                    table_view += "</tr>"
+
+                table_view += """</tbody></table>"""
+
+                return render_template('index.html', table_view=table_view)
+
+
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            # - API Endpoints - - - - - - - - - - - - - - - - - - - -
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+            @current_app.route('/api/upload', methods=['POST'])
             def upload():
                 """
                 Endpunkt für das Annehmen hochgeladener Kontoumsatzdateien.
@@ -94,16 +115,8 @@ class UserInterface():
                 """
                 tx_file = request.files['tx_file']
                 content_type = tx_file.content_type
-                out = """<html>
-                <body>
-                    tx_file length: {size}<br />
-                    tx_file filename: {filename}<br />
-                    tx_file mime-type: {content_type}<br />
-                    inserted: {inserted}
-                </body>
-                </html>"""
                 size = 0
-                path = '/tmp/test.file'
+                path = '/tmp/upload.file'
                 with open(path, 'wb') as f:
 
                     while True:
@@ -131,51 +144,22 @@ class UserInterface():
                 inserted = self._flush_to_db()
                 os.remove(path)
 
-                if inserted:
-                    return out.format(size=size, filename=tx_file.filename,
-                                      content_type=content_type, inserted=inserted), 201
+                return_code = 201 if inserted else 200
+                return jsonify({
+                    'size': size,
+                    'filename': tx_file.filename,
+                    'content_type': content_type,
+                    'inserted': inserted
+                }), return_code
 
-                return out.format(size=size, filename=tx_file.filename,
-                                    content_type=content_type, inserted=inserted), 200
-
-            @current_app.route('/view/', defaults={'iban': None}, methods=['GET'])
-            @current_app.route('/view/<iban>', methods=['GET'])
-            def view(iban):
-                """
-                Anzeige aller Umsätze zu einer IBAN
-
-                Args:
-                    iban (str): IBAN, zu der die Umsätze angezeigt werden sollen
-                                (default: aus Config)
-                Returns:
-                    html: Tabelle mit den Umsätzen
-                """
-                rows = self.db_handler.select(iban)
-                out = """<table style="border: 1px solid black;"><thead><tr>
-                    <th>Datum</th> <th>Betrag</th> <th>Tag (pri)</th> <th>Tag (sec.)</th> <th>Parsed</th> <th>Hash</th>
-                </tr></thead><tbody>"""
-                for r in rows:
-                    out += f"""<tr id="tr-{r['uuid']}">
-                    <td class="td-date">{r['date_tx']}</td>
-                    <td class="td-betrag">{r['betrag']} {r['currency']}</td>
-                    <td class="td-tag1">{r['primary_tag']}</td>
-                    <td class="td-tag2">{r['secondary_tag']}</td>
-                    <td class="td-parsed">"""
-                    for parse_element in r['parsed']:
-                        out += f"<p>{parse_element}</p>"
-                    out += f"</td><td class='td-uuid'>{r['uuid']}</td>"
-                    out += "</tr>"
-                out += """</tbody></table>"""
-                return out, 200
-
-            @current_app.route('/truncateDatabase/', defaults={'iban': None}, methods=['GET'])
-            @current_app.route('/truncateDatabase/<iban>', methods=['GET'])
+            @current_app.route('/api/truncateDatabase/', defaults={'iban': None}, methods=['GET'])
+            @current_app.route('/api/truncateDatabase/<iban>', methods=['GET'])
             def truncateDatabase(iban):
                 """Leert die Datenbank"""
                 deleted_entries = self.db_handler.truncate(iban)
                 return jsonify({'deleted': deleted_entries}), 200
 
-            @current_app.route('/tag', methods=['POST'])
+            @current_app.route('/api/tag', methods=['POST'])
             def tag() -> dict:
                 """
                 Kategorisiert die Kontoumsätze und aktualisiert die Daten in der Instanz.
@@ -185,30 +169,36 @@ class UserInterface():
                 result = self.tagger.tag(**data)
                 return jsonify(result)
 
-            @current_app.route('/setManualTag', methods=['POST'])
-            def setManualTag(self, t_id, primary_tag, secondary_tag=None):
+            @current_app.route('/api/setManualTag/<iban>/<t_id>', methods=['POST'])
+            def setManualTag(iban, t_id):
                 """
                 Setzt manuell eine Kategorie für einen bestimmten Eintrag.
 
                 Args:
+                    iban, str: IBAN
                     t_id, int: Datenbank ID der Transaktion, die getaggt werden soll
                     primary_tag, str: Bezeichnung der primären Kategorie
                     secondary_tag, str: Bezeichnung der sekundären Kategorie
                 Returns:
                     Anzahl der gespeicherten Datensätzen
                 """
-                data = request.json
-                t_id = data['t_id']
+                data = request.get_json(force=True)
                 primary_tag = data['primary_tag']
                 secondary_tag = data.get('secondary_tag')
 
-                updated_entries = self.db_handler.update(
-                    {
-                        'main_category': primary_tag,
-                        'second_category': secondary_tag,
-                    },
-                    f'WHERE id = {t_id}')
-                return jsonify({'updated': updated_entries})
+                new_tag_data = {
+                    'prio': 99,
+                    'primary_tag': primary_tag,
+                    'secondary_tag': secondary_tag,
+                }
+                condition = {
+                    'key': 'uuid',
+                    'value': t_id,
+                    'compare': '=='
+                }
+
+                updated_entries = self.db_handler.update(new_tag_data, iban, condition)
+                return jsonify(updated_entries)
 
     def _read_input(self, uri, bank='Generic', data_format=None):
         """
