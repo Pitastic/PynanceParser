@@ -85,7 +85,7 @@ jobs:
         #
         # -- Lint and parse Output
         #
-        pylint_output=$(PYTHONPATH=. pylint . --recursive=y --disable=C,R,W0511,R0801 --score=y)
+        pylint_output=$(PYTHONPATH=. pylint . --recursive=y --disable=W0511,R0903 --score=y)
         exitcode=$?
         score=$(sed -n '$s/[^0-9]*\([0-9.]*\).*/\1/p' <<< "$pylint_output")
         #
