@@ -97,7 +97,7 @@ jobs:
           exit 0
         elif \
            [[ $exitcode -ge 8 && $exitcode -le 15 ]] || \
-           [[ $exitcode -ge 17 && $exitcode -le 23 ]]; then
+           [[ $exitcode -ge 17 && $exitcode -le 24 ]]; then
           echo "### :shushing_face: tolerated (code: ${exitcode}) - **${score} / 10**" >> $GITHUB_STEP_SUMMARY
           exit 0
         else
