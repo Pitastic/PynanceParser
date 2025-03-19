@@ -3,7 +3,7 @@
 
 import sys
 import os
-from flask import request, jsonify, current_app
+from flask import request, jsonify, current_app, render_template
 
 # Add Parent for importing Classes
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -72,14 +72,14 @@ class UserInterface():
                 Returns:
                     html: Startseite mit Navigation
                 """
-                return """<html><body>
+                raw_html = """
                     <h2>Upload a file</h2>
                     <form action="/upload" method="post" enctype="multipart/form-data">
                     filename: <input type="file" name="tx_file" /><br />
                     <input type="submit" />
                     </form>
-                </body></html>
                 """
+                return render_template('index.html', content=raw_html)
 
             @current_app.route('/upload', methods=['POST'])
             def upload():
