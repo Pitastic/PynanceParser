@@ -23,7 +23,7 @@ def test_truncate(test_app):
     with test_app.app_context():
 
         with test_app.test_client() as client:
-            result = client.get('/truncateDatabase/')
+            result = client.get('/api/truncateDatabase/')
             assert result.status_code == 200, "Fehler beim Leeren der Datenbank"
 
 
@@ -39,7 +39,7 @@ def test_upload_csv_commerzbank(test_app):
 
         with test_app.test_client() as client:
             # Cleared DB ?
-            result = client.get(f"/view/{test_app.config['IBAN']}")
+            result = client.get(f"/{test_app.config['IBAN']}")
             assert "<td class=" not in result.text, \
                 "Die Datenbank war zum Start des Tests nicht leer"
 
@@ -53,17 +53,17 @@ def test_upload_csv_commerzbank(test_app):
             content = get_testfile_contents(EXAMPLE_CSV, binary=True)
             files = {'tx_file': (io.BytesIO(content), 'commerzbank.csv')}
             # Post File
-            result = client.post("/upload", data=files, content_type='multipart/form-data')
+            result = client.post("/api/upload", data=files, content_type='multipart/form-data')
 
             # Check Response
             assert result.status_code == 201, \
                 "Die Seite hat den Upload nicht wie erwartet verarbeitet"
-            assert 'tx_file filename: commerzbank.csv' in result.text, \
+            assert result.json.get('filename') == 'commerzbank.csv', \
                 "Angaben zum Upload wurden nicht gefunden"
 
             # Aufruf der Transaktionen auf verschiedene Weisen
-            response1 = client.get("/view/")
-            response2 = client.get(f"/view/{test_app.config['IBAN']}")
+            response1 = client.get("/")
+            response2 = client.get(f"/{test_app.config['IBAN']}")
             assert response1.status_code == response2.status_code == 200, \
                 "Die Ergebnisseite mit den Transaktionen ist nicht (richtig) erreichbar"
             assert response2.text == response1.text, \
@@ -110,11 +110,7 @@ def test_reachable_endpoints(test_app):
             result = client.get('/')
             assert result.status_code == 200, "Der Statuscode der Startseite war falsch"
 
-            #/view
-            result = client.get('/view/')
-            assert result.status_code == 200, "Der Statuscode der Ansicht war falsch"
-
-            result = client.get(f"/view/{test_app.config['IBAN']}")
+            result = client.get(f"/{test_app.config['IBAN']}")
             assert result.status_code == 200, "Der Statuscode der IBAN war falsch"
 
 
@@ -126,7 +122,7 @@ def test_double_upload(test_app):
 
         with test_app.test_client() as client:
             # Cleared DB ?
-            result = client.get(f"/view/{test_app.config['IBAN']}")
+            result = client.get(f"/{test_app.config['IBAN']}")
             assert "<td class=" not in result.text, \
                 "Die Datenbank war zum Start des Tests nicht leer"
 
@@ -134,17 +130,17 @@ def test_double_upload(test_app):
             content = get_testfile_contents(EXAMPLE_CSV, binary=True)
             files = {'tx_file': (io.BytesIO(content), 'commerzbank.csv')}
             # Post File 1
-            result = client.post("/upload", data=files, content_type='multipart/form-data')
+            result = client.post("/api/upload", data=files, content_type='multipart/form-data')
 
             # Check Response
             assert result.status_code == 201, \
                 "Die Seite hat den Upload nicht wie erwartet verarbeitet"
-            assert 'tx_file filename: commerzbank.csv' in result.text, \
+            assert result.json.get('filename') == 'commerzbank.csv', \
                 "Angaben zum Upload wurden nicht gefunden"
 
             # Post File 2
             files = {'tx_file': (io.BytesIO(content), 'commerzbank.csv')}
-            result = client.post("/upload", data=files, content_type='multipart/form-data')
+            result = client.post("/api/upload", data=files, content_type='multipart/form-data')
 
             # Check Response (same TX: Keine neuen Einträge angelegt)
             assert result.status_code == 200, \
@@ -152,7 +148,7 @@ def test_double_upload(test_app):
                 "dürfen keine neuen Datensätze angelegt werden")
 
             # Double-Check: Anzahl der Einträge
-            result = client.get(f"/view/{test_app.config['IBAN']}")
+            result = client.get(f"/{test_app.config['IBAN']}")
 
             soup = BeautifulSoup(result.text, features="html.parser")
             rows = soup.css.select('table .td-uuid')
@@ -172,7 +168,7 @@ def test_tag_stored(test_app):
                 'dry_run': True,
                 'prio': 2
             }
-            result = client.post("/tag", json=parameters)
+            result = client.post("/api/tag", json=parameters)
             result = result.json
 
             assert result.get('tagged') == 0, \
@@ -188,7 +184,7 @@ def test_tag_stored(test_app):
                 'dry_run': True,
                 'prio': 2
             }
-            result = client.post("/tag", json=parameters)
+            result = client.post("/api/tag", json=parameters)
             result = result.json
 
             assert result.get('tagged') == 0, \
@@ -214,7 +210,7 @@ def test_own_rules(test_app):
                 'prio': 0,
                 'dry_run': False
             }
-            result = client.post("/tag", json=parameters)
+            result = client.post("/api/tag", json=parameters)
             result = result.json
 
             # Es sollte eine Transaktion zutreffen,
@@ -236,7 +232,7 @@ def test_own_rules(test_app):
                 'prio_set': 3,
                 'dry_run': False
             }
-            result = client.post("/tag", json=parameters)
+            result = client.post("/api/tag", json=parameters)
             result = result.json
 
             assert result.get('tagged') == 1, \
@@ -244,3 +240,19 @@ def test_own_rules(test_app):
             tagged_entries = result.get('My high Rule', {}).get('entries')
             assert len(tagged_entries) == 1, \
                 f"DRegel 'My high Rule' hat {len(tagged_entries)} statt 1 Transactionen getroffen"
+
+def test_manual_tagging(test_app):
+    """Einem bestimmten Datenbankeintrag eine Kategorie zuweisen"""
+    with test_app.app_context():
+
+        with test_app.test_client() as client:
+            new_tag = {
+                'primary_tag': 'Tets_PRIMARY',
+                'secondary_tag': 'Test_SECONDARY'
+            }
+            r = client.post(
+                f"/api/setManualTag/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd",
+                json=new_tag
+            )
+            r = r.json
+            assert r.get('updated') == 1, "Der Eintrag wurde nicht aktualisiert"
