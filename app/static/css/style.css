@@ -2,3 +2,11 @@ html, body {
     background-color: rgb(51, 61, 56);
     color: white;
 }
+
+.my-buttons {
+    display: inline-block;
+    cursor: pointer;
+    padding: 1em;
+    margin: 1em;
+    background-color: silver;
+}
