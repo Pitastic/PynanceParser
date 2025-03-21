@@ -10,3 +10,10 @@ html, body {
     margin: 1em;
     background-color: silver;
 }
+
+#result-text {
+    display: block;
+    background-color: silver;
+    padding: 1em;
+    margin: 1em;
+}

@@ -3,28 +3,122 @@
 document.addEventListener('DOMContentLoaded', function () {
 
     // Upload Button Listener
-    document.getElementById('uploadButton').addEventListener('click', uploadFile);
+    //document.getElementById('uploadButton').addEventListener('click', uploadFile);
 
 });
 
 
+/**
+ * Shows a given Result in the Result-Box.
+ *
+ * @param {string} result - The text to be shwon.
+ */
+function printResult(result){
+    var box = document.getElementById('result-text');
+    box.innerHTML = result;
+}
+
+
+/**
+ * Sends a file to the server for upload.
+ * The file is selected via the file input element 'input_file'.
+ */
 function uploadFile() {
-    /**
-     * Sends a file to the server for upload.
-     */
-    const fileInput = document.getElementById('tx_file');
+    const fileInput = document.getElementById('input_file');
     if (fileInput.files.length === 0) {
         alert('Please select a file to upload.');
         return;
     }
 
-    const params = { file: 'tx_file' }; // The key 'file' corresponds to the input element's ID
+    const params = { file: 'input_file' }; // The key 'file' corresponds to the input element's ID
     apiPost('upload', params, function (responseText, error) {
         if (error) {
-            alert('File upload failed: ' + '(' + error + ')' + responseText);
+            printResult('File upload failed: ' + '(' + error + ')' + responseText);
+
         } else {
             alert('File uploaded successfully!' + responseText);
             window.location.reload();
+
+        }
+    }, true);
+}
+
+
+/**
+ * Truncates the database.
+ * An optional IBAN to truncate is selected by input with ID 'iban'.
+ */
+function truncateDB() {
+    var iban = document.getElementById('input_iban').value;
+
+    apiGet('truncateDatabase/'+iban, {}, function (responseText, error) {
+        if (error) {
+            printResult('Truncate failed: ' + '(' + error + ')' + responseText);
+
+        } else {
+            alert('Database truncated successfully!' + responseText);
+            window.location.reload();
+
+        }
+    }, true);
+    
+}
+
+
+/**
+ * Tags the entries in the database.
+ * Optional Tagging commands are read from the input with ID
+ * 'input_tagging_name' (more in the Future)
+ */
+function tagEntries() {
+    // TODO: Implement more, complex tagging rules
+    var rule_name = document.getElementById('input_tagging_name').value;
+    var rules = {
+        'rule_name': rule_name
+    }
+
+    apiPost('tag', rules, function (responseText, error) {
+        if (error) {
+            printResult('Tagging failed: ' + '(' + error + ')' + responseText);
+
+        } else {
+            alert('Entries tagged successfully!' + responseText);
+            window.location.reload();
+
+        }
+    }, true);
+}
+
+
+/**
+ * Tags the entries in the database in a direct manner (assign Categories, no rules)
+ * Optional Tagging commands are read from the inputs with IDs
+ * 'input_manual_primary' , 'input_manual_secondary' , 'input_iban' and 'input_tid'.
+ * While the IBAN and Transaction_ID are mandatory, the other inputs are optional.
+ */
+function manualTagEntries() {
+    var primary_tag = document.getElementById('input_manual_primary').value;
+    var secondary_tag = document.getElementById('input_manual_secondary').value;
+    var iban = document.getElementById('input_iban').value;
+    var t_id = document.getElementById('input_t_id').value;
+
+    if (!iban || !t_id) {
+        alert('Please provide an IBAN.');
+        return;
+    }
+
+    var tags = {
+        'primary_tag': primary_tag,
+        'secondary_tag': secondary_tag
+    }
+    apiPost('setManualTag/'+iban+'/'+t_id, tags, function (responseText, error) {
+        if (error) {
+            printResult('Tagging failed: ' + '(' + error + ')' + responseText);
+
+        } else {
+            alert('Entries tagged successfully!' + responseText);
+            window.location.reload();
+
         }
     }, true);
 }

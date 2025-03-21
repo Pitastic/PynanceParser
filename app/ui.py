@@ -3,7 +3,7 @@
 
 import sys
 import os
-from flask import request, jsonify, current_app, render_template
+from flask import request, current_app, render_template
 
 # Add Parent for importing Classes
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -109,18 +109,21 @@ class UserInterface():
                 Im Anschluss wird automatisch die Untersuchung der Inhalte angestoßen.
 
                 Args:
-                    tx_file (binary): Dateiupload aus Formular-Submit
+                    input_file (binary): Dateiupload aus Formular-Submit
                 Returns:
                     html: Informationen zur Datei und Ergebnis der Untersuchung.
                 """
-                tx_file = request.files['tx_file']
-                content_type = tx_file.content_type
+                input_file = request.files['input_file']
+                if not input_file:
+                    return {'error': 'No file provided'}, 400
+
+                content_type = input_file.content_type
                 size = 0
                 path = '/tmp/upload.file'
                 with open(path, 'wb') as f:
 
                     while True:
-                        data = tx_file.read(8192)
+                        data = input_file.read(8192)
 
                         if not data:
                             break
@@ -145,19 +148,19 @@ class UserInterface():
                 os.remove(path)
 
                 return_code = 201 if inserted else 200
-                return jsonify({
+                return {
                     'size': size,
-                    'filename': tx_file.filename,
+                    'filename': input_file.filename,
                     'content_type': content_type,
                     'inserted': inserted
-                }), return_code
+                }, return_code
 
             @current_app.route('/api/truncateDatabase/', defaults={'iban': None}, methods=['GET'])
             @current_app.route('/api/truncateDatabase/<iban>', methods=['GET'])
             def truncateDatabase(iban):
                 """Leert die Datenbank"""
                 deleted_entries = self.db_handler.truncate(iban)
-                return jsonify({'deleted': deleted_entries}), 200
+                return {'deleted': deleted_entries}, 200
 
             @current_app.route('/api/tag', methods=['POST'])
             def tag() -> dict:
@@ -165,9 +168,9 @@ class UserInterface():
                 Kategorisiert die Kontoumsätze und aktualisiert die Daten in der Instanz.
                 """
                 #TODO: Check *args, **kwargs provided
-                data = request.get_json(force=True)
+                data = request.values
                 result = self.tagger.tag(**data)
-                return jsonify(result)
+                return result
 
             @current_app.route('/api/setManualTag/<iban>/<t_id>', methods=['POST'])
             def setManualTag(iban, t_id):
@@ -182,7 +185,7 @@ class UserInterface():
                 Returns:
                     Anzahl der gespeicherten Datensätzen
                 """
-                data = request.get_json(force=True)
+                data = request.values
                 primary_tag = data['primary_tag']
                 secondary_tag = data.get('secondary_tag')
 
@@ -198,7 +201,7 @@ class UserInterface():
                 }
 
                 updated_entries = self.db_handler.update(new_tag_data, iban, condition)
-                return jsonify(updated_entries)
+                return updated_entries
 
     def _read_input(self, uri, bank='Generic', data_format=None):
         """

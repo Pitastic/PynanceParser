@@ -4,16 +4,16 @@
 // -- AJAX Functions ----------------------------------------------------------
 // ----------------------------------------------------------------------------
 
+/**
+ * Constructs a URI string or FormData object from a dictionary of key-value pairs.
+ *
+ * @param {Object} value_dict - An object containing key-value pairs to be converted into an URI or FormData.
+ *                              Keys ending with "[]" are treated as arrays.
+ * @param {FormData} [formData] - An optional FormData object to append the key-value pairs to
+ * 								  instead of creating an URI string.
+ * @returns {string|FormData} - Returns an URI string or FormData object.
+ */
 function concatURI(value_dict, formData){
-	/**
-	 * Constructs a URI string or FormData object from a dictionary of key-value pairs.
-	 *
-	 * @param {Object} value_dict - An object containing key-value pairs to be converted into an URI or FormData.
-	 *                              Keys ending with "[]" are treated as arrays.
-	 * @param {FormData} [formData] - An optional FormData object to append the key-value pairs to
-	 * 								  instead of creating an URI string.
-	 * @returns {string|FormData} - Returns an URI string or FormData object.
-	 */
 	var uri = "";
 	for (var key in value_dict) {
 		if (value_dict.hasOwnProperty(key)) {
@@ -44,15 +44,15 @@ function concatURI(value_dict, formData){
 	return (typeof formData == 'undefined') ? uri : formData;
 }
 
+/**
+ * Creates and returns a new XMLHttpRequest object
+ * configured with a callback to handle its response.
+ *
+ * @param {function} callback - A callback function to handle the response.
+ * 								Receives the response text and stsatus code as arguments.
+ * @returns {XMLHttpRequest} - The newly created XMLHttpRequest object.
+ */
 function createAjax(callback) {
-	/**
-	 * Creates and returns a new XMLHttpRequest object
-	 * configured with a callback to handle its response.
-	 *
-	 * @param {function} callback - A callback function to handle the response.
-	 * 								Receives the response text and stsatus code as arguments.
-	 * @returns {XMLHttpRequest} - The newly created XMLHttpRequest object.
-	 */
 	var ajax = new XMLHttpRequest();
 	ajax.onreadystatechange = function () {
 		if (this.readyState == 4 && this.status >= 200 && this.status < 300) {
@@ -66,31 +66,31 @@ function createAjax(callback) {
 	return ajax
 }
 
+/**
+ * Sends a GET request to the specified API endpoint with the given parameters.
+ *
+ * @param {string} sub - The API endpoint to append to the base URL.
+ * @param {Object} params - An object containing key-value pairs to be sent as query parameters.
+ * @param {function} callback - A callback function to handle the response.
+ * 								Receives the response text and stsatus code as arguments.
+ */
 function apiGet(sub, params, callback) {
-	/**
-	 * Sends a GET request to the specified API endpoint with the given parameters.
-	 *
-	 * @param {string} sub - The API endpoint to append to the base URL.
-	 * @param {Object} params - An object containing key-value pairs to be sent as query parameters.
-	 * @param {function} callback - A callback function to handle the response.
-	 * 								Receives the response text and stsatus code as arguments.
-	 */
 	var ajax = createAjax(callback);
 	var request_uri = concatURI(params);
 	ajax.open("GET", "/api/" + sub, true);
 	ajax.send(request_uri);
 }
 
+/**
+ * Sends a POST request to the specified API endpoint with the given parameters.
+ *
+ * @param {string} sub - The API endpoint to append to the base URL.
+ * @param {Object} params - An object containing key-value pairs to be sent as query parameters.
+ * @param {function} callback - A callback function to handle the response.
+ * 								Receives the response text and stsatus code as arguments.
+ * @param {boolean} isFile - A switch to enable special file upload handling.
+ */
 function apiPost(sub, params, callback, isFile){
-	/**
-	 * Sends a POST request to the specified API endpoint with the given parameters.
-	 *
-	 * @param {string} sub - The API endpoint to append to the base URL.
-	 * @param {Object} params - An object containing key-value pairs to be sent as query parameters.
-	 * @param {function} callback - A callback function to handle the response.
-	 * 								Receives the response text and stsatus code as arguments.
-	 * @param {boolean} isFile - A switch to enable special file upload handling.
-	 */
 	var ajax = createAjax(callback);
 	ajax.open("POST", "/api/"+sub, true);
 	if (!isFile) {
