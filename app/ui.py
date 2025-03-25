@@ -113,7 +113,7 @@ class UserInterface():
                 Returns:
                     html: Informationen zur Datei und Ergebnis der Untersuchung.
                 """
-                input_file = request.files['input_file']
+                input_file = request.files.get('input_file')
                 if not input_file:
                     return {'error': 'No file provided'}, 400
 
@@ -167,8 +167,21 @@ class UserInterface():
                 """
                 Kategorisiert die Kontoumsätze und aktualisiert die Daten in der Instanz.
                 """
-                #TODO: Check *args, **kwargs provided
-                data = request.values
+                data = dict(request.form)
+
+                # Convert values to their expected types
+                data['dry_run'] = bool(data.get('dry_run'))
+
+                try:
+                    data['prio'] = int(data.get('prio'))
+                except (TypeError, ValueError):
+                    data['prio'] = None
+
+                try:
+                    data['prio_set'] = int(data.get('prio_set'))
+                except (TypeError, ValueError):
+                    data['prio_set'] = None
+
                 result = self.tagger.tag(**data)
                 return result
 

@@ -46,18 +46,18 @@ def test_upload_csv_commerzbank(test_app):
             # Visit Form
             result = client.get('/')
             assert result.status_code == 200, "Der Statuscode der Startseite war falsch"
-            assert 'type="submit"' in result.text, \
-                "Submit button not found in the response"
+            assert 'Message Box' in result.text, \
+                "Special Heading not found in the response"
 
             # Prepare File
             content = get_testfile_contents(EXAMPLE_CSV, binary=True)
-            files = {'tx_file': (io.BytesIO(content), 'commerzbank.csv')}
+            files = {'input_file': (io.BytesIO(content), 'commerzbank.csv')}
             # Post File
             result = client.post("/api/upload", data=files, content_type='multipart/form-data')
 
             # Check Response
             assert result.status_code == 201, \
-                "Die Seite hat den Upload nicht wie erwartet verarbeitet"
+                f"Die Seite hat den Upload nicht wie erwartet verarbeitet: {result.text}"
             assert result.json.get('filename') == 'commerzbank.csv', \
                 "Angaben zum Upload wurden nicht gefunden"
 
@@ -128,24 +128,24 @@ def test_double_upload(test_app):
 
             # Prepare File
             content = get_testfile_contents(EXAMPLE_CSV, binary=True)
-            files = {'tx_file': (io.BytesIO(content), 'commerzbank.csv')}
+            files = {'input_file': (io.BytesIO(content), 'commerzbank.csv')}
             # Post File 1
             result = client.post("/api/upload", data=files, content_type='multipart/form-data')
 
             # Check Response
             assert result.status_code == 201, \
-                "Die Seite hat den Upload nicht wie erwartet verarbeitet"
+                f"Die Seite hat den Upload nicht wie erwartet verarbeitet: {result.text}"
             assert result.json.get('filename') == 'commerzbank.csv', \
                 "Angaben zum Upload wurden nicht gefunden"
 
             # Post File 2
-            files = {'tx_file': (io.BytesIO(content), 'commerzbank.csv')}
+            files = {'input_file': (io.BytesIO(content), 'commerzbank.csv')}
             result = client.post("/api/upload", data=files, content_type='multipart/form-data')
 
             # Check Response (same TX: Keine neuen Einträge angelegt)
             assert result.status_code == 200, \
                 ("Beim zweiten Upload der gleichen Transaktionen"
-                "dürfen keine neuen Datensätze angelegt werden")
+                f"dürfen keine neuen Datensätze angelegt werden: {result.text}")
 
             # Double-Check: Anzahl der Einträge
             result = client.get(f"/{test_app.config['IBAN']}")
@@ -162,13 +162,13 @@ def test_tag_stored(test_app):
 
         with test_app.test_client() as client:
 
-            # Regel mit Namen aus der SystemDB holen
+            # Regel mit Namen aus der SystemDB holen (dry_run)
             parameters = {
                 'rule_name': 'Supermarkets',
                 'dry_run': True,
                 'prio': 2
             }
-            result = client.post("/api/tag", json=parameters)
+            result = client.post("/api/tag", data=parameters)
             result = result.json
 
             assert result.get('tagged') == 0, \
@@ -178,21 +178,29 @@ def test_tag_stored(test_app):
             assert len(tagged_entries) == 2, \
                 f"Regel 'Supermarkets' hat {len(tagged_entries)} statt 2 Transactionen getroffen"
 
-            # Regel mit Namen aus der UserDB holen
+            # Regel mit Namen aus der UserDB holen (no dry_run)
             parameters = {
                 'rule_name': 'City Tax',
-                'dry_run': True,
                 'prio': 2
             }
-            result = client.post("/api/tag", json=parameters)
+            result = client.post("/api/tag", data=parameters)
             result = result.json
 
-            assert result.get('tagged') == 0, \
-                f"Trotz 'dry_run' wurden {result.get('tagged')} Einträge getaggt"
+            assert result.get('tagged') == 1, \
+                f"Ohne 'dry_run' wurden trotzdem nur {result.get('tagged')} Einträge getaggt"
 
             tagged_entries = result.get('City Tax', {}).get('entries')
             assert len(tagged_entries) == 1, \
                 f"Die Regel 'City Tax' hat {len(tagged_entries)} statt 1 Transactionen getroffen"
+
+            # Test 'prio' set correctly
+            query = {'key': 'prio', 'compare': '>', 'value': 0}
+            result_filtered = test_app.host.db_handler.select(
+                test_app.config['IBAN'],
+                condition=query
+            )
+            assert len(result_filtered) == 1, \
+                f"Falsche Anzahl an Datensätzen mit 'prio': {len(result_filtered)}"
 
 
 def test_own_rules(test_app):
@@ -208,9 +216,8 @@ def test_own_rules(test_app):
                 'rule_secondary': 'Supermarkt',
                 'rule_regex': r'EDEKA',
                 'prio': 0,
-                'dry_run': False
             }
-            result = client.post("/api/tag", json=parameters)
+            result = client.post("/api/tag", data=parameters)
             result = result.json
 
             # Es sollte eine Transaktion zutreffen,
@@ -230,9 +237,8 @@ def test_own_rules(test_app):
                 'rule_regex': r'\sGARTEN\w',
                 'prio': 9,
                 'prio_set': 3,
-                'dry_run': False
             }
-            result = client.post("/api/tag", json=parameters)
+            result = client.post("/api/tag", data=parameters)
             result = result.json
 
             assert result.get('tagged') == 1, \
@@ -252,7 +258,7 @@ def test_manual_tagging(test_app):
             }
             r = client.post(
                 f"/api/setManualTag/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd",
-                json=new_tag
+                data=new_tag
             )
             r = r.json
             assert r.get('updated') == 1, "Der Eintrag wurde nicht aktualisiert"
