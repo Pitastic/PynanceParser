@@ -122,3 +122,18 @@ function manualTagEntries() {
         }
     }, false);
 }
+
+
+function getInfo(uuid) {
+    var iban = document.getElementById('input_iban').value;
+
+    apiGet('getTx/'+iban+'/'+uuid, {}, function (responseText, error) {
+        if (error) {
+            printResult('getTx failed: ' + '(' + error + ')' + responseText);
+
+        } else {
+            alert(responseText);
+
+        }
+    });
+}

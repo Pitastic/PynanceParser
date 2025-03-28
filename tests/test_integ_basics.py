@@ -79,7 +79,7 @@ def test_upload_csv_commerzbank(test_app):
             f"Es wurden {len(row1)} rows für das erste Beispiel gefunden"
 
         content = row1[0].css.filter('.td-betrag')[0].contents[0]
-        assert content == '-11.63 EUR', \
+        assert content == '-11.63', \
             f"Der Content von {tx_hash} ist anders als erwartet: '{content}'"
 
         # 2. Example
@@ -89,7 +89,7 @@ def test_upload_csv_commerzbank(test_app):
             f"Es wurden {len(row2)} rows für das zweite Beispiel gefunden"
 
         content = row2[0].css.filter('.td-betrag')[0].contents[0]
-        assert content == '-221.98 EUR', \
+        assert content == '-221.98', \
             f"Der Content von {tx_hash} / 'betrag' ist anders als erwartet: '{content}'"
 
         content = [child.contents[0] for child in row2[0].select('.td-parsed p')]
@@ -151,7 +151,7 @@ def test_double_upload(test_app):
             result = client.get(f"/{test_app.config['IBAN']}")
 
             soup = BeautifulSoup(result.text, features="html.parser")
-            rows = soup.css.select('table .td-uuid')
+            rows = soup.css.select('table .td-date_tx')
 
             assert len(rows) == 5, f"Es wurden zu viele Einträge ({len(rows)}) angelegt"
 
@@ -247,6 +247,7 @@ def test_own_rules(test_app):
             assert len(tagged_entries) == 1, \
                 f"DRegel 'My high Rule' hat {len(tagged_entries)} statt 1 Transactionen getroffen"
 
+
 def test_manual_tagging(test_app):
     """Einem bestimmten Datenbankeintrag eine Kategorie zuweisen"""
     with test_app.app_context():
@@ -262,3 +263,21 @@ def test_manual_tagging(test_app):
             )
             r = r.json
             assert r.get('updated') == 1, "Der Eintrag wurde nicht aktualisiert"
+
+
+def test_get_tx(test_app):
+    """Testet den API-Endpoint für die Transaktionsdetails"""
+    with test_app.app_context():
+
+        with test_app.test_client() as client:
+            # Get Transaction                
+            result = client.get(
+                f"/api/getTx/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd"
+            )
+            assert result.status_code == 200, \
+                "Der Statuscode der Transaktion war falsch"
+
+            # Check Content
+            result = result.json
+            assert result.get('primary_tag') == 'Tets_PRIMARY', \
+                "Der Primary Tag war nicht wie erwartet"

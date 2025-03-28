@@ -3,6 +3,8 @@
 
 import sys
 import os
+import logging
+from datetime import datetime
 from flask import request, current_app, render_template
 
 # Add Parent for importing Classes
@@ -70,35 +72,57 @@ class UserInterface():
                 """
                 Startseite mit Navigation und Uploadformular.
 
+                Args (uri):
+                    iban, str:  (optional) IBAN zu der die Einträge angezeigt werden sollen.
+                                (Default: Primäre IBAN aus der Config)
+                    startDate, str (query): Startdatum (Y-m-d) für die Anzeige der Einträge
+                    endDate, str (query):   Enddatum (Y-m-d) für die Anzeige der Einträge
                 Returns:
                     html: Startseite mit Navigation
                 """
+                # Check filter args
+                condition = []
+
                 if iban is None:
                     iban = current_app.config['IBAN']
+
+                start_date = request.args.get('startDate')
+                if start_date is not None:
+                    # Convert to valid date format
+                    try:
+                        start_date = int(datetime.strptime(start_date, '%Y-%m-%d').timestamp())
+                        condition.append({
+                            'key': 'date_tx',
+                            'value': start_date,
+                            'compare': '>='
+                        })
+
+                    except (ValueError, TypeError) as e:
+                        logging.warning(f"Invalid startDate format '{e}' will be ignored")
+
+                end_date = request.args.get('endDate')
+                if end_date is not None:
+                    # Convert to valid date format
+                    try:
+                        end_date = int(datetime.strptime(end_date, '%Y-%m-%d').timestamp())
+                        condition.append({
+                            'key': 'date_tx',
+                            'value': end_date,
+                            'compare': '<='
+                        })
+
+                    except (ValueError, TypeError) as e:
+                        logging.warning(f"Invalid endDate format '{e}' will be ignored")
+
                 # Table with Transactions
-                rows = self.db_handler.select(iban)
-                table_view = """<table style="border: 1px solid black;"><thead><tr>
-                    <th>Datum</th> <th>Betrag</th> <th>Tag (pri)</th> <th>Tag (sec.)</th> <th>Prio</th> <th>Parsed</th> <th>Hash</th>
-                </tr></thead><tbody>"""
+                rows = self.db_handler.select(iban, condition)
+                table_header = ['date_tx', 'betrag', 'currency',
+                                'primary_tag', 'secondary_tag',
+                                'prio', 'parsed']
 
-                for r in rows:
-                    table_view += f"""<tr id="tr-{r['uuid']}">
-                    <td class="td-date">{r['date_tx']}</td>
-                    <td class="td-betrag">{r['betrag']} {r['currency']}</td>
-                    <td class="td-tag1">{r['primary_tag']}</td>
-                    <td class="td-tag2">{r['secondary_tag']}</td>
-                    <td class="td-prio">{r['prio']}</td>
-                    <td class="td-parsed">"""
-
-                    for parse_element in r['parsed']:
-                        table_view += f"<p>{parse_element}</p>"
-
-                    table_view += f"</td><td class='td-uuid'>{r['uuid']}</td>"
-                    table_view += "</tr>"
-
-                table_view += """</tbody></table>"""
-
-                return render_template('index.html', iban=iban, table_view=table_view)
+                return render_template('index.html', iban=iban,
+                                       table_header=table_header,
+                                       table_data=rows)
 
 
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -157,6 +181,25 @@ class UserInterface():
                     'content_type': content_type,
                     'inserted': inserted
                 }, return_code
+
+            @current_app.route('/api/getTx/<iban>/<t_id>', methods=['GET'])
+            def getTx(iban, t_id):
+                """
+                Gibt alle Details zu einer bestimmten Transaktion zurück.
+                Args (uri):
+                    iban, str: IBAN
+                    t_id, int: Datenbank ID der Transaktion
+                Returns:
+                    json: Details zu einer bestimmten Transaktion
+                """
+                tx_details = self.db_handler.select(
+                    iban, {
+                        'key': 'uuid',
+                        'value': t_id,
+                        'compare': '=='
+                    }
+                )
+                return tx_details[0], 200
 
             @current_app.route('/api/truncateDatabase/', defaults={'iban':None}, methods=['DELETE'])
             @current_app.route('/api/truncateDatabase/<iban>', methods=['DELETE'])

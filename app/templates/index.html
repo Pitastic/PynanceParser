@@ -4,7 +4,34 @@
 
 <div class="container">
 
-    {{ table_view | safe }}
+    <table style="border: 1px solid black;">
+        <thead><tr>
+            {% for entry in table_header %}
+            <th>{{ entry }}</th>
+            {% endfor %}
+            <th>&nbsp;</th>
+        </tr></thead>
+
+        <tbody>
+            {% for entry in table_data %}
+            <tr id="tr-{{entry.get('uuid')}}">
+                {% for key in table_header %}
+                {% if key != 'parsed' %}
+                <td class="td-{{ key }}">{{ entry.get(key) }}</td>
+                {% endif %}
+                {% endfor %}
+                <td class="td-parsed">
+                    {% for info in entry.get('parsed') %}
+                    <p>{{ info }}</p>
+                    {% endfor %}
+                </td>
+                <td>
+                    <a class="my-buttons" href="javascript:getInfo('{{ entry.get('uuid') }}');">(i)</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 
 </div>
 
