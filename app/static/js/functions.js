@@ -73,34 +73,44 @@ function createAjax(callback) {
  * @param {Object} params - An object containing key-value pairs to be sent as query parameters.
  * @param {function} callback - A callback function to handle the response.
  * 								Receives the response text and stsatus code as arguments.
+ * @param {string} [method="GET"] - The HTTP method to use for the request (e.g., "GET", "DELETE").
  */
-function apiGet(sub, params, callback) {
+function apiGet(sub, params, callback, method = "GET") {
 	var ajax = createAjax(callback);
 	var request_uri = concatURI(params);
-	ajax.open("GET", "/api/" + sub, true);
+	ajax.open(method, "/api/" + sub, true);
 	ajax.send(request_uri);
 }
 
 /**
- * Sends a POST request to the specified API endpoint with the given parameters.
+ * Sends data to the specified API endpoint with the given parameters.
+ * The HTTP method will adapt to the presence of a file in the parameters.
+ * If a file is present, it will use 'POST' else 'PUT'.
  *
  * @param {string} sub - The API endpoint to append to the base URL.
  * @param {Object} params - An object containing key-value pairs to be sent as query parameters.
  * @param {function} callback - A callback function to handle the response.
  * 								Receives the response text and stsatus code as arguments.
- * @param {boolean} isFile - A switch to enable special file upload handling.
+ * @param {boolean} [isFile=false] - A switch to enable special file upload handling.
  */
-function apiPost(sub, params, callback, isFile){
+function apiSubmit(sub, params, callback, isFile = false) {
 	var ajax = createAjax(callback);
-	ajax.open("POST", "/api/"+sub, true);
-	if (!isFile) {
+	if (isFile) {
 		// Concat Uri
-		var request_uri = concatURI(params);
-		ajax.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-	}else{
-		// Append Form
+		var method = "POST";
 		var newForm = new FormData();
 		var request_uri = concatURI(params, newForm);
+
+	} else {
+		// Append JSON
+		var method = "PUT";
+		var request_uri = JSON.stringify(params);
+	}
+	
+	ajax.open(method, "/api/" + sub, true);
+
+	if (method != "POST") {
+		ajax.setRequestHeader("Content-type", "application/json");
 	}
 	ajax.send(request_uri);
 }

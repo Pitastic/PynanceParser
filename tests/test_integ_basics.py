@@ -23,7 +23,7 @@ def test_truncate(test_app):
     with test_app.app_context():
 
         with test_app.test_client() as client:
-            result = client.get('/api/truncateDatabase/')
+            result = client.delete('/api/truncateDatabase/')
             assert result.status_code == 200, "Fehler beim Leeren der Datenbank"
 
 
@@ -168,7 +168,7 @@ def test_tag_stored(test_app):
                 'dry_run': True,
                 'prio': 2
             }
-            result = client.post("/api/tag", data=parameters)
+            result = client.put("/api/tag", json=parameters)
             result = result.json
 
             assert result.get('tagged') == 0, \
@@ -183,7 +183,7 @@ def test_tag_stored(test_app):
                 'rule_name': 'City Tax',
                 'prio': 2
             }
-            result = client.post("/api/tag", data=parameters)
+            result = client.put("/api/tag", json=parameters)
             result = result.json
 
             assert result.get('tagged') == 1, \
@@ -217,7 +217,7 @@ def test_own_rules(test_app):
                 'rule_regex': r'EDEKA',
                 'prio': 0,
             }
-            result = client.post("/api/tag", data=parameters)
+            result = client.put("/api/tag", json=parameters)
             result = result.json
 
             # Es sollte eine Transaktion zutreffen,
@@ -238,7 +238,7 @@ def test_own_rules(test_app):
                 'prio': 9,
                 'prio_set': 3,
             }
-            result = client.post("/api/tag", data=parameters)
+            result = client.put("/api/tag", json=parameters)
             result = result.json
 
             assert result.get('tagged') == 1, \
@@ -256,9 +256,9 @@ def test_manual_tagging(test_app):
                 'primary_tag': 'Tets_PRIMARY',
                 'secondary_tag': 'Test_SECONDARY'
             }
-            r = client.post(
+            r = client.put(
                 f"/api/setManualTag/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd",
-                data=new_tag
+                json=new_tag
             )
             r = r.json
             assert r.get('updated') == 1, "Der Eintrag wurde nicht aktualisiert"

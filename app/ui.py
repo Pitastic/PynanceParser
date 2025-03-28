@@ -64,7 +64,7 @@ class UserInterface():
         # Define Routes
         with current_app.app_context():
 
-            @current_app.route('/', defaults={'iban': None}, methods=['GET'])
+            @current_app.route('/', defaults={'iban':None}, methods=['GET'])
             @current_app.route('/<iban>', methods=['GET'])
             def index(iban) -> str:
                 """
@@ -73,10 +73,12 @@ class UserInterface():
                 Returns:
                     html: Startseite mit Navigation
                 """
+                if iban is None:
+                    iban = current_app.config['IBAN']
                 # Table with Transactions
                 rows = self.db_handler.select(iban)
                 table_view = """<table style="border: 1px solid black;"><thead><tr>
-                    <th>Datum</th> <th>Betrag</th> <th>Tag (pri)</th> <th>Tag (sec.)</th> <th>Parsed</th> <th>Hash</th>
+                    <th>Datum</th> <th>Betrag</th> <th>Tag (pri)</th> <th>Tag (sec.)</th> <th>Prio</th> <th>Parsed</th> <th>Hash</th>
                 </tr></thead><tbody>"""
 
                 for r in rows:
@@ -85,6 +87,7 @@ class UserInterface():
                     <td class="td-betrag">{r['betrag']} {r['currency']}</td>
                     <td class="td-tag1">{r['primary_tag']}</td>
                     <td class="td-tag2">{r['secondary_tag']}</td>
+                    <td class="td-prio">{r['prio']}</td>
                     <td class="td-parsed">"""
 
                     for parse_element in r['parsed']:
@@ -95,7 +98,7 @@ class UserInterface():
 
                 table_view += """</tbody></table>"""
 
-                return render_template('index.html', table_view=table_view)
+                return render_template('index.html', iban=iban, table_view=table_view)
 
 
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -108,10 +111,10 @@ class UserInterface():
                 Endpunkt für das Annehmen hochgeladener Kontoumsatzdateien.
                 Im Anschluss wird automatisch die Untersuchung der Inhalte angestoßen.
 
-                Args:
+                Args (multipart/form-data):
                     input_file (binary): Dateiupload aus Formular-Submit
                 Returns:
-                    html: Informationen zur Datei und Ergebnis der Untersuchung.
+                    json: Informationen zur Datei und Ergebnis der Untersuchung.
                 """
                 input_file = request.files.get('input_file')
                 if not input_file:
@@ -155,42 +158,39 @@ class UserInterface():
                     'inserted': inserted
                 }, return_code
 
-            @current_app.route('/api/truncateDatabase/', defaults={'iban': None}, methods=['GET'])
-            @current_app.route('/api/truncateDatabase/<iban>', methods=['GET'])
+            @current_app.route('/api/truncateDatabase/', defaults={'iban':None}, methods=['DELETE'])
+            @current_app.route('/api/truncateDatabase/<iban>', methods=['DELETE'])
             def truncateDatabase(iban):
-                """Leert die Datenbank"""
+                """
+                Leert die Datenbank zu einer IBAN
+                Args (uri):
+                    iban, str:  (optional) IBAN zu der die Datenbank geleert werden soll.
+                                (Default: Primäre IBAN aus der Config)
+                Returns:
+                    json: Informationen zum Ergebnis des Löschauftrags.
+                """
                 deleted_entries = self.db_handler.truncate(iban)
                 return {'deleted': deleted_entries}, 200
 
-            @current_app.route('/api/tag', methods=['POST'])
+            @current_app.route('/api/tag', methods=['PUT'])
             def tag() -> dict:
                 """
                 Kategorisiert die Kontoumsätze und aktualisiert die Daten in der Instanz.
+                Die Argumente werden nach Prüfung an die Tagger-Klasse weitergegeben.
+
+                Args (json):
+                    siehe Tagger.tag()
+                Returns:
+                    json: Informationen zum Ergebnis des Taggings.
                 """
-                data = dict(request.form)
+                return self.tagger.tag(**request.json)
 
-                # Convert values to their expected types
-                data['dry_run'] = bool(data.get('dry_run'))
-
-                try:
-                    data['prio'] = int(data.get('prio'))
-                except (TypeError, ValueError):
-                    data['prio'] = None
-
-                try:
-                    data['prio_set'] = int(data.get('prio_set'))
-                except (TypeError, ValueError):
-                    data['prio_set'] = None
-
-                result = self.tagger.tag(**data)
-                return result
-
-            @current_app.route('/api/setManualTag/<iban>/<t_id>', methods=['POST'])
+            @current_app.route('/api/setManualTag/<iban>/<t_id>', methods=['PUT'])
             def setManualTag(iban, t_id):
                 """
                 Setzt manuell eine Kategorie für einen bestimmten Eintrag.
 
-                Args:
+                Args (uri/json):
                     iban, str: IBAN
                     t_id, int: Datenbank ID der Transaktion, die getaggt werden soll
                     primary_tag, str: Bezeichnung der primären Kategorie
@@ -198,7 +198,7 @@ class UserInterface():
                 Returns:
                     Anzahl der gespeicherten Datensätzen
                 """
-                data = request.values
+                data = request.json
                 primary_tag = data['primary_tag']
                 secondary_tag = data.get('secondary_tag')
 

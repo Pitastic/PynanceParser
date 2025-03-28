@@ -31,7 +31,7 @@ function uploadFile() {
     }
 
     const params = { file: 'input_file' }; // The key 'file' corresponds to the input element's ID
-    apiPost('upload', params, function (responseText, error) {
+    apiSubmit('upload', params, function (responseText, error) {
         if (error) {
             printResult('File upload failed: ' + '(' + error + ')' + responseText);
 
@@ -60,7 +60,7 @@ function truncateDB() {
             window.location.reload();
 
         }
-    }, true);
+    }, 'DELETE');
     
 }
 
@@ -77,7 +77,7 @@ function tagEntries() {
         'rule_name': rule_name
     }
 
-    apiPost('tag', rules, function (responseText, error) {
+    apiSubmit('tag', rules, function (responseText, error) {
         if (error) {
             printResult('Tagging failed: ' + '(' + error + ')' + responseText);
 
@@ -86,7 +86,7 @@ function tagEntries() {
             window.location.reload();
 
         }
-    }, true);
+    }, false);
 }
 
 
@@ -111,7 +111,7 @@ function manualTagEntries() {
         'primary_tag': primary_tag,
         'secondary_tag': secondary_tag
     }
-    apiPost('setManualTag/'+iban+'/'+t_id, tags, function (responseText, error) {
+    apiSubmit('setManualTag/'+iban+'/'+t_id, tags, function (responseText, error) {
         if (error) {
             printResult('Tagging failed: ' + '(' + error + ')' + responseText);
 
@@ -120,5 +120,5 @@ function manualTagEntries() {
             window.location.reload();
 
         }
-    }, true);
+    }, false);
 }
