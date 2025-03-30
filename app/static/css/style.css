@@ -27,12 +27,12 @@ table.transactions {
         padding: 8px;
     }
     table.transactions th {
-        background-color: #f2f2f2;
+        background-color: rgb(0, 0, 0);
         text-align: left;
     }
     table.transactions tr:nth-child(even) {
-        background-color: #f9f9f9;
+        background-color: rgb(70, 70, 70);
     }
     table.transactions tr:hover {
-        background-color: #ddd;
+        background-color: #374d3a;
     }

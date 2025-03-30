@@ -14,25 +14,25 @@
  * @returns {string|FormData} - Returns an URI string or FormData object.
  */
 function concatURI(value_dict, formData){
-	var uri = "";
-	for (var key in value_dict) {
+	let uri = "";
+	for (let key in value_dict) {
 		if (value_dict.hasOwnProperty(key)) {
 			if (typeof formData == 'undefined') {
 				// URI
 				if (key.endsWith("[]")){
-					for (var i = 0; i < value_dict[key].length; i++) {
-						var val = encodeURIComponent(value_dict[key][i]);
+					for (let i = 0; i < value_dict[key].length; i++) {
+						const val = encodeURIComponent(value_dict[key][i]);
 						uri += key + "=" + val + "&";
 					}
 				}else{
-					var val = encodeURIComponent(value_dict[key]);
+					const val = encodeURIComponent(value_dict[key]);
 					uri += key + "=" + val + "&";
 				}
 			}else{
 				// formData
-				var value = value_dict[key];
+				let value = value_dict[key];
 				if (key == 'file') {
-					var fileInput = document.getElementById(value);
+					const fileInput = document.getElementById(value);
 					value = fileInput.files[0];
 					key = value_dict[key];
 				}
@@ -53,7 +53,7 @@ function concatURI(value_dict, formData){
  * @returns {XMLHttpRequest} - The newly created XMLHttpRequest object.
  */
 function createAjax(callback) {
-	var ajax = new XMLHttpRequest();
+	const ajax = new XMLHttpRequest();
 	ajax.onreadystatechange = function () {
 		if (this.readyState == 4 && this.status >= 200 && this.status < 300) {
 			callback(this.responseText);
@@ -63,7 +63,7 @@ function createAjax(callback) {
 			callback(this.responseText, this.status);
 		}
 	};
-	return ajax
+	return ajax;
 }
 
 /**
@@ -76,8 +76,8 @@ function createAjax(callback) {
  * @param {string} [method="GET"] - The HTTP method to use for the request (e.g., "GET", "DELETE").
  */
 function apiGet(sub, params, callback, method = "GET") {
-	var ajax = createAjax(callback);
-	var request_uri = concatURI(params);
+	const ajax = createAjax(callback);
+	const request_uri = concatURI(params);
 	ajax.open(method, "/api/" + sub, true);
 	ajax.send(request_uri);
 }
@@ -94,17 +94,20 @@ function apiGet(sub, params, callback, method = "GET") {
  * @param {boolean} [isFile=false] - A switch to enable special file upload handling.
  */
 function apiSubmit(sub, params, callback, isFile = false) {
-	var ajax = createAjax(callback);
+	const ajax = createAjax(callback);
+	let method;
+	let request_uri;
+
 	if (isFile) {
 		// Concat Uri
-		var method = "POST";
-		var newForm = new FormData();
-		var request_uri = concatURI(params, newForm);
+		method = "POST";
+		const newForm = new FormData();
+		request_uri = concatURI(params, newForm);
 
 	} else {
 		// Append JSON
-		var method = "PUT";
-		var request_uri = JSON.stringify(params);
+		method = "PUT";
+		request_uri = JSON.stringify(params);
 	}
 	
 	ajax.open(method, "/api/" + sub, true);

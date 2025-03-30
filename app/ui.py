@@ -283,14 +283,18 @@ class UserInterface():
         Returns:
             dict: updated, int: Anzahl der gespeicherten Datensätzen
         """
-        primary_tag = data['primary_tag']
-        secondary_tag = data.get('secondary_tag')
-
         new_tag_data = {
-            'prio': 99,
-            'primary_tag': primary_tag,
-            'secondary_tag': secondary_tag,
+            'prio': 99
         }
+
+        primary_tag = data['primary_tag']
+        if primary_tag:
+            new_tag_data['primary_tag'] = primary_tag
+
+        secondary_tag = data.get('secondary_tag')
+        if secondary_tag:
+            new_tag_data['secondary_tag'] = secondary_tag
+
         condition = {
             'key': 'uuid',
             'value': t_id,

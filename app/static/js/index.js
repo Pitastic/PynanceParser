@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
  * @param {string} result - The text to be shwon.
  */
 function printResult(result){
-    var box = document.getElementById('result-text');
+    const box = document.getElementById('result-text');
     box.innerHTML = result;
 }
 
@@ -49,7 +49,7 @@ function uploadFile() {
  * An optional IBAN to truncate is selected by input with ID 'iban'.
  */
 function truncateDB() {
-    var iban = document.getElementById('input_iban').value;
+    const iban = document.getElementById('input_iban').value;
 
     apiGet('truncateDatabase/'+iban, {}, function (responseText, error) {
         if (error) {
@@ -72,8 +72,8 @@ function truncateDB() {
  */
 function tagEntries() {
     // TODO: Implement more, complex tagging rules
-    var rule_name = document.getElementById('input_tagging_name').value;
-    var rules = {
+    const rule_name = document.getElementById('input_tagging_name').value;
+    const rules = {
         'rule_name': rule_name
     }
 
@@ -97,21 +97,41 @@ function tagEntries() {
  * While the IBAN and Transaction_ID are mandatory, the other inputs are optional.
  */
 function manualTagEntries() {
-    var primary_tag = document.getElementById('input_manual_primary').value;
-    var secondary_tag = document.getElementById('input_manual_secondary').value;
-    var iban = document.getElementById('input_iban').value;
-    var t_id = document.getElementById('input_t_id').value;
+    const primary_tag = document.getElementById('input_manual_primary').value;
+    const secondary_tag = document.getElementById('input_manual_secondary').value;
+    const iban = document.getElementById('input_iban').value;
 
-    if (!iban || !t_id) {
+    const checkboxes = document.querySelectorAll('input[name="entry-select[]"]');
+    const t_ids = [];    
+    checkboxes.forEach((checkbox) => {
+        if (checkbox.checked) {
+            t_ids.push(checkbox.value);
+        }
+    });
+
+    if (!iban) {
         alert('Please provide an IBAN.');
         return;
     }
+    if (!t_ids) {
+        alert('Please provide a Transaction ID (checkbox).');
+        return;
+    }
 
-    var tags = {
+    let tags = {
         'primary_tag': primary_tag,
         'secondary_tag': secondary_tag
     }
-    apiSubmit('setManualTag/'+iban+'/'+t_id, tags, function (responseText, error) {
+    
+    let api_function;
+    if (t_ids.length == 1) {
+        api_function = 'setManualTag/'+iban+'/'+t_ids[0];
+    } else {
+        api_function = 'setManualTags/' + iban;
+        tags['t_ids'] = t_ids;
+    };
+
+    apiSubmit(api_function, tags, function (responseText, error) {
         if (error) {
             printResult('Tagging failed: ' + '(' + error + ')' + responseText);
 
@@ -125,7 +145,7 @@ function manualTagEntries() {
 
 
 function getInfo(uuid) {
-    var iban = document.getElementById('input_iban').value;
+    const iban = document.getElementById('input_iban').value;
 
     apiGet('getTx/'+iban+'/'+uuid, {}, function (responseText, error) {
         if (error) {
