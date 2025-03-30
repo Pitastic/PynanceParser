@@ -4,8 +4,9 @@
 
 <div class="container">
 
-    <table style="border: 1px solid black;">
+    <table class="transactions">
         <thead><tr>
+            <th>&nbsp;</th>
             {% for entry in table_header %}
             <th>{{ entry }}</th>
             {% endfor %}
@@ -15,6 +16,7 @@
         <tbody>
             {% for entry in table_data %}
             <tr id="tr-{{entry.get('uuid')}}">
+                <td><input type="checkbox" name="entry-select[]" value="entry.get('uuid')"></td>
                 {% for key in table_header %}
                 {% if key != 'parsed' %}
                 <td class="td-{{ key }}">{{ entry.get(key) }}</td>

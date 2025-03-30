@@ -229,35 +229,76 @@ class UserInterface():
                 return self.tagger.tag(**request.json)
 
             @current_app.route('/api/setManualTag/<iban>/<t_id>', methods=['PUT'])
-            def setManualTag(iban, t_id):
+            def setManualTag(iban, t_id, data=None):
                 """
-                Setzt manuell eine Kategorie für einen bestimmten Eintrag.
+                Handler für _set_manual_tag() für einzelne Einträge.
 
                 Args (uri/json):
                     iban, str: IBAN
                     t_id, int: Datenbank ID der Transaktion, die getaggt werden soll
+                    data, dict: Daten für die Aktualisierung (default: request.json)
+                        - primary_tag, str: Bezeichnung der primären Kategorie
+                        - secondary_tag, str: Bezeichnung der sekundären Kategorie
+                Returns:
+                    dict: updated, int: Anzahl der gespeicherten Datensätzen
+                """
+                if data is None:
+                    data = request.json
+                return self._set_manual_tag(iban, t_id, data)
+
+            @current_app.route('/api/setManualTags/<iban>', methods=['PUT'])
+            def setManualTags(iban):
+                """
+                Handler für _set_manual_tag() für mehrere Einträge.
+
+                Args (uri/json):
+                    iban, str: IBAN
+                    t_ids, list[str]: Liste mit Datenbank IDs der Transaktionen,
+                                      die getaggt werden sollen
                     primary_tag, str: Bezeichnung der primären Kategorie
                     secondary_tag, str: Bezeichnung der sekundären Kategorie
                 Returns:
-                    Anzahl der gespeicherten Datensätzen
+                    dict: updated, int: Anzahl der gespeicherten Datensätzen
                 """
                 data = request.json
-                primary_tag = data['primary_tag']
-                secondary_tag = data.get('secondary_tag')
+                updated_entries = {'updated': 0}
 
-                new_tag_data = {
-                    'prio': 99,
-                    'primary_tag': primary_tag,
-                    'secondary_tag': secondary_tag,
-                }
-                condition = {
-                    'key': 'uuid',
-                    'value': t_id,
-                    'compare': '=='
-                }
+                for tx in data.get('t_ids'):
 
-                updated_entries = self.db_handler.update(new_tag_data, iban, condition)
+                    updated = self._set_manual_tag(iban, tx, data)
+                    updated_entries['updated'] += updated.get('updated')
+
                 return updated_entries
+
+    def _set_manual_tag(self, iban, t_id, data):
+        """
+        Setzt manuell eine Kategorie für einen bestimmten Eintrag.
+
+        Args:
+            iban, str: IBAN
+            t_id, int: Datenbank ID der Transaktion, die getaggt werden soll
+            data, dict: Daten für die Aktualisierung (default: request.json)
+                - primary_tag, str: Bezeichnung der primären Kategorie
+                - secondary_tag, str: Bezeichnung der sekundären Kategorie
+        Returns:
+            dict: updated, int: Anzahl der gespeicherten Datensätzen
+        """
+        primary_tag = data['primary_tag']
+        secondary_tag = data.get('secondary_tag')
+
+        new_tag_data = {
+            'prio': 99,
+            'primary_tag': primary_tag,
+            'secondary_tag': secondary_tag,
+        }
+        condition = {
+            'key': 'uuid',
+            'value': t_id,
+            'compare': '=='
+        }
+
+        updated_entries = self.db_handler.update(new_tag_data, iban, condition)
+        return updated_entries
 
     def _read_input(self, uri, bank='Generic', data_format=None):
         """

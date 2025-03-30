@@ -17,3 +17,22 @@ html, body {
     padding: 1em;
     margin: 1em;
 }
+
+table.transactions {
+    width: 100%;
+    border-collapse: collapse;
+}
+    table.transactions th, table.transactions td {
+        border: 1px solid #ddd;
+        padding: 8px;
+    }
+    table.transactions th {
+        background-color: #f2f2f2;
+        text-align: left;
+    }
+    table.transactions tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+    table.transactions tr:hover {
+        background-color: #ddd;
+    }

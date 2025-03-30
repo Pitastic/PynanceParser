@@ -265,6 +265,25 @@ def test_manual_tagging(test_app):
             assert r.get('updated') == 1, "Der Eintrag wurde nicht aktualisiert"
 
 
+def test_manual_multi_tagging(test_app):
+    """Mehrere Einträge mit bestimmter Kategorie taggen"""
+    with test_app.app_context():
+
+        with test_app.test_client() as client:
+            new_tag = {
+                'primary_tag': 'Tets_PRIMARY_2',
+                'secondary_tag': 'Test_SECONDARY_2',
+                't_ids': ["6884802db5e07ee68a68e2c64f9c0cdd",
+                          "fdd4649484137572ac642e2c0f34f9af"]
+            }
+            r = client.put(
+                f"/api/setManualTags/{test_app.config['IBAN']}",
+                json=new_tag
+            )
+            r = r.json
+            assert r.get('updated') == 2, "Der Eintrag wurde nicht aktualisiert"
+
+
 def test_get_tx(test_app):
     """Testet den API-Endpoint für die Transaktionsdetails"""
     with test_app.app_context():
@@ -279,5 +298,5 @@ def test_get_tx(test_app):
 
             # Check Content
             result = result.json
-            assert result.get('primary_tag') == 'Tets_PRIMARY', \
+            assert result.get('primary_tag') == 'Tets_PRIMARY_2', \
                 "Der Primary Tag war nicht wie erwartet"

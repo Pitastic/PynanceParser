@@ -64,6 +64,35 @@ def test_flush_to_db(test_app):
             (f'Es wurden {len(r)} Einträge statt '
             'der 5 erwarteten von UserInterface gespeichert')
 
+def test_set_manual_tag(test_app):
+    """
+    Testet das Setzen eines Tags für einen Eintrag in der Instanz.
+    """
+    with test_app.app_context():
+        iban = test_app.config['IBAN']
+        t_id = '6884802db5e07ee68a68e2c64f9c0cdd'
+
+        # Setzen des Tags
+        r = test_app.host._set_manual_tag( # pylint: disable=protected-access
+            iban, t_id,
+            {
+                'primary_tag': 'Test_Pri',
+                'secondary_tag': 'Test_Second'
+            }
+        )
+        assert r.get('updated') == 1, 'Es wurde kein Eintrag aktualisiert. '
+
+        # Überprüfen
+        condition = {
+            'key': 'uuid',
+            'value': t_id,
+            'compare': '=='
+        }
+        rows = test_app.host.db_handler.select(iban, condition)
+        assert rows[0].get('primary_tag') == 'Test_Pri' and \
+            rows[0].get('secondary_tag') == 'Test_Second', \
+            f'Der Tag wurde nicht gesetzt: {rows[0]}'
+
 @pytest.mark.skip(reason="Currently not implemented yet")
 def test_create_user():
     """Testet das Anlegen eines Users"""
