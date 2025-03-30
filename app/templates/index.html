@@ -1,0 +1,77 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+
+<div class="container">
+
+    <table class="transactions">
+        <thead><tr>
+            <th>&nbsp;</th>
+            {% for entry in table_header %}
+            <th>{{ entry }}</th>
+            {% endfor %}
+            <th>&nbsp;</th>
+        </tr></thead>
+
+        <tbody>
+            {% for entry in table_data %}
+            <tr id="tr-{{entry.get('uuid')}}">
+                <td><input type="checkbox" name="entry-select[]" value="{{ entry.get('uuid') }}"></td>
+                {% for key in table_header %}
+                {% if key != 'parsed' %}
+                <td class="td-{{ key }}">{{ entry.get(key) }}</td>
+                {% endif %}
+                {% endfor %}
+                <td class="td-parsed">
+                    {% for info in entry.get('parsed') %}
+                    <p>{{ info }}</p>
+                    {% endfor %}
+                </td>
+                <td>
+                    <a class="my-buttons" href="javascript:getInfo('{{ entry.get('uuid') }}');">(i)</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</div>
+
+<div class="container">
+
+    <h2>Input Forms</h2>
+    <ul>
+        <li>Filename: <input type="file" id="input_file"></li>
+    </ul>
+    <ul>
+        <li><input type="text" value="{{iban}}" id="input_iban" placeholder="IBAN"></li>
+        <li><input type="text" value="" id="input_t_id" placeholder="Transaction ID"></li>
+    </ul>
+    <ul>
+        <li><input type="text" value="" id="input_tagging_name" placeholder="Tagging Rule Name"></li>
+    </ul>
+    <ul>
+        <li><input type="text" value="" id="input_manual_primary" placeholder="Primary Manual Tag"></li>
+        <li><input type="text" value="" id="input_manual_secondary" placeholder="Secondary Manual Tag"></li>
+    </ul>
+    
+</div>
+
+<div class="container">
+    
+    <h2>Switches to Click</h2>
+    <a class="my-buttons" id="uploadButton" href="javascript:uploadFile();">Upload</a>
+    <a class="my-buttons" id="truncateButton" href="javascript:truncateDB();">truncate Database</a>
+    <a class="my-buttons" id="tagButton" href="javascript:tagEntries();">tag Entries</a>
+    <a class="my-buttons" id="manualTagButton" href="javascript:manualTagEntries();">tag Entries (manually)</a>
+
+</div>
+
+<div class="container">
+
+    <h2>Message Box</h2>
+    <pre id="result-text">&nbsp;</pre>
+
+<script src="{{ url_for('static', filename='js/index.js') }}"></script>
+
+{% endblock %}

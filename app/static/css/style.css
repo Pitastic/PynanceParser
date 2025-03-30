@@ -1,0 +1,38 @@
+html, body {
+    background-color: rgb(51, 61, 56);
+    color: white;
+}
+
+.my-buttons {
+    display: inline-block;
+    cursor: pointer;
+    padding: 1em;
+    margin: 1em;
+    background-color: silver;
+}
+
+#result-text {
+    display: block;
+    background-color: silver;
+    padding: 1em;
+    margin: 1em;
+}
+
+table.transactions {
+    width: 100%;
+    border-collapse: collapse;
+}
+    table.transactions th, table.transactions td {
+        border: 1px solid #ddd;
+        padding: 8px;
+    }
+    table.transactions th {
+        background-color: rgb(0, 0, 0);
+        text-align: left;
+    }
+    table.transactions tr:nth-child(even) {
+        background-color: rgb(70, 70, 70);
+    }
+    table.transactions tr:hover {
+        background-color: #374d3a;
+    }

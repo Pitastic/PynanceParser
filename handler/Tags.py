@@ -78,6 +78,8 @@ class Tagger():
                 - tagged (int): Anzahl der getaggten Datensätze (0 bei dry_run)
                 - entries (list): UUIDs die selektiert wurden (auch bei dry_run)
         """
+        prio_set = prio if prio_set is None else prio_set
+
         # RegEx Tagging (specific rule or all)
         if rule_regex is not None or rule_parsed_keys:
 
@@ -124,7 +126,7 @@ class Tagger():
 
 
     def tag_regex(self, ruleset: dict, collection: str=None, prio: int=1,
-                  prio_set: int=None, dry_run: bool=False) -> dict:
+                  prio_set: int=1, dry_run: bool=False) -> dict:
         """
         Automatische Kategorisierung anhand von hinterlegten RegExes je Kategorie.
 
@@ -146,7 +148,6 @@ class Tagger():
                 - entries (list): UUIDs die selektiert wurden (auch bei dry_run)
         """
         result = { 'tagged': 0 }
-        prio_set = prio if prio_set is None else prio_set
 
         # Allgemeine Startfilter für die Condition
         query_args = self._form_tag_query(prio, collection)

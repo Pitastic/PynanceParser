@@ -144,11 +144,13 @@ class TinyDbHandler(BaseDb):
         """
         if collection is None:
             collection = current_app.config['IBAN']
+
         collection = self.connection.table(collection)
 
         # Form condition into a query and run
         if condition is None:
             query = Query().noop()
+
         else:
             query = self._form_complete_query(condition, multi)
 
@@ -219,6 +221,12 @@ class TinyDbHandler(BaseDb):
 
         condition_method = condition.get('compare', '==')
         condition_key = condition.get('key')
+        condition_val = condition.get('value')
+        try:
+            # Transfer to a number for comparison
+            condition_val = float(condition_val)
+        except (TypeError, ValueError):
+            pass
 
         # Nested or Plain Key
         if isinstance(condition_key, dict):
@@ -230,7 +238,7 @@ class TinyDbHandler(BaseDb):
 
         # RegEx Suche
         if condition_method == 'regex':
-            where_statement = where_statement.search(condition.get('value'))
+            where_statement = where_statement.search(condition_val)
             return where_statement
 
         # Like Suche
@@ -238,22 +246,22 @@ class TinyDbHandler(BaseDb):
             def test_contains(value, search):
                 return search.lower() in value.lower()
 
-            where_statement = where_statement.test(test_contains, condition.get('value'))
+            where_statement = where_statement.test(test_contains, condition_val)
             return where_statement
 
         # Standard Query
         if condition_method == '==':
-            where_statement = where_statement == condition.get('value')
+            where_statement = where_statement == condition_val
         if condition_method == '!=':
-            where_statement = where_statement != condition.get('value')
+            where_statement = where_statement != condition_val
         if condition_method == '>=':
-            where_statement = where_statement >= condition.get('value')
+            where_statement = where_statement >= condition_val
         if condition_method == '<=':
-            where_statement = where_statement <= condition.get('value')
+            where_statement = where_statement <= condition_val
         if condition_method == '>':
-            where_statement = where_statement > condition.get('value')
+            where_statement = where_statement > condition_val
         if condition_method == '<':
-            where_statement = where_statement < condition.get('value')
+            where_statement = where_statement < condition_val
 
         return where_statement
 

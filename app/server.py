@@ -35,7 +35,10 @@ def create_app(config_path: str) -> Flask:
         }
     })
 
-    app = Flask("PynanceParser")
+    app = Flask("PynanceParser",
+                template_folder=os.path.join(parent_dir, 'app', 'templates'),
+                static_folder=os.path.join(parent_dir, 'app', 'static')
+    )
 
     # Global Config
     app.config.from_pyfile(config_path)
@@ -53,4 +56,4 @@ if __name__ == '__main__':
         'config.py'
     )
     application = create_app(config)
-    application.run(host='0.0.0.0', port=8080, debug=True)
+    application.run(host='0.0.0.0', port=8110, debug=True)

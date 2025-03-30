@@ -3,7 +3,9 @@
 
 import sys
 import os
-from flask import request, jsonify, current_app
+import logging
+from datetime import datetime
+from flask import request, current_app, render_template
 
 # Add Parent for importing Classes
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -64,50 +66,91 @@ class UserInterface():
         # Define Routes
         with current_app.app_context():
 
-            @current_app.route('/')
-            def index() -> str:
+            @current_app.route('/', defaults={'iban':None}, methods=['GET'])
+            @current_app.route('/<iban>', methods=['GET'])
+            def index(iban) -> str:
                 """
                 Startseite mit Navigation und Uploadformular.
 
+                Args (uri):
+                    iban, str:  (optional) IBAN zu der die Einträge angezeigt werden sollen.
+                                (Default: Primäre IBAN aus der Config)
+                    startDate, str (query): Startdatum (Y-m-d) für die Anzeige der Einträge
+                    endDate, str (query):   Enddatum (Y-m-d) für die Anzeige der Einträge
                 Returns:
                     html: Startseite mit Navigation
                 """
-                return """<html><body>
-                    <h2>Upload a file</h2>
-                    <form action="/upload" method="post" enctype="multipart/form-data">
-                    filename: <input type="file" name="tx_file" /><br />
-                    <input type="submit" />
-                    </form>
-                </body></html>
-                """
+                # Check filter args
+                condition = []
 
-            @current_app.route('/upload', methods=['POST'])
+                if iban is None:
+                    iban = current_app.config['IBAN']
+
+                start_date = request.args.get('startDate')
+                if start_date is not None:
+                    # Convert to valid date format
+                    try:
+                        start_date = int(datetime.strptime(start_date, '%Y-%m-%d').timestamp())
+                        condition.append({
+                            'key': 'date_tx',
+                            'value': start_date,
+                            'compare': '>='
+                        })
+
+                    except (ValueError, TypeError) as e:
+                        logging.warning(f"Invalid startDate format '{e}' will be ignored")
+
+                end_date = request.args.get('endDate')
+                if end_date is not None:
+                    # Convert to valid date format
+                    try:
+                        end_date = int(datetime.strptime(end_date, '%Y-%m-%d').timestamp())
+                        condition.append({
+                            'key': 'date_tx',
+                            'value': end_date,
+                            'compare': '<='
+                        })
+
+                    except (ValueError, TypeError) as e:
+                        logging.warning(f"Invalid endDate format '{e}' will be ignored")
+
+                # Table with Transactions
+                rows = self.db_handler.select(iban, condition)
+                table_header = ['date_tx', 'betrag', 'currency',
+                                'primary_tag', 'secondary_tag',
+                                'prio', 'parsed']
+
+                return render_template('index.html', iban=iban,
+                                       table_header=table_header,
+                                       table_data=rows)
+
+
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            # - API Endpoints - - - - - - - - - - - - - - - - - - - -
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+            @current_app.route('/api/upload', methods=['POST'])
             def upload():
                 """
                 Endpunkt für das Annehmen hochgeladener Kontoumsatzdateien.
                 Im Anschluss wird automatisch die Untersuchung der Inhalte angestoßen.
 
-                Args:
-                    tx_file (binary): Dateiupload aus Formular-Submit
+                Args (multipart/form-data):
+                    input_file (binary): Dateiupload aus Formular-Submit
                 Returns:
-                    html: Informationen zur Datei und Ergebnis der Untersuchung.
+                    json: Informationen zur Datei und Ergebnis der Untersuchung.
                 """
-                tx_file = request.files['tx_file']
-                content_type = tx_file.content_type
-                out = """<html>
-                <body>
-                    tx_file length: {size}<br />
-                    tx_file filename: {filename}<br />
-                    tx_file mime-type: {content_type}<br />
-                    inserted: {inserted}
-                </body>
-                </html>"""
+                input_file = request.files.get('input_file')
+                if not input_file:
+                    return {'error': 'No file provided'}, 400
+
+                content_type = input_file.content_type
                 size = 0
-                path = '/tmp/test.file'
+                path = '/tmp/upload.file'
                 with open(path, 'wb') as f:
 
                     while True:
-                        data = tx_file.read(8192)
+                        data = input_file.read(8192)
 
                         if not data:
                             break
@@ -131,84 +174,135 @@ class UserInterface():
                 inserted = self._flush_to_db()
                 os.remove(path)
 
-                if inserted:
-                    return out.format(size=size, filename=tx_file.filename,
-                                      content_type=content_type, inserted=inserted), 201
+                return_code = 201 if inserted else 200
+                return {
+                    'size': size,
+                    'filename': input_file.filename,
+                    'content_type': content_type,
+                    'inserted': inserted
+                }, return_code
 
-                return out.format(size=size, filename=tx_file.filename,
-                                    content_type=content_type, inserted=inserted), 200
-
-            @current_app.route('/view/', defaults={'iban': None}, methods=['GET'])
-            @current_app.route('/view/<iban>', methods=['GET'])
-            def view(iban):
+            @current_app.route('/api/getTx/<iban>/<t_id>', methods=['GET'])
+            def getTx(iban, t_id):
                 """
-                Anzeige aller Umsätze zu einer IBAN
-
-                Args:
-                    iban (str): IBAN, zu der die Umsätze angezeigt werden sollen
-                                (default: aus Config)
+                Gibt alle Details zu einer bestimmten Transaktion zurück.
+                Args (uri):
+                    iban, str: IBAN
+                    t_id, int: Datenbank ID der Transaktion
                 Returns:
-                    html: Tabelle mit den Umsätzen
+                    json: Details zu einer bestimmten Transaktion
                 """
-                rows = self.db_handler.select(iban)
-                out = """<table style="border: 1px solid black;"><thead><tr>
-                    <th>Datum</th> <th>Betrag</th> <th>Tag (pri)</th> <th>Tag (sec.)</th> <th>Parsed</th> <th>Hash</th>
-                </tr></thead><tbody>"""
-                for r in rows:
-                    out += f"""<tr id="tr-{r['uuid']}">
-                    <td class="td-date">{r['date_tx']}</td>
-                    <td class="td-betrag">{r['betrag']} {r['currency']}</td>
-                    <td class="td-tag1">{r['primary_tag']}</td>
-                    <td class="td-tag2">{r['secondary_tag']}</td>
-                    <td class="td-parsed">"""
-                    for parse_element in r['parsed']:
-                        out += f"<p>{parse_element}</p>"
-                    out += f"</td><td class='td-uuid'>{r['uuid']}</td>"
-                    out += "</tr>"
-                out += """</tbody></table>"""
-                return out, 200
+                tx_details = self.db_handler.select(
+                    iban, {
+                        'key': 'uuid',
+                        'value': t_id,
+                        'compare': '=='
+                    }
+                )
+                return tx_details[0], 200
 
-            @current_app.route('/truncateDatabase/', defaults={'iban': None}, methods=['GET'])
-            @current_app.route('/truncateDatabase/<iban>', methods=['GET'])
+            @current_app.route('/api/truncateDatabase/', defaults={'iban':None}, methods=['DELETE'])
+            @current_app.route('/api/truncateDatabase/<iban>', methods=['DELETE'])
             def truncateDatabase(iban):
-                """Leert die Datenbank"""
+                """
+                Leert die Datenbank zu einer IBAN
+                Args (uri):
+                    iban, str:  (optional) IBAN zu der die Datenbank geleert werden soll.
+                                (Default: Primäre IBAN aus der Config)
+                Returns:
+                    json: Informationen zum Ergebnis des Löschauftrags.
+                """
                 deleted_entries = self.db_handler.truncate(iban)
-                return jsonify({'deleted': deleted_entries}), 200
+                return {'deleted': deleted_entries}, 200
 
-            @current_app.route('/tag', methods=['POST'])
+            @current_app.route('/api/tag', methods=['PUT'])
             def tag() -> dict:
                 """
                 Kategorisiert die Kontoumsätze und aktualisiert die Daten in der Instanz.
-                """
-                #TODO: Check *args, **kwargs provided
-                data = request.get_json(force=True)
-                result = self.tagger.tag(**data)
-                return jsonify(result)
+                Die Argumente werden nach Prüfung an die Tagger-Klasse weitergegeben.
 
-            @current_app.route('/setManualTag', methods=['POST'])
-            def setManualTag(self, t_id, primary_tag, secondary_tag=None):
+                Args (json):
+                    siehe Tagger.tag()
+                Returns:
+                    json: Informationen zum Ergebnis des Taggings.
                 """
-                Setzt manuell eine Kategorie für einen bestimmten Eintrag.
+                return self.tagger.tag(**request.json)
 
-                Args:
+            @current_app.route('/api/setManualTag/<iban>/<t_id>', methods=['PUT'])
+            def setManualTag(iban, t_id, data=None):
+                """
+                Handler für _set_manual_tag() für einzelne Einträge.
+
+                Args (uri/json):
+                    iban, str: IBAN
                     t_id, int: Datenbank ID der Transaktion, die getaggt werden soll
+                    data, dict: Daten für die Aktualisierung (default: request.json)
+                        - primary_tag, str: Bezeichnung der primären Kategorie
+                        - secondary_tag, str: Bezeichnung der sekundären Kategorie
+                Returns:
+                    dict: updated, int: Anzahl der gespeicherten Datensätzen
+                """
+                if data is None:
+                    data = request.json
+                return self._set_manual_tag(iban, t_id, data)
+
+            @current_app.route('/api/setManualTags/<iban>', methods=['PUT'])
+            def setManualTags(iban):
+                """
+                Handler für _set_manual_tag() für mehrere Einträge.
+
+                Args (uri/json):
+                    iban, str: IBAN
+                    t_ids, list[str]: Liste mit Datenbank IDs der Transaktionen,
+                                      die getaggt werden sollen
                     primary_tag, str: Bezeichnung der primären Kategorie
                     secondary_tag, str: Bezeichnung der sekundären Kategorie
                 Returns:
-                    Anzahl der gespeicherten Datensätzen
+                    dict: updated, int: Anzahl der gespeicherten Datensätzen
                 """
                 data = request.json
-                t_id = data['t_id']
-                primary_tag = data['primary_tag']
-                secondary_tag = data.get('secondary_tag')
+                updated_entries = {'updated': 0}
 
-                updated_entries = self.db_handler.update(
-                    {
-                        'main_category': primary_tag,
-                        'second_category': secondary_tag,
-                    },
-                    f'WHERE id = {t_id}')
-                return jsonify({'updated': updated_entries})
+                for tx in data.get('t_ids'):
+
+                    updated = self._set_manual_tag(iban, tx, data)
+                    updated_entries['updated'] += updated.get('updated')
+
+                return updated_entries
+
+    def _set_manual_tag(self, iban, t_id, data):
+        """
+        Setzt manuell eine Kategorie für einen bestimmten Eintrag.
+
+        Args:
+            iban, str: IBAN
+            t_id, int: Datenbank ID der Transaktion, die getaggt werden soll
+            data, dict: Daten für die Aktualisierung (default: request.json)
+                - primary_tag, str: Bezeichnung der primären Kategorie
+                - secondary_tag, str: Bezeichnung der sekundären Kategorie
+        Returns:
+            dict: updated, int: Anzahl der gespeicherten Datensätzen
+        """
+        new_tag_data = {
+            'prio': 99
+        }
+
+        primary_tag = data['primary_tag']
+        if primary_tag:
+            new_tag_data['primary_tag'] = primary_tag
+
+        secondary_tag = data.get('secondary_tag')
+        if secondary_tag:
+            new_tag_data['secondary_tag'] = secondary_tag
+
+        condition = {
+            'key': 'uuid',
+            'value': t_id,
+            'compare': '=='
+        }
+
+        updated_entries = self.db_handler.update(new_tag_data, iban, condition)
+        return updated_entries
 
     def _read_input(self, uri, bank='Generic', data_format=None):
         """
