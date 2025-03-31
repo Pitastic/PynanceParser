@@ -98,7 +98,14 @@ def test_regex_custom():
     die vom Benutzer hinterlegt worden sind"""
     return
 
-@pytest.mark.skip(reason="Currently not implemented yet")
-def test_ai():
-    """Testet das Kategorisieren der Datensätze mit Hilfe der KI"""
-    return
+
+def test_ai_guess(test_app):
+    """Prüft zunächst, ob die Methode für das KI Tagging die
+    richtigen Datensätze selektiert und ein Guess hinterlässt"""
+    with test_app.app_context():
+        tagger = Tagger(MockDatabase())
+        tagging_result = tagger.tag_ai(dry_run=True)
+        assert tagging_result.get('guessed') == 0, \
+            "Die Option dry_run hat trotzdem Datensätze verändert"
+        assert len(tagging_result.get('ai').get('entries')) == 5, \
+            "Die Methode hat nicht die richtige Anzahl an Einträgen getroffen"

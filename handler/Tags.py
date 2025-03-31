@@ -108,8 +108,7 @@ class Tagger():
 
         if rule_name == 'ai':
             # AI only
-            return self.tag_ai(rules, prio=prio,
-                               prio_set=prio_set, dry_run=dry_run)
+            return self.tag_ai(rules, dry_run=dry_run)
 
         # Benutzer Regeln laden
         rules = self._load_ruleset(rule_name)
@@ -122,8 +121,9 @@ class Tagger():
             raise ValueError('Es existieren noch keine Regeln für den Benutzer')
 
         # Benutzer Regeln anwenden
-        return self.tag_regex(rules, prio=prio, prio_set=prio_set, dry_run=dry_run)
-
+        result_rx = self.tag_regex(rules, prio=prio, prio_set=prio_set, dry_run=dry_run)
+        result_ai = self.tag_ai(dry_run=dry_run)
+        return {**result_rx, **result_ai}
 
     def tag_regex(self, ruleset: dict, collection: str=None, prio: int=1,
                   prio_set: int=1, dry_run: bool=False) -> dict:
@@ -228,34 +228,27 @@ class Tagger():
             # Store Result for this Rule
             result['tagged'] += rule_result.get('tagged')
             result[rule_name] = rule_result
+
         return result
 
-
-    def tag_ai(self, collection: str=None, prio: int=1, prio_set: int=None,
-               dry_run: bool=False) -> dict:
+    def tag_ai(self, collection: str=None, dry_run: bool=False) -> dict:
         """
         Automatisches Tagging mit AI.
 
         Args:
             collection:     Name der Collection, in die Werte eingefügt werden sollen.
                             Default: IBAN aus der Config.
-            prio:           Value of priority for this tagging run
-                            in comparison with already tagged transactions (higher = important)
-                            This value will be set as the new priority in DB
-            prio_set        Compare with priority but set this value instead.
-                            Default: prio.
             dry_run         Switch to show, which TX would be updated. Do not update.
         Returns:
             dict:
-            - tagged (int): Summe aller erfolgreichen Taggings (0 bei dry_run)
+            - guessed (int): Summe aller erfolgreichen Taggings (0 bei dry_run)
             - ai (dict):
-                - tagged (int): Anzahl der getaggten Datensätze (0 bei dry_run)
                 - entries (list): UUIDs die selektiert wurden (auch bei dry_run)
         """
         logging.info("Tagging with AI....")
 
         # Allgemeine Startfilter für die Condition
-        query_args = self._form_tag_query(prio, collection=collection)
+        query_args = self._form_tag_query(collection=collection, ai=True)
         matched = self.db_handler.select(**query_args)
 
         tagged = 0
@@ -266,25 +259,19 @@ class Tagger():
         for row in matched:
             c, entry = self._ai_tagging(row)
             count += c
-            entries += entry.get('uuid')
+            entries.append(entry.get('uuid'))
 
         # Update Request
         if count and not dry_run:
 
             for entry in entries:
 
-                if entry.get('primmary') is None:
-                    continue
-
                 uuid = entry.get('uuid')
                 query = {'key': 'uuid', 'value': uuid}
-                new_prio = prio if prio_set is None else prio_set
 
                 # Updated Category
                 new_category = {
-                    'prio': new_prio,
-                    'primary_tag': entry.get('primary'),
-                    'secondary_tag': entry.get('secondary', 'sonstiges'),
+                    'guess': entry.get('guess')
                 }
                 updated = self.db_handler.update(data=new_category, condition=query)
 
@@ -297,9 +284,8 @@ class Tagger():
                 tagged += updated
 
         result = {
-            'tagged': tagged,
+            'guessed': tagged,
             'ai': {
-                'tagged': tagged,
                 'entries': entries
             }
         }
@@ -307,28 +293,45 @@ class Tagger():
         logging.info("Tagging with AI....DONE")
         return result
 
-    def _form_tag_query(self, prio: int, collection: str=None) -> dict:
+    def _form_tag_query(self, prio: int=1, collection: str=None, ai=False) -> dict:
         """
         Erstellt die Standardabfrage-Filter für den Ausgangsdatensatz eines Taggings.
 
         Args:
             prio, int: Filter more important tags
             collection, str: Collection to select from
+            ai, bool: True if AI Tagging
         Return:
             dict: Query Dict for db_handler.select()
         """
-        # Allgemeine Startfilter für die Condition
-        query_args = {
-            'condition': [{
-                'key': 'prio',
-                'value': prio,
-                'compare': '<'
-            }],
-            'multi': 'AND',
-            'collection': collection
-        }
-        if collection is not None:
-            query_args['collection'] = collection
+        if not ai:
+            # Allgemeine Startfilter für die Condition
+            query_args = {
+                'condition': [{
+                    'key': 'prio',
+                    'value': prio,
+                    'compare': '<'
+                }],
+                'multi': 'AND',
+                'collection': collection
+            }
+        else:
+            # Startfilter für unkategoriesierte Transaktionen
+            query_args = {
+                'condition': [
+                    {
+                        'key': 'primary_tag',
+                        'value': None,
+                        'compare': '=='
+                    }, {
+                        'key': 'secondary_tag',
+                        'value': None,
+                        'compare': '=='
+                    }
+                ],
+                'multi': 'OR',
+                'collection': collection
+            }
 
         return query_args
 
@@ -344,20 +347,35 @@ class Tagger():
             tuple(int, dict): Trefferanzahl (0|1), Aktualisierte Transaktion
         """
         #TODO: Fake Methode
-        list_of_categories = [
-            'Vergnügen', 'Versicherung', 'KFZ', 'Kredite',
-            'Haushalt und Lebensmittel', 'Anschaffung',
+        primary_categories = [
+            'AI_Pri_1', 'AI_Pri_2', 'AI_Pri_3', 'AI_Pri_4',
+            'AI_Pri_5', 'AI_Pri_6', None, None, None, None,
+            None, None, None, None, None, None, None
         ]
-        list_of_categories += 20 * None
+        secondary_categories = [
+            'AI_Sec_1', 'AI_Sec_2', 'AI_Sec_3', 'AI_Sec_4',
+            'AI_Sec_5', 'AI_Sec_6', None, None, None, None,
+            None, None, None, None, None, None, None
+        ]
 
-        found_category = random.choice(list_of_categories)
         c = 0
+        guess = {}
+        if transaction.get('primary_tag') is not None:
+            # Guess Primary Tag
+            found_category = random.choice(primary_categories)
+            if found_category is not None:
+                guess['primary_tag'] = found_category
+                c += 1
 
-        if found_category is not None:
-            transaction['primary_tag'] = found_category
-            transaction['secondary_tag'] = None
-            c = 1
+        if transaction.get('secondary_tag') is not None:
+            # Guess Secondary Tag
+            found_category = random.choice(secondary_categories)
+            if found_category is not None:
+                guess['secondary_tag'] = found_category
+                c += 1
 
+        # Store result and return
+        transaction['guess'] = guess
         return c, transaction
 
     def _load_ruleset(self, rule_name=None, namespace='both'):
