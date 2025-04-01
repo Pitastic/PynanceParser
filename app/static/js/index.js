@@ -147,7 +147,7 @@ function manualTagEntries() {
 function getInfo(uuid) {
     const iban = document.getElementById('input_iban').value;
 
-    apiGet('getTx/'+iban+'/'+uuid, {}, function (responseText, error) {
+    apiGet('/'+iban+'/'+uuid, {}, function (responseText, error) {
         if (error) {
             printResult('getTx failed: ' + '(' + error + ')' + responseText);
 

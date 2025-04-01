@@ -291,7 +291,7 @@ def test_get_tx(test_app):
         with test_app.test_client() as client:
             # Get Transaction                
             result = client.get(
-                f"/api/getTx/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd"
+                f"/api/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd"
             )
             assert result.status_code == 200, \
                 "Der Statuscode der Transaktion war falsch"

@@ -108,7 +108,7 @@ class Tagger():
 
         if rule_name == 'ai':
             # AI only
-            return self.tag_ai(rules, dry_run=dry_run)
+            return self.tag_ai(dry_run=dry_run)
 
         # Benutzer Regeln laden
         rules = self._load_ruleset(rule_name)
@@ -259,7 +259,7 @@ class Tagger():
         for row in matched:
             c, entry = self._ai_tagging(row)
             count += c
-            entries.append(entry.get('uuid'))
+            entries.append(entry)
 
         # Update Request
         if count and not dry_run:
@@ -274,6 +274,7 @@ class Tagger():
                     'guess': entry.get('guess')
                 }
                 updated = self.db_handler.update(data=new_category, condition=query)
+                updated = updated.get('updated')
 
                 # soft Exception Handling
                 if not updated:
@@ -286,7 +287,7 @@ class Tagger():
         result = {
             'guessed': tagged,
             'ai': {
-                'entries': entries
+                'entries': [e.get('uuid') for e in entries],
             }
         }
 
@@ -360,14 +361,17 @@ class Tagger():
 
         c = 0
         guess = {}
-        if transaction.get('primary_tag') is not None:
+        primary_tag = transaction.get('primary_tag')
+        if primary_tag is None:
             # Guess Primary Tag
             found_category = random.choice(primary_categories)
             if found_category is not None:
-                guess['primary_tag'] = found_category
+                primary_tag = found_category
+                guess['primary_tag'] = primary_tag
                 c += 1
 
-        if transaction.get('secondary_tag') is not None:
+
+        if primary_tag is not None and transaction.get('secondary_tag') is None:
             # Guess Secondary Tag
             found_category = random.choice(secondary_categories)
             if found_category is not None:

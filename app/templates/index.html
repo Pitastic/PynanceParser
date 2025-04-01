@@ -19,7 +19,7 @@
                 <td><input type="checkbox" name="entry-select[]" value="{{ entry.get('uuid') }}"></td>
                 {% for key in table_header %}
                 {% if key != 'parsed' %}
-                <td class="td-{{ key }}">{{ entry.get(key) }}</td>
+                <td class="td-{{ key }}">{{ entry.get(key) or '' }}</td>
                 {% endif %}
                 {% endfor %}
                 <td class="td-parsed">

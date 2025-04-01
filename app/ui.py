@@ -182,7 +182,7 @@ class UserInterface():
                     'inserted': inserted
                 }, return_code
 
-            @current_app.route('/api/getTx/<iban>/<t_id>', methods=['GET'])
+            @current_app.route('/api/<iban>/<t_id>', methods=['GET'])
             def getTx(iban, t_id):
                 """
                 Gibt alle Details zu einer bestimmten Transaktion zurück.
