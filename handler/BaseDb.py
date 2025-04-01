@@ -141,3 +141,26 @@ class BaseDb():
             return tx_list[0]
 
         return tx_list
+
+    def get_metadata(self, key):
+        """
+        Ruft Metadaten aus der Datenbank ab.
+
+        Args:
+            key (str): Der Schlüssel der Metadaten.
+        Returns:
+            dict: Die abgerufenen Metadaten.
+        """
+        raise NotImplementedError()
+
+    def set_metadata(self, key, value):
+        """
+        Speichert oder aktualisiert Metadaten in der Datenbank.
+
+        Args:
+            key (str): Der Schlüssel der Metadaten.
+            value (any): Der Wert der Metadaten.
+        Returns:
+            dict: Informationen über den Speichervorgang.
+        """
+        raise NotImplementedError()

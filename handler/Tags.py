@@ -29,11 +29,7 @@ class Tagger():
         # RegExes
         # Der Key wird als Bezeichner für das Ergebnis verwendet.
         # Jeder RegEx muss genau eine Gruppe matchen.
-        parse_regexes = {
-            'Mandatsreferenz': re.compile(r"Mandatsref\:\s?([A-z0-9]*)"),
-            'Gläubiger-ID': re.compile(r"([A-Z]{2}[0-9]{2}[0-9A-Z]{3}[0-9]{11})"),
-            'Gläubiger-ID-2': re.compile(r"([A-Z]{2}[0-9]{2}[0-9A-Z]{3}[0-9]{19})"),
-        }
+        parse_regexes = self._load_parsers()
 
         for d in input_data:
             for name, regex in parse_regexes.items():
@@ -381,6 +377,20 @@ class Tagger():
         # Store result and return
         transaction['guess'] = guess
         return c, transaction
+
+    def _load_parsers(self) -> dict:
+        """
+        Parser ermöglichen das Extrahieren von Kerninformationen aus dem Buchungstext.
+        Die Ergebnisse können für Entscheidung beim Tagging genutzt werden.
+        Der Key wird als Bezeichner für das Ergebnis verwendet.
+        Jeder RegEx muss genau eine Gruppe matchen.
+        """
+        parsers = {
+            'Mandatsreferenz': re.compile(r"Mandatsref\:\s?([A-z0-9]*)"),
+            'Gläubiger-ID': re.compile(r"([A-Z]{2}[0-9]{2}[0-9A-Z]{3}[0-9]{11})"),
+            'Gläubiger-ID-2': re.compile(r"([A-Z]{2}[0-9]{2}[0-9A-Z]{3}[0-9]{19})"),
+        }
+        return parsers
 
     def _load_ruleset(self, rule_name=None, namespace='both'):
         """

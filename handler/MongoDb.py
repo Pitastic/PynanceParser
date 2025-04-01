@@ -26,11 +26,23 @@ class MongoDbHandler(BaseDb):
 
     def create(self):
         """
-        Erstellt eine Collection je Konto und legt Indexes/Constraints fest
+        Erstellt eine Collection je Konto und legt Indexes/Constraints fest.
+        Außerdem wird die Collection für Metadaten erstellt, falls sie noch nicht existiert.
         """
-        self.connection[current_app.config['IBAN']].create_index(
-            [("uuid", pymongo.TEXT)], unique=True
+        # Collection für Transaktionen (je Konto)
+        iban = current_app.config['IBAN']
+        if iban not in self.connection.list_collection_names():
+            self.connection.create_collection(iban)
+            self.connection[iban].create_index(
+                [("uuid", pymongo.TEXT)], unique=True
         )
+
+        # Collection für Metadaten
+        if 'metadata' not in self.connection.list_collection_names():
+            self.connection.create_collection('metadata')
+            self.connection['metadata'].create_index(
+                [("key", pymongo.TEXT)], unique=True
+            )
 
     def select(self, collection=None, condition=None, multi='AND'):
         """
@@ -169,6 +181,20 @@ class MongoDbHandler(BaseDb):
                 - deleted, int: Anzahl der gelöschten Datensätze
         """
         return self.delete(collection=collection)
+
+    def get_metadata(self, key):
+        collection = self.connection['metadata']
+        result = collection.find_one({'key': key})
+        return result
+
+    def set_metadata(self, key, value):
+        collection = self.connection['metadata']
+        result = collection.update_one(
+            {'key': key},
+            {'$set': {'value': value}},
+            upsert=True
+        )
+        return {'updated': result.modified_count}
 
     def _form_condition(self, condition):
         """

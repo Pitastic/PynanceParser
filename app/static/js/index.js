@@ -144,6 +144,13 @@ function manualTagEntries() {
 }
 
 
+/**
+ * Fetches information based on the provided UUID and IBAN input value.
+ *
+ * @param {string} uuid - The unique identifier used to fetch specific information.
+ * 
+ * This function retrieves the info for a given uuid from the server.
+ */
 function getInfo(uuid) {
     const iban = document.getElementById('input_iban').value;
 
@@ -156,4 +163,18 @@ function getInfo(uuid) {
 
         }
     });
+}
+
+
+function saveRule() {
+    const rule = document.getElementById('input_rule').value;
+    apiSubmit('saveRule', {'rule_json': rule}, function (responseText, error) {
+        if (error) {
+            printResult('Rule saving failed: ' + '(' + error + ')' + responseText);
+
+        } else {
+            alert('Rule saved successfully!' + responseText);
+
+        }
+    }, false);
 }

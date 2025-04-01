@@ -35,10 +35,14 @@ class TinyDbHandler(BaseDb):
 
     def create(self):
         """
-        Erstellt einen Table je Konto und legt Indexes/Constraints fest
+        Erstellt einen Table je Konto und legt Indexes/Constraints fest.
+        Außerdem wird der Table für Metadaten erstellt, falls er noch nicht existiert.
         """
-        # Touch Table
+        # Touch Table für Transaktionen (je Konto)
         self.connection.table(current_app.config['IBAN'])
+
+        # Table für Metadaten
+        self.connection.table('metadata')
 
     def select(self, collection=None, condition=None, multi='AND'):
         """
@@ -206,6 +210,20 @@ class TinyDbHandler(BaseDb):
         table = self.connection.table(collection)
         r = table.remove(lambda x: True)
         return {'deleted': len(r)}
+
+    def get_metadata(self, key):
+        collection = self.connection.table('metadata')
+        result = collection.get(Query().key == key)
+        return result
+
+    def set_metadata(self, key, value):
+        collection = self.connection.table('metadata')
+        existing = collection.get(Query().key == key)
+        if existing:
+            collection.update({'value': value}, Query().key == key)
+        else:
+            collection.insert({'key': key, 'value': value})
+        return {'updated': 1}
 
     def _form_where(self, condition):
         """

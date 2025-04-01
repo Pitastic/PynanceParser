@@ -270,6 +270,23 @@ class UserInterface():
 
                 return updated_entries
 
+            @current_app.route('/api/saveRule/', defaults={'rule_type':'rule'}, methods=['POST'])
+            @current_app.route('/api/saveRule/<rule_type>', methods=['POST'])
+            def saveRule(rule_type):
+                """
+                Einfügen oder updaten einer Regel in der Datenbank.
+                Args (json):
+                    rule_type, str: Typ der Regel (rule | parser)
+                    rule, dict: Regel-Objekt
+                        - name, str: Name der Regel
+                        - rule, dict: Regel-Objekt
+                """
+                #TODO: Beide Arten in einer DB speichern, anhand eines Key aber unterscheiden.
+                # - Das Dict muss hier noch richtig verpackt werden.
+                # - Das Select muss dafür optimiert werden.
+                # - Es müssen für alles mit metadata noch tests geschrieben werden.
+                raise NotImplementedError()
+
     def _set_manual_tag(self, iban, t_id, data):
         """
         Setzt manuell eine Kategorie für einen bestimmten Eintrag.

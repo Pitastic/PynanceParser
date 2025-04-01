@@ -64,6 +64,13 @@
     <a class="my-buttons" id="truncateButton" href="javascript:truncateDB();">truncate Database</a>
     <a class="my-buttons" id="tagButton" href="javascript:tagEntries();">tag Entries</a>
     <a class="my-buttons" id="manualTagButton" href="javascript:manualTagEntries();">tag Entries (manually)</a>
+    <a class="my-buttons" id="saveRuleButton" href="javascript:saveRule();">save Rule</a>
+
+</div>
+
+<div class="container">
+
+    <textarea id="input_rule" rows="10" cols="50" placeholder="JSON Rule Editor"></textarea>
 
 </div>
 
@@ -71,6 +78,8 @@
 
     <h2>Message Box</h2>
     <pre id="result-text">&nbsp;</pre>
+
+</div>
 
 <script src="{{ url_for('static', filename='js/index.js') }}"></script>
 
