@@ -105,12 +105,13 @@ class BaseDb():
         """
         raise NotImplementedError()
 
-    def _generate_unique(self, tx_entries):
+    def _generate_unique(self, tx_entries, salt=""):
         """
         Erstellt einen einmaligen ID für jede Transaktion.
 
         Args:
             tx_entries (dict | list(dict)): Liste mit Transaktionsobjekten
+            salt (str): Optionaler String, der zur Erstellung der ID verwendet wird.
         Returns:
             dict | list(dict): Die um die IDs ('uuid') erweiterte Eingabeliste
         """
@@ -127,7 +128,8 @@ class BaseDb():
             tx_text = no_special_chars.sub('', transaction.get('text_tx', ''))
             combined_string = str(transaction.get('date_tx', '')) + \
                               str(transaction.get('betrag', '')) + \
-                              tx_text
+                              tx_text + \
+                              salt
             md5_hash.update(combined_string.encode('utf-8'))
 
             # Store UUID
@@ -142,24 +144,57 @@ class BaseDb():
 
         return tx_list
 
-    def get_metadata(self, key):
+    def _generate_unique_meta(self, entry):
+        """
+        Generiert eine eindeutige UUID für Metadaten basierend auf dem Eintrag.
+        Args:
+            entry (dict): Eintrag für den die UUID generiert werden soll.
+        Returns:
+            dict: Das um die ID ('uuid') erweiterte Dict mit den Metadaten.
+        """
+        no_special_chars = re.compile("[^A-Za-z0-9]")
+
+        # Calculate Hash
+        md5_hash = hashlib.md5()
+        uuid_text = f"{entry.get('type', '')}-{entry.get('name', '')}"
+        uuid_text = no_special_chars.sub('', uuid_text)
+        md5_hash.update(uuid_text.encode('utf-8'))
+
+        # Store UUID
+        entry['uuid'] = md5_hash.hexdigest()
+
+        return entry
+
+    def get_metadata(self, uuid):
         """
         Ruft Metadaten aus der Datenbank ab.
 
         Args:
-            key (str): Der Schlüssel der Metadaten.
+            uuid (str): Unique ID (key).
         Returns:
             dict: Die abgerufenen Metadaten.
         """
         raise NotImplementedError()
 
-    def set_metadata(self, key, value):
+    def filter_metadata(self, condition, multi):
         """
-        Speichert oder aktualisiert Metadaten in der Datenbank.
+        Ruft Metadaten aus der Datenbank anhand von Kriterien ab.
 
         Args:
-            key (str): Der Schlüssel der Metadaten.
-            value (any): Der Wert der Metadaten.
+            condition (dict): key-value-Paare für die Filterung der Metadaten.
+            multi (str) : ['AND' | 'OR'] Wenn 'condition' eine Liste mit conditions ist,
+                          werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
+        Returns:
+            dict: Die abgerufenen Metadaten.
+        """
+        raise NotImplementedError()
+
+    def set_metadata(self, entry):
+        """
+        Speichert oder ersetzt Metadaten in der Datenbank.
+
+        Args:
+            entry (dict): Der Eintrag, der gespeichert werden soll.
         Returns:
             dict: Informationen über den Speichervorgang.
         """

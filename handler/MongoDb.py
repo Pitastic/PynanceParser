@@ -41,7 +41,7 @@ class MongoDbHandler(BaseDb):
         if 'metadata' not in self.connection.list_collection_names():
             self.connection.create_collection('metadata')
             self.connection['metadata'].create_index(
-                [("key", pymongo.TEXT)], unique=True
+                [("uuid", pymongo.TEXT)], unique=True
             )
 
     def select(self, collection=None, condition=None, multi='AND'):
@@ -182,19 +182,28 @@ class MongoDbHandler(BaseDb):
         """
         return self.delete(collection=collection)
 
-    def get_metadata(self, key):
+    def get_metadata(self, uuid):
         collection = self.connection['metadata']
-        result = collection.find_one({'key': key})
+        result = collection.find_one({'uuid': uuid})
         return result
 
-    def set_metadata(self, key, value):
+    def filter_metadata(self, condition, multi='AND'):
         collection = self.connection['metadata']
-        result = collection.update_one(
-            {'key': key},
-            {'$set': {'value': value}},
-            upsert=True
-        )
-        return {'updated': result.modified_count}
+        query = self._form_complete_query(condition, multi)
+        return list(collection.find(query))
+
+    def set_metadata(self, entry):
+        # Set uuid if not present
+        if not entry.get('uuid'):
+            entry = self._generate_unique_meta(entry)
+
+        # Remove Entry if exists
+        collection = self.connection['metadata']
+        result = collection.delete_one({'uuid': entry.get('uuid')})
+
+        # Insert new Entry
+        result = collection.insert_one(entry)
+        return {'inserted': result.modified_count}
 
     def _form_condition(self, condition):
         """
