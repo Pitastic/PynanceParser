@@ -39,7 +39,7 @@ class Tagger():
 
         return input_data
 
-    def tag(self,
+    def tag(self, iban,
             rule_name: str = None, rule_primary: str = None, rule_secondary: str = None,
             rule_regex: str = None, rule_parsed_keys: list = (), rule_parsed_vals: list = (),
             prio: int = 1, prio_set: int = None, dry_run: bool = False) -> dict:
@@ -48,6 +48,7 @@ class Tagger():
 
         Args:
             data (dict): Dictionary mit den Parametern für das Tagging:
+                iban            Name der Collection
                 rule_name:      Name der anzuwendenden Taggingregel.
                                 Reserviertes Keyword 'ai' führt nur das AI Tagging aus.
                                 Default: Es werden alle Regeln des Benutzers ohne das
@@ -117,8 +118,8 @@ class Tagger():
             raise ValueError('Es existieren noch keine Regeln für den Benutzer')
 
         # Benutzer Regeln anwenden
-        result_rx = self.tag_regex(rules, prio=prio, prio_set=prio_set, dry_run=dry_run)
-        result_ai = self.tag_ai(dry_run=dry_run)
+        result_rx = self.tag_regex(rules, iban, prio=prio, prio_set=prio_set, dry_run=dry_run)
+        result_ai = self.tag_ai(iban, dry_run=dry_run)
         return {**result_rx, **result_ai}
 
     def tag_regex(self, ruleset: dict, collection: str=None, prio: int=1,

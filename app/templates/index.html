@@ -64,13 +64,18 @@
     <a class="my-buttons" id="truncateButton" href="javascript:truncateDB();">truncate Database</a>
     <a class="my-buttons" id="tagButton" href="javascript:tagEntries();">tag Entries</a>
     <a class="my-buttons" id="manualTagButton" href="javascript:manualTagEntries();">tag Entries (manually)</a>
-    <a class="my-buttons" id="saveRuleButton" href="javascript:saveRule();">save Rule</a>
+    <a class="my-buttons" id="saveMetaButton" href="javascript:saveMeta();">save Meta</a>
 
 </div>
 
 <div class="container">
 
-    <textarea id="input_rule" rows="10" cols="50" placeholder="JSON Rule Editor"></textarea>
+    <select id="select_meta">
+        <option value="config">Config</option>
+        <option value="regex">RegEx</option>
+        <option value="parser">Parser</option>
+    </select>
+    <!-- <textarea id="input_rule" rows="10" cols="50" placeholder="JSON Rule Editor"></textarea> -->
 
 </div>
 

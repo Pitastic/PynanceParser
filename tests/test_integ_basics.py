@@ -23,7 +23,7 @@ def test_truncate(test_app):
     with test_app.app_context():
 
         with test_app.test_client() as client:
-            result = client.delete('/api/truncateDatabase/')
+            result = client.delete(f'/api/{test_app.config['IBAN']}/truncateDatabase')
             assert result.status_code == 200, "Fehler beim Leeren der Datenbank"
 
 
@@ -53,7 +53,10 @@ def test_upload_csv_commerzbank(test_app):
             content = get_testfile_contents(EXAMPLE_CSV, binary=True)
             files = {'input_file': (io.BytesIO(content), 'commerzbank.csv')}
             # Post File
-            result = client.post("/api/upload", data=files, content_type='multipart/form-data')
+            result = client.post(
+                f"/api/upload/{test_app.config['IBAN']}",
+                data=files, content_type='multipart/form-data'
+            )
 
             # Check Response
             assert result.status_code == 201, \
@@ -130,7 +133,10 @@ def test_double_upload(test_app):
             content = get_testfile_contents(EXAMPLE_CSV, binary=True)
             files = {'input_file': (io.BytesIO(content), 'commerzbank.csv')}
             # Post File 1
-            result = client.post("/api/upload", data=files, content_type='multipart/form-data')
+            result = client.post(
+                f"/api/upload/{test_app.config['IBAN']}",
+                data=files, content_type='multipart/form-data'
+            )
 
             # Check Response
             assert result.status_code == 201, \
@@ -140,7 +146,10 @@ def test_double_upload(test_app):
 
             # Post File 2
             files = {'input_file': (io.BytesIO(content), 'commerzbank.csv')}
-            result = client.post("/api/upload", data=files, content_type='multipart/form-data')
+            result = client.post(
+                f"/api/upload/{test_app.config['IBAN']}",
+                data=files, content_type='multipart/form-data'
+            )
 
             # Check Response (same TX: Keine neuen Einträge angelegt)
             assert result.status_code == 200, \
@@ -168,7 +177,7 @@ def test_tag_stored(test_app):
                 'dry_run': True,
                 'prio': 2
             }
-            result = client.put("/api/tag", json=parameters)
+            result = client.put(f"/api/{test_app.config['IBAN']}/tag", json=parameters)
             result = result.json
 
             assert result.get('tagged') == 0, \
@@ -183,7 +192,7 @@ def test_tag_stored(test_app):
                 'rule_name': 'City Tax',
                 'prio': 2
             }
-            result = client.put("/api/tag", json=parameters)
+            result = client.put(f"/api/{test_app.config['IBAN']}/tag", json=parameters)
             result = result.json
 
             assert result.get('tagged') == 1, \
@@ -217,7 +226,7 @@ def test_own_rules(test_app):
                 'rule_regex': r'EDEKA',
                 'prio': 0,
             }
-            result = client.put("/api/tag", json=parameters)
+            result = client.put(f"/api/{test_app.config['IBAN']}/tag", json=parameters)
             result = result.json
 
             # Es sollte eine Transaktion zutreffen,
@@ -238,7 +247,7 @@ def test_own_rules(test_app):
                 'prio': 9,
                 'prio_set': 3,
             }
-            result = client.put("/api/tag", json=parameters)
+            result = client.put(f"/api/{test_app.config['IBAN']}/tag", json=parameters)
             result = result.json
 
             assert result.get('tagged') == 1, \
@@ -258,7 +267,7 @@ def test_manual_tagging(test_app):
                 'secondary_tag': 'Test_SECONDARY'
             }
             r = client.put(
-                f"/api/setManualTag/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd",
+                f"/api/{test_app.config['IBAN']}/setManualTag/6884802db5e07ee68a68e2c64f9c0cdd",
                 json=new_tag
             )
             r = r.json
@@ -277,7 +286,7 @@ def test_manual_multi_tagging(test_app):
                           "fdd4649484137572ac642e2c0f34f9af"]
             }
             r = client.put(
-                f"/api/setManualTags/{test_app.config['IBAN']}",
+                f"/api/{test_app.config['IBAN']}/setManualTags",
                 json=new_tag
             )
             r = r.json

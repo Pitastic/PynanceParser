@@ -4,7 +4,7 @@
 
 ```
 {
-    'uuid': str,
+    'uuid': str,            # (generated)
     'date_tx': int,         # (UTC)
     'text_tx': str,
     'betrag': float,
@@ -46,19 +46,22 @@
 }
 ```
 
-### Dictionary eines Rulesets
+### Dictionary eines Rulesets (Tag/Parse)
 
 ```
 {
-    'primary': str,
-    'regex': r-str( RegEx ),    # (optional if parsed)
-    'parsed': dict(             # (optional if regex)
-        str( parsed-Key ) : r-str( RegEx )
-    )
+    'uuid': str             # (generated)
+    'metatype': str         # (config|regex|parser)
+    'name': str,
+    'regex': r-str( RegEx ),
+
+    ----------- bei Rules ----------
+
+    'primary': str | None,
+    'secondary': str | None,
 
     ----------- optional -----------
 
-    'secondary': str,
     'prioriry': int
 }
 ```

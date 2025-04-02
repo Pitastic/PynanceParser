@@ -24,6 +24,7 @@ function printResult(result){
  * The file is selected via the file input element 'input_file'.
  */
 function uploadFile() {
+    const iban = document.getElementById('input_iban').value;
     const fileInput = document.getElementById('input_file');
     if (fileInput.files.length === 0) {
         alert('Please select a file to upload.');
@@ -31,7 +32,7 @@ function uploadFile() {
     }
 
     const params = { file: 'input_file' }; // The key 'file' corresponds to the input element's ID
-    apiSubmit('upload', params, function (responseText, error) {
+    apiSubmit('upload/' + iban, params, function (responseText, error) {
         if (error) {
             printResult('File upload failed: ' + '(' + error + ')' + responseText);
 
@@ -51,7 +52,7 @@ function uploadFile() {
 function truncateDB() {
     const iban = document.getElementById('input_iban').value;
 
-    apiGet('truncateDatabase/'+iban, {}, function (responseText, error) {
+    apiGet(iban + '/truncateDatabase/'+iban, {}, function (responseText, error) {
         if (error) {
             printResult('Truncate failed: ' + '(' + error + ')' + responseText);
 
@@ -72,12 +73,13 @@ function truncateDB() {
  */
 function tagEntries() {
     // TODO: Implement more, complex tagging rules
+    const iban = document.getElementById('input_iban').value;
     const rule_name = document.getElementById('input_tagging_name').value;
     const rules = {
         'rule_name': rule_name
     }
 
-    apiSubmit('tag', rules, function (responseText, error) {
+    apiSubmit(iban + '/tag', rules, function (responseText, error) {
         if (error) {
             printResult('Tagging failed: ' + '(' + error + ')' + responseText);
 
@@ -125,9 +127,9 @@ function manualTagEntries() {
     
     let api_function;
     if (t_ids.length == 1) {
-        api_function = 'setManualTag/'+iban+'/'+t_ids[0];
+        api_function = iban+'/setManualTag/'+t_ids[0];
     } else {
-        api_function = 'setManualTags/' + iban;
+        api_function = iban+'/setManualTags';
         tags['t_ids'] = t_ids;
     };
 
@@ -166,9 +168,16 @@ function getInfo(uuid) {
 }
 
 
-function saveRule() {
-    const rule = document.getElementById('input_rule').value;
-    apiSubmit('saveRule', {'rule_json': rule}, function (responseText, error) {
+function saveMeta() {
+    const meta_type = document.getElementById('select_meta').value;
+    const fileInput = document.getElementById('input_file');
+    if (fileInput.files.length === 0) {
+        alert('Please select a file to upload.');
+        return;
+    }
+
+    const params = { file: 'input_file' }; // The key 'file' corresponds to the input element's ID
+    apiSubmit('upload/metadata/'+meta_type, params, function (responseText, error) {
         if (error) {
             printResult('Rule saving failed: ' + '(' + error + ')' + responseText);
 
@@ -176,5 +185,5 @@ function saveRule() {
             alert('Rule saved successfully!' + responseText);
 
         }
-    }, false);
+    }, true);
 }
