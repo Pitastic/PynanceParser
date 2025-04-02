@@ -105,13 +105,12 @@ class BaseDb():
         """
         raise NotImplementedError()
 
-    def _generate_unique(self, tx_entries, salt=""):
+    def _generate_unique(self, tx_entries):
         """
         Erstellt einen einmaligen ID für jede Transaktion.
 
         Args:
             tx_entries (dict | list(dict)): Liste mit Transaktionsobjekten
-            salt (str): Optionaler String, der zur Erstellung der ID verwendet wird.
         Returns:
             dict | list(dict): Die um die IDs ('uuid') erweiterte Eingabeliste
         """
@@ -128,8 +127,7 @@ class BaseDb():
             tx_text = no_special_chars.sub('', transaction.get('text_tx', ''))
             combined_string = str(transaction.get('date_tx', '')) + \
                               str(transaction.get('betrag', '')) + \
-                              tx_text + \
-                              salt
+                              tx_text
             md5_hash.update(combined_string.encode('utf-8'))
 
             # Store UUID

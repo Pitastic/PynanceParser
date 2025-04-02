@@ -51,7 +51,6 @@ class UserInterface():
         self.tagger = Tagger(self.db_handler)
 
         # Weitere Attribute
-        self.data = None
         self.reader = None
 
         #TODO: Usermanagement, #7
@@ -130,7 +129,7 @@ class UserInterface():
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
             @current_app.route('/api/upload', methods=['POST'])
-            def upload():
+            def uploadIban():
                 """
                 Endpunkt für das Annehmen hochgeladener Kontoumsatzdateien.
                 Im Anschluss wird automatisch die Untersuchung der Inhalte angestoßen.
@@ -167,11 +166,14 @@ class UserInterface():
                 }
 
                 # Read Input and Parse the contents
-                self._read_input(path, data_format=content_formats.get(content_type))
+                parsed_data = self._read_input(
+                    path, data_format=content_formats.get(content_type)
+                )
 
                 # Verarbeitete Kontiumsätze in die DB speichern
                 # und vom Objekt und Dateisystem löschen
-                inserted = self._flush_to_db()
+                insert_result = self.db_handler.insert(parsed_data)
+                inserted = insert_result.get('inserted')
                 os.remove(path)
 
                 return_code = 201 if inserted else 200
@@ -179,7 +181,7 @@ class UserInterface():
                     'size': size,
                     'filename': input_file.filename,
                     'content_type': content_type,
-                    'inserted': inserted
+                    'inserted': inserted,
                 }, return_code
 
             @current_app.route('/api/<iban>/<t_id>', methods=['GET'])
@@ -332,7 +334,7 @@ class UserInterface():
             bank (str): Bezeichnung der Bank bzw. des einzusetzenden Readers.
             format (str, optional): Bezeichnung des Ressourcenformats (http, csv, pdf).
         Returns:
-            int: Anzahl an geparsten Einträgen
+            list(dict): Geparste und getaggte Kontoumsätze
         """
         # Format
         if data_format is None:
@@ -350,28 +352,8 @@ class UserInterface():
             'http': self.reader.from_http
         }.get(data_format)
 
-        self.data = parsing_method(uri)
-        if self.data is not None:
-            self.data = self._parse(self.data)
-            return len(self.data)
+        data = parsing_method(uri)
+        if data is None:
+            return []
 
-        return 0
-
-    def _parse(self, input_data=None):
-        """Hanlder für den gleichnamigen Methodenaufruf beim Taggers"""
-        # Parsing Data
-        #TODO: Daten nicht aus self.data, sondern DB nach Signal, #8
-        if input_data is None:
-            input_data = self.data
-        return self.tagger.parse(input_data)
-
-    def _flush_to_db(self) -> int:
-        """
-        Speichert die eingelesenen Kontodaten in der Datenbank und bereinigt den Objektspeicher.
-
-        Returns:
-            int: Die Anzahl der eingefügten Datensätze
-        """
-        inserted_rows = self.db_handler.insert(self.data)
-        self.data = None
-        return inserted_rows.get('inserted')
+        return self.tagger.parse(data)

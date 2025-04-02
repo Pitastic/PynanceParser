@@ -18,11 +18,13 @@ def test_read_input_csv(test_app):
         ), bank='Commerzbank', data_format=None)
 
         # Check Return Value
-        assert found_rows == 5, (f'Es wurden {found_rows} statt der '
+        found_rows_len = len(found_rows)
+        assert found_rows_len == 5, (f'Es wurden {found_rows_len} statt der '
                                     'erwarteten 5 Einträge aus der Datei eingelesen.')
-        assert len(test_app.host.data) == 5, \
-            (f'Es wurden {len(test_app.host.data)} Einträge statt '
-            'der 5 erwarteten in der Instanz UserInterface gespeichert')
+        # Savev to DB for next Tests
+        r = test_app.host.db_handler.insert(found_rows, test_app.config['IBAN'])
+        assert r.get('inserted') == 5, \
+            "Es wurden nicht alle Einträge in die DB eingefügt."
 
 @pytest.mark.skip(reason="Currently not implemented yet")
 def test_read_input_pdf():
@@ -42,27 +44,6 @@ def test_read_input_html():
     """
     return
 
-def test_flush_to_db(test_app):
-    """Testet das Wegschreiben von Daten aus der Instanz in die Datenbank"""
-
-    # Muss Daten in der Instanz haben
-    # Leeren und 5 Datensätze einlesen
-    test_app.host.data = None
-    test_read_input_csv(test_app)
-
-    with test_app.app_context():
-        # Methode ausführen
-        inserted = test_app.host._flush_to_db() # pylint: disable=protected-access
-
-        # Überprüfen
-        assert inserted == 5, \
-            (f'Es wurden {inserted} Einträge statt '
-            'der 5 erwarteten von UserInterface gespeichert')
-
-        r = test_app.host.db_handler.select()
-        assert len(r) == 5, \
-            (f'Es wurden {len(r)} Einträge statt '
-            'der 5 erwarteten von UserInterface gespeichert')
 
 def test_set_manual_tag(test_app):
     """
