@@ -52,7 +52,7 @@ function uploadFile() {
 function truncateDB() {
     const iban = document.getElementById('input_iban').value;
 
-    apiGet(iban + '/truncateDatabase/'+iban, {}, function (responseText, error) {
+    apiGet(iban + '/truncateDatabase', {}, function (responseText, error) {
         if (error) {
             printResult('Truncate failed: ' + '(' + error + ')' + responseText);
 

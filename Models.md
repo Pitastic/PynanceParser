@@ -51,7 +51,7 @@
 ```
 {
     'uuid': str             # (generated)
-    'metatype': str         # (config|regex|parser)
+    'metatype': str         # (config|rule|parser)
     'name': str,
     'regex': r-str( RegEx ),
 
@@ -62,6 +62,10 @@
 
     ----------- optional -----------
 
-    'prioriry': int
+    'prioriry': int,
+    'parsed': dict(
+        'multi': str,       # (AND|OR)
+        'query': dict       # (key=Name, val=Value)
+    )
 }
 ```

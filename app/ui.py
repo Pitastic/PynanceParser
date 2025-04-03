@@ -405,14 +405,18 @@ class UserInterface():
         Returns:
             list(dict): Geparste Objekte für das Einfügen in die Datenbank.
         """
-        #with open(uri, 'rb') as infile:
         with open(uri, 'r', encoding='utf-8') as infile:
-            parsed_data = json.load(infile)
+            try:
+                parsed_data = json.load(infile)
+
+            except json.JSONDecodeError as e:
+                logging.warning(f"Failed to parse JSON file: {e}")
+                return {'error': 'Invalid file format (not json)'}, 400
 
         if isinstance(parsed_data, list):
 
-            for entry in parsed_data.keys():
-                parsed_data[entry]['metatype'] = metatype
+            for i, _ in enumerate(parsed_data):
+                parsed_data[i]['metatype'] = metatype
 
         else:
             parsed_data['metatype'] = metatype

@@ -386,14 +386,14 @@ class Tagger():
         Der Key wird als Bezeichner für das Ergebnis verwendet.
         Jeder RegEx muss genau eine Gruppe matchen.
         """
-        parsers = {
-            'Mandatsreferenz': re.compile(r"Mandatsref\:\s?([A-z0-9]*)"),
-            'Gläubiger-ID': re.compile(r"([A-Z]{2}[0-9]{2}[0-9A-Z]{3}[0-9]{11})"),
-            'Gläubiger-ID-2': re.compile(r"([A-Z]{2}[0-9]{2}[0-9A-Z]{3}[0-9]{19})"),
-        }
+        raw_parser = self.db_handler.filter_metadata({"metatype":"parser"})
+        parsers = {}
+        for p in raw_parser:
+            parsers[p.get('name')] = re.compile(p.get('regex'))
+
         return parsers
 
-    def _load_ruleset(self, rule_name=None, namespace='both'):
+    def _load_ruleset(self, rule_name=None):
         """
         Load Rules from the Settings of for the requesting User.
 
@@ -408,45 +408,21 @@ class Tagger():
         Returns:
             list(dict): Liste von Filterregeln
         """
-        #TODO: Fake Funktion
-        system_rules = {
-            'Supermarkets': {
-                'primary': 'Lebenserhaltungskosten',
-                'secondary': 'Lebensmittel',
-                'regex': r"(EDEKA|Wucherpfennig|Penny|Aldi|Kaufland|netto)",
-            },
-        }
-        user_rules = {
-            'City Tax': {
-                'primary': 'Haus und Grund',
-                'secondary': 'Stadtabgaben',
-                'parsed': {
-                    'Gläubiger-ID': r'DE7000100000077777'
-                },
-            }
-        }
-
         if rule_name:
-
             # Bestimmte Regel laden
-            if namespace in ['system', 'both']:
-                # Allgemein
-                rule = system_rules.get(rule_name)
-            if namespace == 'both':
-                # oder speziell (falls vorhanden)
-                rule = user_rules.get(rule_name, rule)
-            if namespace == 'user':
-                # Nur User
-                rule = user_rules.get(rule_name)
+            raw_rule = self.db_handler.filter_metadata(
+                {"metatype":"rule", "name": rule_name},
+                multi='AND'
+            )
+            rule = raw_rule[0]
+            rule['regex'] = re.compile(rule['regex'])
+            return {rule_name: raw_rule}
 
-            return {rule_name: rule}
+        # Alle Regeln laden
+        raw_rules = self.db_handler.filter_metadata({"metatype":"rule"})
+        rules = {}
+        for r in raw_rules:
+            r['regex'] = re.compile(r.get('regex'))
+            rules[r.get('name')] = r
 
-        # Alle Regeln einzelner namespaces
-        if namespace == 'system':
-            return system_rules
-        if namespace == 'user':
-            return user_rules
-
-        # Alle Regeln aller namespaces
-        system_rules.update(user_rules)
-        return system_rules
+        return rules
