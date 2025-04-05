@@ -215,7 +215,7 @@ class BaseDb():
                 os.path.dirname(
                     os.path.abspath(__file__)
                 )
-            ), 'configs'
+            ), 'settings'
         )
 
         # Load given rules & parsers (do not overwrite)

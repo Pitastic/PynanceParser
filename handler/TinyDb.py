@@ -244,7 +244,6 @@ class TinyDbHandler(BaseDb):
 
         return {'inserted': 0}
 
-
     def _form_where(self, condition):
         """
         Erstellt aus einem Condition-Dict eine entsprechende Query

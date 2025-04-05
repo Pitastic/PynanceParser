@@ -29,10 +29,10 @@ class Tagger():
         # RegExes
         # Der Key wird als Bezeichner für das Ergebnis verwendet.
         # Jeder RegEx muss genau eine Gruppe matchen.
-        parse_regexes = self._load_parsers()
+        parses = self._load_parsers()
 
         for d in input_data:
-            for name, regex in parse_regexes.items():
+            for name, regex in parses.items():
                 re_match = regex.search(d['text_tx'])
                 if re_match:
                     d['parsed'][name] = re_match.group(1)
@@ -177,9 +177,12 @@ class Tagger():
                 })
 
             # -- Add Parsed Values
+            multi = 'AND'
             if rule.get('parsed') is not None:
                 parsed_condition = rule.get('parsed')
-                for key, val in parsed_condition.items():
+                multi = parsed_condition.get('multi', 'AND')
+
+                for key, val in parsed_condition.get('query', {}).items():
                     rule_args['condition'].append({
                         'key': {'parsed': key},
                         'value': val,
@@ -191,7 +194,7 @@ class Tagger():
             matched = self.db_handler.select(
                 collection=rule_args.get('collection'),
                 condition=rule_args.get('condition'),
-                multi=rule_args.get('multi')
+                multi=multi
             )
 
             # Nothing to update
@@ -386,14 +389,16 @@ class Tagger():
         Der Key wird als Bezeichner für das Ergebnis verwendet.
         Jeder RegEx muss genau eine Gruppe matchen.
         """
-        raw_parser = self.db_handler.filter_metadata({"metatype":"parser"})
+        raw_parser = self.db_handler.filter_metadata(
+            {"key": "metatype", "value": "parser"}
+        )
         parsers = {}
         for p in raw_parser:
-            parsers[p.get('name')] = re.compile(p.get('regex'))
+            parsers[p['name']] = re.compile(p.get('regex'))
 
         return parsers
 
-    def _load_ruleset(self, rule_name=None):
+    def _load_ruleset(self, rule_name=None) -> dict|list[dict]:
         """
         Load Rules from the Settings of for the requesting User.
 
@@ -406,23 +411,35 @@ class Tagger():
                                                - user: nur private Regeln
                                                - both (default): alle Regeln
         Returns:
-            list(dict): Liste von Filterregeln
+            dict|list(dict): Liste von Filterregeln
         """
         if rule_name:
             # Bestimmte Regel laden
             raw_rule = self.db_handler.filter_metadata(
-                {"metatype":"rule", "name": rule_name},
+                [
+                    {"key": "metatype", "value": "rule"},
+                    {"key": "name", "value": rule_name}
+                ],
                 multi='AND'
             )
             rule = raw_rule[0]
-            rule['regex'] = re.compile(rule['regex'])
-            return {rule_name: raw_rule}
+            regex = rule.get('regex')
+            if regex:
+                rule['regex'] = re.compile(regex)
+
+            return {rule_name: rule}
 
         # Alle Regeln laden
-        raw_rules = self.db_handler.filter_metadata({"metatype":"rule"})
+        raw_rules = self.db_handler.filter_metadata(
+            {"key": "metatype", "value": "rule"}
+        )
         rules = {}
         for r in raw_rules:
-            r['regex'] = re.compile(r.get('regex'))
+            regex = r.get('regex')
+
+            if regex:
+                r['regex'] = re.compile(regex)
+
             rules[r.get('name')] = r
 
         return rules

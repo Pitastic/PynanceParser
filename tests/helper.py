@@ -249,3 +249,17 @@ class MockDatabase:
             return {'updated': 1}
 
         return {'updated': 0}
+
+    def filter_metadata(self, *args, **kwargs):
+        # [
+        #    {
+        #        "name": "Mandatsreferenz",
+        #        "metatype": "parser",
+        #        "regex": "Mandatsref\\:\\s?([A-z0-9]*)"
+        #    },{
+        #        "name": "Gläubiger-ID",
+        #        "metatype": "parser",
+        #        "regex": "([A-Z]{2}[0-9]{2}[0-9A-Z]{3}(?:[0-9]{11}|[0-9]{19}))"
+        #    }
+        #]
+        return {}
