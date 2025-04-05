@@ -154,6 +154,17 @@ class MockDatabase:
                 'compare': 'regex'
             }
         ]
+        self.query3 = [
+            {
+                'key': 'primary_tag',
+                'value': None,
+                'compare': '=='
+            }, {
+                'key': 'secondary_tag',
+                'value': None,
+                'compare': '=='
+            }
+        ]
         self.db_all = [
 
             {
@@ -219,6 +230,9 @@ class MockDatabase:
 
         if condition == self.query2:
             return [self.db_all[4]]
+
+        if condition == self.query3:
+            return self.db_all
 
         return []
 

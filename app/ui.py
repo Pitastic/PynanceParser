@@ -3,6 +3,7 @@
 
 import sys
 import os
+import json
 import logging
 from datetime import datetime
 from flask import request, current_app, render_template
@@ -51,7 +52,6 @@ class UserInterface():
         self.tagger = Tagger(self.db_handler)
 
         # Weitere Attribute
-        self.data = None
         self.reader = None
 
         #TODO: Usermanagement, #7
@@ -129,8 +129,8 @@ class UserInterface():
             # - API Endpoints - - - - - - - - - - - - - - - - - - - -
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-            @current_app.route('/api/upload', methods=['POST'])
-            def upload():
+            @current_app.route('/api/upload/<iban>', methods=['POST'])
+            def uploadIban(iban):
                 """
                 Endpunkt für das Annehmen hochgeladener Kontoumsatzdateien.
                 Im Anschluss wird automatisch die Untersuchung der Inhalte angestoßen.
@@ -144,19 +144,9 @@ class UserInterface():
                 if not input_file:
                     return {'error': 'No file provided'}, 400
 
-                content_type = input_file.content_type
-                size = 0
-                path = '/tmp/upload.file'
-                with open(path, 'wb') as f:
-
-                    while True:
-                        data = input_file.read(8192)
-
-                        if not data:
-                            break
-
-                        size += len(data)
-                        f.write(data)
+                # Store Upload file to tmp
+                path = '/tmp/transactions.tmp'
+                content_type, size = self._mv_fileupload(input_file, path)
 
                 # Daten einlesen und in Object speichern (Bank und Format default bzw. wird geraten)
                 content_formats = {
@@ -167,11 +157,14 @@ class UserInterface():
                 }
 
                 # Read Input and Parse the contents
-                self._read_input(path, data_format=content_formats.get(content_type))
+                parsed_data = self._read_input(
+                    path, data_format=content_formats.get(content_type)
+                )
 
                 # Verarbeitete Kontiumsätze in die DB speichern
                 # und vom Objekt und Dateisystem löschen
-                inserted = self._flush_to_db()
+                insert_result = self.db_handler.insert(parsed_data, iban)
+                inserted = insert_result.get('inserted')
                 os.remove(path)
 
                 return_code = 201 if inserted else 200
@@ -179,10 +172,30 @@ class UserInterface():
                     'size': size,
                     'filename': input_file.filename,
                     'content_type': content_type,
-                    'inserted': inserted
+                    'inserted': inserted,
                 }, return_code
 
-            @current_app.route('/api/getTx/<iban>/<t_id>', methods=['GET'])
+            @current_app.route('/api/upload/metadata/<metadata>', methods=['POST'])
+            def uploadRules(metadata):
+                """
+                Endpunkt für das Annehmen hochgeladener Tagging- und Parsingregeln..
+
+                Args (uri, multipart/form-data):
+                    metadata (str): [regex|parser|config] Type of Metadata to save
+                    input_file (binary): Dateiupload aus Formular-Submit
+                Returns:
+                    json: Informationen zur Datei und Ergebnis der Untersuchung.
+                """
+                input_file = request.files.get('input_file')
+                if not input_file:
+                    return {'error': 'No file provided'}, 400
+
+                # Store Upload file to tmp
+                path = f'/tmp/{metadata}.tmp'
+                _ = self._mv_fileupload(input_file, path)
+                return self._read_settings(path, metatype=metadata)
+
+            @current_app.route('/api/<iban>/<t_id>', methods=['GET'])
             def getTx(iban, t_id):
                 """
                 Gibt alle Details zu einer bestimmten Transaktion zurück.
@@ -201,8 +214,7 @@ class UserInterface():
                 )
                 return tx_details[0], 200
 
-            @current_app.route('/api/truncateDatabase/', defaults={'iban':None}, methods=['DELETE'])
-            @current_app.route('/api/truncateDatabase/<iban>', methods=['DELETE'])
+            @current_app.route('/api/<iban>/truncateDatabase', methods=['DELETE'])
             def truncateDatabase(iban):
                 """
                 Leert die Datenbank zu einer IBAN
@@ -215,8 +227,8 @@ class UserInterface():
                 deleted_entries = self.db_handler.truncate(iban)
                 return {'deleted': deleted_entries}, 200
 
-            @current_app.route('/api/tag', methods=['PUT'])
-            def tag() -> dict:
+            @current_app.route('/api/<iban>/tag', methods=['PUT'])
+            def tag(iban) -> dict:
                 """
                 Kategorisiert die Kontoumsätze und aktualisiert die Daten in der Instanz.
                 Die Argumente werden nach Prüfung an die Tagger-Klasse weitergegeben.
@@ -226,10 +238,10 @@ class UserInterface():
                 Returns:
                     json: Informationen zum Ergebnis des Taggings.
                 """
-                return self.tagger.tag(**request.json)
+                return self.tagger.tag(iban, **request.json)
 
-            @current_app.route('/api/setManualTag/<iban>/<t_id>', methods=['PUT'])
-            def setManualTag(iban, t_id, data=None):
+            @current_app.route('/api/<iban>/setManualTag/<t_id>', methods=['PUT'])
+            def setManualTag(iban, t_id):
                 """
                 Handler für _set_manual_tag() für einzelne Einträge.
 
@@ -242,11 +254,10 @@ class UserInterface():
                 Returns:
                     dict: updated, int: Anzahl der gespeicherten Datensätzen
                 """
-                if data is None:
-                    data = request.json
+                data = request.json
                 return self._set_manual_tag(iban, t_id, data)
 
-            @current_app.route('/api/setManualTags/<iban>', methods=['PUT'])
+            @current_app.route('/api/<iban>/setManualTags', methods=['PUT'])
             def setManualTags(iban):
                 """
                 Handler für _set_manual_tag() für mehrere Einträge.
@@ -269,6 +280,24 @@ class UserInterface():
                     updated_entries['updated'] += updated.get('updated')
 
                 return updated_entries
+
+            @current_app.route('/api/saveRule/', defaults={'rule_type':'rule'}, methods=['POST'])
+            @current_app.route('/api/saveRule/<rule_type>', methods=['POST'])
+            def saveRule(rule_type):
+                """
+                Einfügen oder updaten einer Regel in der Datenbank.
+                Args (json):
+                    rule_type, str: Typ der Regel (rule | parser)
+                    rule, dict: Regel-Objekt
+                        - name, str: Name der Regel
+                        - rule, dict: Regel-Objekt
+                """
+                #TODO: Beide Arten in einer DB speichern, anhand eines Key aber unterscheiden.
+                # - Es müssen für alles mit metadata noch tests geschrieben werden.
+                # - Bisher ist nur der Import via FileUpload möglich
+                # - Das speichern eines Regexes in JSON ist noch problematisch
+                # - Laden, Filtern und Auflisten testen
+                raise NotImplementedError()
 
     def _set_manual_tag(self, iban, t_id, data):
         """
@@ -304,6 +333,31 @@ class UserInterface():
         updated_entries = self.db_handler.update(new_tag_data, iban, condition)
         return updated_entries
 
+    def _mv_fileupload(self, input_file, path):
+        """
+        Verschiebt die hochgeladene Datei in ein temporäres Verzeichnis.
+
+        Args:
+            input_file (binary): Dateiupload aus Formular-Submit
+            path (str): Pfad zur temporären Datei
+        Returns:
+            str: Content-Type der Datei
+        """
+        content_type = input_file.content_type
+        size = 0
+        with open(path, 'wb') as f:
+
+            while True:
+                data = input_file.read(8192)
+
+                if not data:
+                    break
+
+                size += len(data)
+                f.write(data)
+
+        return content_type, size
+
     def _read_input(self, uri, bank='Generic', data_format=None):
         """
         Liest Kontoumsätze aus der Ressource ein. Wenn das Format nicht angegeben ist,
@@ -315,7 +369,7 @@ class UserInterface():
             bank (str): Bezeichnung der Bank bzw. des einzusetzenden Readers.
             format (str, optional): Bezeichnung des Ressourcenformats (http, csv, pdf).
         Returns:
-            int: Anzahl an geparsten Einträgen
+            list(dict): Geparste und getaggte Kontoumsätze
         """
         # Format
         if data_format is None:
@@ -333,28 +387,51 @@ class UserInterface():
             'http': self.reader.from_http
         }.get(data_format)
 
-        self.data = parsing_method(uri)
-        if self.data is not None:
-            self.data = self._parse(self.data)
-            return len(self.data)
+        data = parsing_method(uri)
+        if data is None:
+            return []
 
-        return 0
+        return self.tagger.parse(data)
 
-    def _parse(self, input_data=None):
-        """Hanlder für den gleichnamigen Methodenaufruf beim Taggers"""
-        # Parsing Data
-        #TODO: Daten nicht aus self.data, sondern DB nach Signal, #8
-        if input_data is None:
-            input_data = self.data
-        return self.tagger.parse(input_data)
-
-    def _flush_to_db(self) -> int:
+    def _read_settings(self, uri, metatype):
         """
-        Speichert die eingelesenen Kontodaten in der Datenbank und bereinigt den Objektspeicher.
+        Liest eine Datei mit Metadaten ein, die entweder Konfigurationen,
+        Regeln für das Tagging oder Regeln für das Parsing enthalten kann.
 
+        Args:
+            uri (str): Pfad zur JSON mit den Eingabedaten.
+            metatype (str): [rule|parser|config] Art der Metadaten.
+                            Sie dürfen nicht gemischt vorliegen.
         Returns:
-            int: Die Anzahl der eingefügten Datensätze
+            list(dict): Geparste Objekte für das Einfügen in die Datenbank.
         """
-        inserted_rows = self.db_handler.insert(self.data)
-        self.data = None
-        return inserted_rows.get('inserted')
+        with open(uri, 'r', encoding='utf-8') as infile:
+            try:
+                parsed_data = json.load(infile)
+
+            except json.JSONDecodeError as e:
+                logging.warning(f"Failed to parse JSON file: {e}")
+                return {'error': 'Invalid file format (not json)'}, 400
+
+        if isinstance(parsed_data, list):
+
+            for i, _ in enumerate(parsed_data):
+                parsed_data[i]['metatype'] = metatype
+
+        else:
+            parsed_data['metatype'] = metatype
+            parsed_data = [parsed_data]
+
+        # Verarbeitete Metadataen in die DB speichern
+        # und vom Objekt und Dateisystem löschen
+        inserted = 0
+        for data in parsed_data:
+            inserted += self.db_handler.set_metadata(data).get('inserted')
+
+        os.remove(uri)
+
+        return_code = 201 if inserted else 200
+        return {
+            'metatype': metatype,
+            'inserted': inserted,
+        }, return_code
