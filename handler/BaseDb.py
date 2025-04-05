@@ -3,16 +3,23 @@
 
 import hashlib
 import re
+import os
+import logging
+import glob
+import json
 
 
 class BaseDb():
     """Basisklasse für die Vererbung an Datenbankhandler mit allgemeinen Funktionen"""
+    def __init__(self):
+        self.create()
+        self._import_metadata()
 
     def create(self):
         """Erstellen des Datenbankspeichers"""
         raise NotImplementedError()
 
-    def select(self, collection, condition, multi):
+    def select(self, collection: str, condition: dict|list[dict], multi: str):
         """
         Selektiert Datensätze aus der Datenbank, die die angegebene Bedingung erfüllen.
 
@@ -34,7 +41,7 @@ class BaseDb():
         """
         raise NotImplementedError()
 
-    def insert(self, data, collection):
+    def insert(self, data: dict|list[dict], collection: str):
         """
         Fügt einen oder mehrere Datensätze in die Datenbank ein.
 
@@ -48,7 +55,7 @@ class BaseDb():
         """
         raise NotImplementedError()
 
-    def update(self, data, collection, condition, multi):
+    def update(self, data: dict, collection: str, condition: dict|list[dict], multi:str):
         """
         Aktualisiert Datensätze in der Datenbank, die die angegebene Bedingung erfüllen.
 
@@ -71,7 +78,7 @@ class BaseDb():
         """
         raise NotImplementedError()
 
-    def delete(self, collection, condition):
+    def delete(self, collection: str, condition: dict | list[dict]):
         """
         Löscht Datensätze in der Datenbank, die die angegebene Bedingung erfüllen.
 
@@ -93,7 +100,7 @@ class BaseDb():
         """
         raise NotImplementedError()
 
-    def truncate(self, collection):
+    def truncate(self, collection: str):
         """Löscht alle Datensätze aus einer Tabelle/Collection
 
         Args:
@@ -105,7 +112,44 @@ class BaseDb():
         """
         raise NotImplementedError()
 
-    def _generate_unique(self, tx_entries):
+    def get_metadata(self, uuid: str):
+        """
+        Ruft Metadaten aus der Datenbank ab.
+
+        Args:
+            uuid (str): Unique ID (key).
+        Returns:
+            dict: Die abgerufenen Metadaten.
+        """
+        raise NotImplementedError()
+
+    def filter_metadata(self, condition: dict, multi: str):
+        """
+        Ruft Metadaten aus der Datenbank anhand von Kriterien ab.
+
+        Args:
+            condition (dict): key-value-Paare für die Filterung der Metadaten.
+            multi (str) : ['AND' | 'OR'] Wenn 'condition' eine Liste mit conditions ist,
+                          werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
+        Returns:
+            dict: Die abgerufenen Metadaten.
+        """
+        raise NotImplementedError()
+
+    def set_metadata(self, entry: dict, overwrite: bool=True):
+        """
+        Speichert oder ersetzt Metadaten in der Datenbank.
+
+        Args:
+            entry (dict): Der Eintrag, der gespeichert werden soll.
+            overwrite (bool): Overwrite existing metadata with same uuid
+                              if present (default: True)
+        Returns:
+            dict: Informationen über den Speichervorgang.
+        """
+        raise NotImplementedError()
+
+    def _generate_unique(self, tx_entries: dict | list[dict]):
         """
         Erstellt einen einmaligen ID für jede Transaktion.
 
@@ -142,7 +186,7 @@ class BaseDb():
 
         return tx_list
 
-    def _generate_unique_meta(self, entry):
+    def _generate_unique_meta(self, entry: dict):
         """
         Generiert eine eindeutige UUID für Metadaten basierend auf dem Eintrag.
         Args:
@@ -163,37 +207,51 @@ class BaseDb():
 
         return entry
 
-    def get_metadata(self, uuid):
-        """
-        Ruft Metadaten aus der Datenbank ab.
+    def _import_metadata(self):
+        """Load content from json configs
+        (config, rules, parsers) into DB"""
+        config_path = os.path.join(
+            os.path.dirname(
+                os.path.dirname(
+                    os.path.abspath(__file__)
+                )
+            ), 'configs'
+        )
 
-        Args:
-            uuid (str): Unique ID (key).
-        Returns:
-            dict: Die abgerufenen Metadaten.
-        """
-        raise NotImplementedError()
+        # Load given rules & parsers (do not overwrite)
+        for metatype in ['config', 'parser', 'rule']:
+            json_glob = os.path.join(config_path, f'{metatype}.*.json')
+            json_files = glob.glob(json_glob)
 
-    def filter_metadata(self, condition, multi):
-        """
-        Ruft Metadaten aus der Datenbank anhand von Kriterien ab.
+            # Load from found metadata files
+            for json_file in json_files:
 
-        Args:
-            condition (dict): key-value-Paare für die Filterung der Metadaten.
-            multi (str) : ['AND' | 'OR'] Wenn 'condition' eine Liste mit conditions ist,
-                          werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
-        Returns:
-            dict: Die abgerufenen Metadaten.
-        """
-        raise NotImplementedError()
+                if not os.path.isfile(json_file):
+                    # dead link
+                    continue
 
-    def set_metadata(self, entry):
-        """
-        Speichert oder ersetzt Metadaten in der Datenbank.
+                # Parse JSON
+                logging.info(f"Loading {metatype} from {json_file}")
+                with open(json_file, 'r', encoding='utf-8') as j:
+                    try:
+                        parsed_data = json.load(j)
 
-        Args:
-            entry (dict): Der Eintrag, der gespeichert werden soll.
-        Returns:
-            dict: Informationen über den Speichervorgang.
-        """
-        raise NotImplementedError()
+                    except json.JSONDecodeError as e:
+                        logging.warning(f"Failed to parse JSON file: {e}")
+
+                # Add metadata type and format as list
+                if isinstance(parsed_data, list):
+
+                    for i, _ in enumerate(parsed_data):
+                        parsed_data[i]['metatype'] = metatype
+
+                else:
+                    parsed_data['metatype'] = metatype
+                    parsed_data = [parsed_data]
+
+                # Store in DB (do not overwrite)
+                inserted = 0
+                for data in parsed_data:
+                    inserted += self.set_metadata(data, overwrite=False).get('inserted')
+
+                logging.info(f"Stored {inserted} {metatype} from {json_file}")

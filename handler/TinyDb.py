@@ -31,7 +31,7 @@ class TinyDbHandler(BaseDb):
         except IOError as ex:
             logging.error(f"Fehler beim Verbindungsaufbau zur Datenbank: {ex}")
 
-        self.create()
+        super().__init__()
 
     def create(self):
         """
@@ -222,18 +222,28 @@ class TinyDbHandler(BaseDb):
         results = collection.search(query)
         return results
 
-    def set_metadata(self, entry):
+    def set_metadata(self, entry, overwrite=True):
         # Set uuid if not present
         if not entry.get('uuid'):
             entry = self._generate_unique_meta(entry)
 
-        # Remove Entry if exists
         collection = self.connection.table('metadata')
-        collection.remove(Query().uuid == entry.get('uuid'))
 
-        # Insert new Entry
-        result = collection.insert(entry)
-        return {'inserted': (1 if result else 0)}
+        if overwrite:
+            # Remove Entry if exists
+            collection.remove(Query().uuid == entry.get('uuid'))
+
+            # Insert new Entry
+            result = collection.insert(entry)
+            return {'inserted': (1 if result else 0)}
+
+        # Only insert if not exists
+        if not collection.search(Query().uuid == entry.get('uuid')):
+            result = collection.insert(entry)
+            return {'inserted': (1 if result else 0)}
+
+        return {'inserted': 0}
+
 
     def _form_where(self, condition):
         """

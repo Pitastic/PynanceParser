@@ -3,7 +3,6 @@
 
 import os
 import sys
-import json
 from logging.config import dictConfig
 from flask import Flask
 
@@ -42,7 +41,7 @@ def create_app(config_path: str) -> Flask:
     )
 
     # Global Config
-    app.config.from_file(config_path, load=json.load)
+    app.config.from_pyfile(config_path)
     if app.config.get('DATABASE_BACKEND') is None:
         raise IOError(f"Config Pfad '{config_path}' konnte nicht geladen werden !")
 
@@ -53,11 +52,8 @@ def create_app(config_path: str) -> Flask:
 
 if __name__ == '__main__':
     config = os.path.join(
-        os.path.dirname(
-            os.path.dirname(
-                os.path.abspath(__file__)
-            )
-        ), 'configs', 'config_default.json'
+        os.path.dirname(os.path.abspath(__file__)),
+        'config.py'
     )
     application = create_app(config)
     application.run(host='0.0.0.0', port=8110, debug=True)

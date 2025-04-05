@@ -22,7 +22,8 @@ class MongoDbHandler(BaseDb):
         self.connection = self.client[current_app.config['DATABASE_NAME']]
         if self.connection is None:
             raise IOError(f"Store {current_app.config['DATABASE_NAME']} not found !")
-        self.create()
+
+        super().__init__()
 
     def create(self):
         """
@@ -192,18 +193,27 @@ class MongoDbHandler(BaseDb):
         query = self._form_complete_query(condition, multi)
         return list(collection.find(query))
 
-    def set_metadata(self, entry):
+    def set_metadata(self, entry, overwrite=True):
         # Set uuid if not present
         if not entry.get('uuid'):
             entry = self._generate_unique_meta(entry)
 
-        # Remove Entry if exists
         collection = self.connection['metadata']
-        result = collection.delete_one({'uuid': entry.get('uuid')})
 
-        # Insert new Entry
-        result = collection.insert_one(entry)
-        return {'inserted': result.modified_count}
+        if overwrite:
+            # Remove Entry if exists
+            result = collection.delete_one({'uuid': entry.get('uuid')})
+
+            # Insert new Entry
+            result = collection.insert_one(entry)
+            return {'inserted': result.modified_count}
+
+        # Only insert if not exists
+        if not collection.find({'uuid': entry.get('uuid')}):
+            result = collection.insert_one(entry)
+            return {'inserted': result.modified_count}
+
+        return {'inserted': 0}
 
     def _form_condition(self, condition):
         """
