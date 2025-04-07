@@ -5,7 +5,7 @@
         "primary": "Lebenserhaltungskosten",
         "secondary": "Lebensmittel",
         "regex": "(EDEKA|Wucherpfennig|Penny|Aldi|Kaufland|netto)"
-    },{
+    }, {
         "name": "City Tax",
         "metatype": "rule",
         "primary": "Haus und Grund",
@@ -13,7 +13,7 @@
         "parsed": {
             "multi": "AND",
             "query": {
-                "Gl\u00e4ubiger-ID": "DE7000100000077777"
+                "Gläubiger-ID": "DE7000100000077777"
             }
         }
     }

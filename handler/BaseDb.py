@@ -7,6 +7,7 @@ import os
 import logging
 import glob
 import json
+from natsort import natsorted
 
 
 class BaseDb():
@@ -210,7 +211,7 @@ class BaseDb():
     def _import_metadata(self):
         """Load content from json configs
         (config, rules, parsers) into DB"""
-        config_path = os.path.join(
+        settings_path = os.path.join(
             os.path.dirname(
                 os.path.dirname(
                     os.path.abspath(__file__)
@@ -220,8 +221,10 @@ class BaseDb():
 
         # Load given rules & parsers (do not overwrite)
         for metatype in ['config', 'parser', 'rule']:
-            json_glob = os.path.join(config_path, f'{metatype}.*.json')
+            json_path = os.path.join(settings_path, metatype)
+            json_glob = os.path.join(json_path, '*.json')
             json_files = glob.glob(json_glob)
+            json_files = natsorted(json_files)
 
             # Load from found metadata files
             for json_file in json_files:
