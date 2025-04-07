@@ -250,16 +250,24 @@ class MockDatabase:
 
         return {'updated': 0}
 
-    def filter_metadata(self, *args, **kwargs):
-        # [
-        #    {
-        #        "name": "Mandatsreferenz",
-        #        "metatype": "parser",
-        #        "regex": "Mandatsref\\:\\s?([A-z0-9]*)"
-        #    },{
-        #        "name": "Gläubiger-ID",
-        #        "metatype": "parser",
-        #        "regex": "([A-Z]{2}[0-9]{2}[0-9A-Z]{3}(?:[0-9]{11}|[0-9]{19}))"
-        #    }
-        #]
-        return {}
+    def filter_metadata(self, condition, *args, **kwargs): # pylint: disable=unused-argument
+        """Mock der Filtermetadatenabfrage
+        Args:
+            condition (dict): Filterkriterien
+            *args, **kwargs: Weitere Argumente
+        Returns:
+            list: Liste der Metadaten
+        """
+        if condition == {"key": "metatype", "value": "parser"}:
+            return [
+                {
+                    "name": "Mandatsreferenz",
+                    "metatype": "parser",
+                    "regex": "Mandatsref\\:\\s?([A-z0-9]*)"
+                },{
+                    "name": "Gläubiger-ID",
+                    "metatype": "parser",
+                    "regex": "([A-Z]{2}[0-9]{2}[0-9A-Z]{3}(?:[0-9]{11}|[0-9]{19}))"
+                }
+            ]
+        return []

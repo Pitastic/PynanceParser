@@ -398,7 +398,7 @@ class Tagger():
 
         return parsers
 
-    def _load_ruleset(self, rule_name=None) -> dict|list[dict]:
+    def _load_ruleset(self, rule_name=None) -> dict:
         """
         Load Rules from the Settings of for the requesting User.
 
@@ -411,7 +411,7 @@ class Tagger():
                                                - user: nur private Regeln
                                                - both (default): alle Regeln
         Returns:
-            dict|list(dict): Liste von Filterregeln
+            dict: Verzeichnis nach Namen der Filterregeln
         """
         if rule_name:
             # Bestimmte Regel laden

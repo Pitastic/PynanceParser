@@ -19,20 +19,26 @@ from handler.Tags import Tagger
 
 # Test Tagging-Ruleset hinterlegen
 RULESET = {
-    'Supermarkets': {
-        'primary': 'Lebenserhaltungskosten',
-        'secondary': 'Lebensmittel',
-        'regex': r"(EDEKA|Wucherpfennig|Penny|Aldi|Kaufland|netto)",
+    "Supermarkets" : {
+        "name": "Supermarkets",
+        "metatype": "rule",
+        "primary": "Lebenserhaltungskosten",
+        "secondary": "Lebensmittel",
+        "regex": r"(EDEKA|Wucherpfennig|Penny|Aldi|Kaufland|netto)"
     },
-    'City Tax': {
-        'primary': 'Haus und Grund',
-        'secondary': 'Stadtabgaben',
-        'parsed': {
-            'Gläubiger-ID': r'DE7000100000077777'
-        },
+    "City Tax": {
+        "name": "City Tax",
+        "metatype": "rule",
+        "primary": "Haus und Grund",
+        "secondary": "Stadtabgaben",
+        "parsed": {
+            "multi": "AND",
+            "query": {
+                'Gläubiger-ID': r'DE7000100000077777'
+            }
+        }
     }
 }
-
 
 def test_parsing_regex(test_app):
     """Testet das Parsen der Datensätze mit den fest hinterlegten RegExes"""
