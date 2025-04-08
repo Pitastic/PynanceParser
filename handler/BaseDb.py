@@ -133,7 +133,7 @@ class BaseDb():
             multi (str) : ['AND' | 'OR'] Wenn 'condition' eine Liste mit conditions ist,
                           werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
         Returns:
-            dict: Die abgerufenen Metadaten.
+            list: Die abgerufenen Metadaten.
         """
         raise NotImplementedError()
 

@@ -243,3 +243,46 @@ def test_delete(test_app):
         delete_many = deleted_db.get('deleted')
         assert delete_many == 4, \
             f'Es wurde nicht die richtige Anzahl an Datensätzen gelöscht: {delete_many}'
+
+
+def test_set_metadata(test_app):
+    """Testet das Setzen von Metadaten"""
+    with test_app.app_context():
+        # Metadaten setzen
+        metadata = {
+            "uuid": "1234567890",
+            "name": "Wild Regex",
+            "metatype": "test",
+            "regex": "Mandatsref\\:\\s?([A-z0-9]*)"
+        }
+        set_metadata = test_app.host.db_handler.set_metadata(metadata)
+        assert set_metadata.get('inserted') == 1, "Die Metadaten konnten nicht gesetzt werden"
+
+        # Overwrite with the same entry
+        set_metadata = test_app.host.db_handler.set_metadata(metadata)
+        assert set_metadata.get('inserted') == 1, "Die Metadaten wurde nicht überschrieben"
+
+        # Do not overwrite equal uuids
+        set_metadata = test_app.host.db_handler.set_metadata(metadata, overwrite=False)
+        assert set_metadata.get('inserted') == 0, "Die Metadaten wurden überschrieben"
+
+
+def test_get_metadata(test_app):
+    """Testet das Auslesen eines bestimmten Metadatums"""
+    with test_app.app_context():
+        # Metadaten abfragen
+        metadata = test_app.host.db_handler.get_metadata(uuid='1234567890')
+        assert metadata is not None, "Es wurden keine Metadaten zurückgegeben"
+        assert isinstance(metadata, dict), "Metadaten sind keine LisDictte"
+        assert metadata.get('uuid') == '1234567890', "Es wurden der falsche Eintrag geladen"
+
+
+def test_filter_metadata(test_app):
+    """Testet das Filtern von Metadaten"""
+    with test_app.app_context():
+        # Metadaten abfragen
+        metadata = test_app.host.db_handler.filter_metadata({'key': 'name', 'value': 'Wild Regex'})
+        assert metadata is not None, "Es wurden keine Metadaten zurückgegeben"
+        assert isinstance(metadata, list), "Metadaten sind keine Liste"
+        assert len(metadata) == 1, "Es wurden nicht die erwarteten Metadaten zurückgegeben"
+        assert metadata[0].get('uuid') == '1234567890', "Es wurden der falsche Eintrag geladen"
