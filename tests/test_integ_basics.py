@@ -165,6 +165,62 @@ def test_double_upload(test_app):
             assert len(rows) == 5, f"Es wurden zu viele Einträge ({len(rows)}) angelegt"
 
 
+def test_save_meta(test_app):
+    """Testet das Speichern Metadaten"""
+    with test_app.app_context():
+
+        with test_app.test_client() as client:
+
+            # Parser in MetadaDB schreiben
+            parameters = {
+                'uuid': '1234567890',
+                'name': 'Test Parsing 4 Digits',
+                'regex': '[0-9]]{4}'
+            }
+            result = client.post("/api/saveMeta/parser", json=parameters)
+            assert result.status_code == 201, \
+                "Der Statuscode war nicht wie erwartet"
+
+            result = result.json
+            assert result.get('inserted') == 1, "Es wurde nichts eingefügt"
+            #TODO: Upload Rule with file
+
+
+def test_list_meta(test_app):
+    """Testet das Speichern Metadaten"""
+    with test_app.app_context():
+
+        with test_app.test_client() as client:
+
+            # Alle Einträge aus MetadatenDB holen
+            result = client.get("/api/getMeta")
+            result = result.json
+            assert isinstance(result, list), \
+                "Die Antwort war keine Liste"
+            assert len(result) > 0, \
+                "Die Liste war leer"
+
+            # Alle Parser aus MetadatenDB holen
+            result = client.get("/api/getMeta/parser")
+            result = result.json
+            assert isinstance(result, list), \
+                "Die Antwort war keine Liste"
+            assert len(result) > 0, \
+                "Die Liste war leer"
+
+            # Regel mit Namen aus der UserDB holen
+            result = client.get("/api/getMeta/-/1234567890")
+            result = result.json
+            assert isinstance(result, dict), \
+                "Die Antwort war kein Dictionary"
+            assert result.get('name') == 'Test Parsing 4 Digits', \
+                "Die Regel war nicht wie erwartet"
+            assert result.get('regex') == '[0-9]]{4}', \
+                "Die Regel war nicht wie erwartet"
+            assert result.get('uuid') == '1234567890', \
+                "Die Regel war nicht wie erwartet"
+
+
 def test_tag_stored(test_app):
     """Testet das Tagging, wenn es über den API Endpoint angesprochen wird"""
     with test_app.app_context():

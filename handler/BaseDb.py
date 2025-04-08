@@ -14,7 +14,7 @@ class BaseDb():
     """Basisklasse für die Vererbung an Datenbankhandler mit allgemeinen Funktionen"""
     def __init__(self):
         self.create()
-        self._import_metadata()
+        self._load_metadata()
 
     def create(self):
         """Erstellen des Datenbankspeichers"""
@@ -208,7 +208,7 @@ class BaseDb():
 
         return entry
 
-    def _import_metadata(self):
+    def _load_metadata(self):
         """Load content from json configs
         (config, rules, parsers) into DB"""
         settings_path = os.path.join(
@@ -258,3 +258,43 @@ class BaseDb():
                     inserted += self.set_metadata(data, overwrite=False).get('inserted')
 
                 logging.info(f"Stored {inserted} {metatype} from {json_file}")
+
+    def import_metadata(self, path: str=None, metatype: str='rule'):
+        """Import metadata from given path
+
+        Args:
+            path (str): Path to the metadata json file
+            metatype (str): Type of metadata (default: 'rule')
+        """
+        # Check if path exists
+        if not os.path.exists(path):
+            logging.error(f"Path {path} does not exist")
+            return
+
+        # Parse JSON
+        with open(path, 'r', encoding='utf-8') as j:
+            try:
+                parsed_data = json.load(j)
+
+            except json.JSONDecodeError as e:
+                error_msg = f"Failed to parse JSON file: {e}"
+                logging.warning(error_msg)
+                return {'error': error_msg}
+
+        # Add metadata type and format as list
+        if isinstance(parsed_data, list):
+
+            for i, _ in enumerate(parsed_data):
+                parsed_data[i]['metatype'] = metatype
+
+        else:
+            parsed_data['metatype'] = metatype
+            parsed_data = [parsed_data]
+
+        # Store in DB (do not overwrite)
+        inserted = 0
+        for data in parsed_data:
+            inserted += self.set_metadata(data, overwrite=True).get('inserted')
+
+        logging.info(f"Stored {inserted} imported metadata from {path}")
+        return {'inserted': inserted}

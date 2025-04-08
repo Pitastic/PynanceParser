@@ -129,6 +129,67 @@ class UserInterface():
             # - API Endpoints - - - - - - - - - - - - - - - - - - - -
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+
+            @current_app.route('/api/saveMeta/', defaults={'rule_type':'rule'}, methods=['POST'])
+            @current_app.route('/api/saveMeta/<rule_type>', methods=['POST'])
+            def saveMeta(rule_type):
+                """
+                Einfügen oder updaten von Metadaten in der Datenbank.
+                Args (json / file):
+                    rule_type, str: Typ der Regel (rule | parser)
+                    rule, dict: Regel-Objekt
+                """
+                input_file = request.files.get('input_file')
+                if not input_file and not request.json:
+                    return {'error': 'No file or json provided'}, 400
+
+                if input_file:
+                    # Store Upload file to tmp
+                    path = '/tmp/metadata.tmp'
+                    _ = self._mv_fileupload(input_file, path)
+                    r = self.db_handler.import_metadata(path=path, metatype=rule_type)
+
+                else:
+                    entry = request.json
+                    entry['metatype'] = rule_type
+                    r = self.db_handler.set_metadata(entry, overwrite=True)
+
+                if not r.get('inserted'):
+                    return {'error': 'No data inserted', 'reason': r.get('error')}, 400
+
+                return r, 201
+
+            @current_app.route('/api/getMeta/', methods=['GET'],
+                                                defaults={'rule_type':'-', 'uuid': None})
+            @current_app.route('/api/getMeta/<rule_type>/uuid', methods=['GET'])
+            def getMeta(rule_type, uuid):
+                """
+                Auflisten von Metadaten (optional gefilter)
+                Args (json):
+                    rule_type, str: Typ der Regel (rule | parser | config)
+                    uuid, str: ID des Metadatums
+                """
+                if uuid is not None:
+                    # Select specific Meta
+                    meta = self.db_handler.select(
+                        rule_type, {
+                            'key': 'uuid',
+                            'value': uuid
+                        }
+                    )
+                    return meta[0], 200
+
+                if rule_type != '-':
+                    # Select specific Meta Type
+                    meta = self.db_handler.select({
+                        'key': 'metatype',
+                        'value': rule_type})
+                    return meta, 200
+
+                # Select all Meta
+                meta = self.db_handler.select(collection='metadata', condition=None)
+                return meta, 200
+
             @current_app.route('/api/upload/<iban>', methods=['POST'])
             def uploadIban(iban):
                 """
@@ -281,23 +342,6 @@ class UserInterface():
 
                 return updated_entries
 
-            @current_app.route('/api/saveRule/', defaults={'rule_type':'rule'}, methods=['POST'])
-            @current_app.route('/api/saveRule/<rule_type>', methods=['POST'])
-            def saveRule(rule_type):
-                """
-                Einfügen oder updaten einer Regel in der Datenbank.
-                Args (json):
-                    rule_type, str: Typ der Regel (rule | parser)
-                    rule, dict: Regel-Objekt
-                        - name, str: Name der Regel
-                        - rule, dict: Regel-Objekt
-                """
-                #TODO: Beide Arten in einer DB speichern, anhand eines Key aber unterscheiden.
-                # - Es müssen für alles mit metadata noch tests geschrieben werden.
-                # - Bisher ist nur der Import via FileUpload möglich
-                # - Das speichern eines Regexes in JSON ist noch problematisch
-                # - Laden, Filtern und Auflisten testen
-                raise NotImplementedError()
 
     def _set_manual_tag(self, iban, t_id, data):
         """

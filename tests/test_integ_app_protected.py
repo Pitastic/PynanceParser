@@ -79,11 +79,6 @@ def test_create_user():
     """Testet das Anlegen eines Users"""
     return
 
-@pytest.mark.skip(reason="Currently not implemented yet")
-def test_save_rule():
-    """Testet das Speichern einer Regel (mehrfach) sowie das Update einer Regel"""
-    return
-
 def test_load_ruleset_all(test_app):
     """Testet das Laden aller Regeln für den anfragenden Benutzer"""
     #TODO: User erkennen und für den Test setzen
