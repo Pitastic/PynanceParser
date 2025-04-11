@@ -22,15 +22,28 @@ class MongoDbHandler(BaseDb):
         self.connection = self.client[current_app.config['DATABASE_NAME']]
         if self.connection is None:
             raise IOError(f"Store {current_app.config['DATABASE_NAME']} not found !")
-        self.create()
+
+        super().__init__()
 
     def create(self):
         """
-        Erstellt eine Collection je Konto und legt Indexes/Constraints fest
+        Erstellt eine Collection je Konto und legt Indexes/Constraints fest.
+        Außerdem wird die Collection für Metadaten erstellt, falls sie noch nicht existiert.
         """
-        self.connection[current_app.config['IBAN']].create_index(
-            [("uuid", pymongo.TEXT)], unique=True
+        # Collection für Transaktionen (je Konto)
+        iban = current_app.config['IBAN']
+        if iban not in self.connection.list_collection_names():
+            self.connection.create_collection(iban)
+            self.connection[iban].create_index(
+                [("uuid", pymongo.TEXT)], unique=True
         )
+
+        # Collection für Metadaten
+        if 'metadata' not in self.connection.list_collection_names():
+            self.connection.create_collection('metadata')
+            self.connection['metadata'].create_index(
+                [("uuid", pymongo.TEXT)], unique=True
+            )
 
     def select(self, collection=None, condition=None, multi='AND'):
         """
@@ -169,6 +182,38 @@ class MongoDbHandler(BaseDb):
                 - deleted, int: Anzahl der gelöschten Datensätze
         """
         return self.delete(collection=collection)
+
+    def get_metadata(self, uuid):
+        collection = self.connection['metadata']
+        result = collection.find_one({'uuid': uuid})
+        return result
+
+    def filter_metadata(self, condition, multi='AND'):
+        collection = self.connection['metadata']
+        query = self._form_complete_query(condition, multi)
+        return list(collection.find(query))
+
+    def set_metadata(self, entry, overwrite=True):
+        # Set uuid if not present
+        if not entry.get('uuid'):
+            entry = self._generate_unique_meta(entry)
+
+        collection = self.connection['metadata']
+
+        if overwrite:
+            # Remove Entry if exists
+            result = collection.delete_one({'uuid': entry.get('uuid')})
+
+            # Insert new Entry
+            result = collection.insert_one(entry)
+            return {'inserted': result.modified_count}
+
+        # Only insert if not exists
+        if not collection.find({'uuid': entry.get('uuid')}):
+            result = collection.insert_one(entry)
+            return {'inserted': result.modified_count}
+
+        return {'inserted': 0}
 
     def _form_condition(self, condition):
         """

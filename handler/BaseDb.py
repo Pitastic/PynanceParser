@@ -3,16 +3,24 @@
 
 import hashlib
 import re
+import os
+import logging
+import glob
+import json
+from natsort import natsorted
 
 
 class BaseDb():
     """Basisklasse für die Vererbung an Datenbankhandler mit allgemeinen Funktionen"""
+    def __init__(self):
+        self.create()
+        self._load_metadata()
 
     def create(self):
         """Erstellen des Datenbankspeichers"""
         raise NotImplementedError()
 
-    def select(self, collection, condition, multi):
+    def select(self, collection: str, condition: dict|list[dict], multi: str):
         """
         Selektiert Datensätze aus der Datenbank, die die angegebene Bedingung erfüllen.
 
@@ -34,7 +42,7 @@ class BaseDb():
         """
         raise NotImplementedError()
 
-    def insert(self, data, collection):
+    def insert(self, data: dict|list[dict], collection: str):
         """
         Fügt einen oder mehrere Datensätze in die Datenbank ein.
 
@@ -48,7 +56,7 @@ class BaseDb():
         """
         raise NotImplementedError()
 
-    def update(self, data, collection, condition, multi):
+    def update(self, data: dict, collection: str, condition: dict|list[dict], multi:str):
         """
         Aktualisiert Datensätze in der Datenbank, die die angegebene Bedingung erfüllen.
 
@@ -71,7 +79,7 @@ class BaseDb():
         """
         raise NotImplementedError()
 
-    def delete(self, collection, condition):
+    def delete(self, collection: str, condition: dict | list[dict]):
         """
         Löscht Datensätze in der Datenbank, die die angegebene Bedingung erfüllen.
 
@@ -93,7 +101,7 @@ class BaseDb():
         """
         raise NotImplementedError()
 
-    def truncate(self, collection):
+    def truncate(self, collection: str):
         """Löscht alle Datensätze aus einer Tabelle/Collection
 
         Args:
@@ -105,7 +113,44 @@ class BaseDb():
         """
         raise NotImplementedError()
 
-    def _generate_unique(self, tx_entries):
+    def get_metadata(self, uuid: str):
+        """
+        Ruft Metadaten aus der Datenbank ab.
+
+        Args:
+            uuid (str): Unique ID (key).
+        Returns:
+            dict: Die abgerufenen Metadaten.
+        """
+        raise NotImplementedError()
+
+    def filter_metadata(self, condition: dict, multi: str):
+        """
+        Ruft Metadaten aus der Datenbank anhand von Kriterien ab.
+
+        Args:
+            condition (dict): key-value-Paare für die Filterung der Metadaten.
+            multi (str) : ['AND' | 'OR'] Wenn 'condition' eine Liste mit conditions ist,
+                          werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
+        Returns:
+            list: Die abgerufenen Metadaten.
+        """
+        raise NotImplementedError()
+
+    def set_metadata(self, entry: dict, overwrite: bool=True):
+        """
+        Speichert oder ersetzt Metadaten in der Datenbank.
+
+        Args:
+            entry (dict): Der Eintrag, der gespeichert werden soll.
+            overwrite (bool): Overwrite existing metadata with same uuid
+                              if present (default: True)
+        Returns:
+            dict: Informationen über den Speichervorgang.
+        """
+        raise NotImplementedError()
+
+    def _generate_unique(self, tx_entries: dict | list[dict]):
         """
         Erstellt einen einmaligen ID für jede Transaktion.
 
@@ -141,3 +186,115 @@ class BaseDb():
             return tx_list[0]
 
         return tx_list
+
+    def _generate_unique_meta(self, entry: dict):
+        """
+        Generiert eine eindeutige UUID für Metadaten basierend auf dem Eintrag.
+        Args:
+            entry (dict): Eintrag für den die UUID generiert werden soll.
+        Returns:
+            dict: Das um die ID ('uuid') erweiterte Dict mit den Metadaten.
+        """
+        no_special_chars = re.compile("[^A-Za-z0-9]")
+
+        # Calculate Hash
+        md5_hash = hashlib.md5()
+        uuid_text = f"{entry.get('type', '')}-{entry.get('name', '')}"
+        uuid_text = no_special_chars.sub('', uuid_text)
+        md5_hash.update(uuid_text.encode('utf-8'))
+
+        # Store UUID
+        entry['uuid'] = md5_hash.hexdigest()
+
+        return entry
+
+    def _load_metadata(self):
+        """Load content from json configs
+        (config, rules, parsers) into DB"""
+        settings_path = os.path.join(
+            os.path.dirname(
+                os.path.dirname(
+                    os.path.abspath(__file__)
+                )
+            ), 'settings'
+        )
+
+        # Load given rules & parsers (do not overwrite)
+        for metatype in ['config', 'parser', 'rule']:
+            json_path = os.path.join(settings_path, metatype)
+            json_glob = os.path.join(json_path, '*.json')
+            json_files = glob.glob(json_glob)
+            json_files = natsorted(json_files)
+
+            # Load from found metadata files
+            for json_file in json_files:
+
+                if not os.path.isfile(json_file):
+                    # dead link
+                    continue
+
+                # Parse JSON
+                logging.info(f"Loading {metatype} from {json_file}")
+                with open(json_file, 'r', encoding='utf-8') as j:
+                    try:
+                        parsed_data = json.load(j)
+
+                    except json.JSONDecodeError as e:
+                        logging.warning(f"Failed to parse JSON file: {e}")
+
+                # Add metadata type and format as list
+                if isinstance(parsed_data, list):
+
+                    for i, _ in enumerate(parsed_data):
+                        parsed_data[i]['metatype'] = metatype
+
+                else:
+                    parsed_data['metatype'] = metatype
+                    parsed_data = [parsed_data]
+
+                # Store in DB (do not overwrite)
+                inserted = 0
+                for data in parsed_data:
+                    inserted += self.set_metadata(data, overwrite=False).get('inserted')
+
+                logging.info(f"Stored {inserted} {metatype} from {json_file}")
+
+    def import_metadata(self, path: str=None, metatype: str='rule'):
+        """Import metadata from given path
+
+        Args:
+            path (str): Path to the metadata json file
+            metatype (str): Type of metadata (default: 'rule')
+        """
+        # Check if path exists
+        if not os.path.exists(path):
+            logging.error(f"Path {path} does not exist")
+            return
+
+        # Parse JSON
+        with open(path, 'r', encoding='utf-8') as j:
+            try:
+                parsed_data = json.load(j)
+
+            except json.JSONDecodeError as e:
+                error_msg = f"Failed to parse JSON file: {e}"
+                logging.warning(error_msg)
+                return {'error': error_msg}
+
+        # Add metadata type and format as list
+        if isinstance(parsed_data, list):
+
+            for i, _ in enumerate(parsed_data):
+                parsed_data[i]['metatype'] = metatype
+
+        else:
+            parsed_data['metatype'] = metatype
+            parsed_data = [parsed_data]
+
+        # Store in DB (do not overwrite)
+        inserted = 0
+        for data in parsed_data:
+            inserted += self.set_metadata(data, overwrite=True).get('inserted')
+
+        logging.info(f"Stored {inserted} imported metadata from {path}")
+        return {'inserted': inserted}

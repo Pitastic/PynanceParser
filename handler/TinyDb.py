@@ -31,14 +31,18 @@ class TinyDbHandler(BaseDb):
         except IOError as ex:
             logging.error(f"Fehler beim Verbindungsaufbau zur Datenbank: {ex}")
 
-        self.create()
+        super().__init__()
 
     def create(self):
         """
-        Erstellt einen Table je Konto und legt Indexes/Constraints fest
+        Erstellt einen Table je Konto und legt Indexes/Constraints fest.
+        Außerdem wird der Table für Metadaten erstellt, falls er noch nicht existiert.
         """
-        # Touch Table
+        # Touch Table für Transaktionen (je Konto)
         self.connection.table(current_app.config['IBAN'])
+
+        # Table für Metadaten
+        self.connection.table('metadata')
 
     def select(self, collection=None, condition=None, multi='AND'):
         """
@@ -119,7 +123,7 @@ class TinyDbHandler(BaseDb):
             return {'inserted': 0}
 
         result = self.connection.table(collection).insert(data)
-        return {'inserted': 1}
+        return {'inserted': (1 if result else 0)}
 
     def update(self, data, collection=None, condition=None, multi='AND'):
         """
@@ -206,6 +210,44 @@ class TinyDbHandler(BaseDb):
         table = self.connection.table(collection)
         r = table.remove(lambda x: True)
         return {'deleted': len(r)}
+
+    def get_metadata(self, uuid):
+        collection = self.connection.table('metadata')
+        result = collection.get(Query().uuid == uuid)
+        return result
+
+    def filter_metadata(self, condition, multi='AND'):
+        collection = self.connection.table('metadata')
+        if condition is None:
+            # Return all
+            return collection.all()
+
+        # Form condition into a query
+        query = self._form_complete_query(condition, multi)
+        results = collection.search(query)
+        return results
+
+    def set_metadata(self, entry, overwrite=True):
+        # Set uuid if not present
+        if not entry.get('uuid'):
+            entry = self._generate_unique_meta(entry)
+
+        collection = self.connection.table('metadata')
+
+        if overwrite:
+            # Remove Entry if exists
+            collection.remove(Query().uuid == entry.get('uuid'))
+
+            # Insert new Entry
+            result = collection.insert(entry)
+            return {'inserted': (1 if result else 0)}
+
+        # Only insert if not exists
+        if not collection.search(Query().uuid == entry.get('uuid')):
+            result = collection.insert(entry)
+            return {'inserted': (1 if result else 0)}
+
+        return {'inserted': 0}
 
     def _form_where(self, condition):
         """

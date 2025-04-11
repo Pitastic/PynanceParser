@@ -2,3 +2,4 @@ pytest==7.4.0
 requests==2.31.0
 beautifulsoup4==4.12.2
 requests_mock==1.12.1
+natsort==8.4.0

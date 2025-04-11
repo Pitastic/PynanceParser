@@ -154,6 +154,17 @@ class MockDatabase:
                 'compare': 'regex'
             }
         ]
+        self.query3 = [
+            {
+                'key': 'primary_tag',
+                'value': None,
+                'compare': '=='
+            }, {
+                'key': 'secondary_tag',
+                'value': None,
+                'compare': '=='
+            }
+        ]
         self.db_all = [
 
             {
@@ -220,6 +231,9 @@ class MockDatabase:
         if condition == self.query2:
             return [self.db_all[4]]
 
+        if condition == self.query3:
+            return self.db_all
+
         return []
 
     def update(self, data, collection=None, condition=None, multi=None): # pylint: disable=unused-argument
@@ -235,3 +249,25 @@ class MockDatabase:
             return {'updated': 1}
 
         return {'updated': 0}
+
+    def filter_metadata(self, condition, *args, **kwargs): # pylint: disable=unused-argument
+        """Mock der Filtermetadatenabfrage
+        Args:
+            condition (dict): Filterkriterien
+            *args, **kwargs: Weitere Argumente
+        Returns:
+            list: Liste der Metadaten
+        """
+        if condition == {"key": "metatype", "value": "parser"}:
+            return [
+                {
+                    "name": "Mandatsreferenz",
+                    "metatype": "parser",
+                    "regex": "Mandatsref\\:\\s?([A-z0-9]*)"
+                },{
+                    "name": "Gläubiger-ID",
+                    "metatype": "parser",
+                    "regex": "([A-Z]{2}[0-9]{2}[0-9A-Z]{3}(?:[0-9]{11}|[0-9]{19}))"
+                }
+            ]
+        return []

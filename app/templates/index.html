@@ -19,7 +19,7 @@
                 <td><input type="checkbox" name="entry-select[]" value="{{ entry.get('uuid') }}"></td>
                 {% for key in table_header %}
                 {% if key != 'parsed' %}
-                <td class="td-{{ key }}">{{ entry.get(key) }}</td>
+                <td class="td-{{ key }}">{{ entry.get(key) or '' }}</td>
                 {% endif %}
                 {% endfor %}
                 <td class="td-parsed">
@@ -64,6 +64,18 @@
     <a class="my-buttons" id="truncateButton" href="javascript:truncateDB();">truncate Database</a>
     <a class="my-buttons" id="tagButton" href="javascript:tagEntries();">tag Entries</a>
     <a class="my-buttons" id="manualTagButton" href="javascript:manualTagEntries();">tag Entries (manually)</a>
+    <a class="my-buttons" id="saveMetaButton" href="javascript:saveMeta();">save Meta</a>
+
+</div>
+
+<div class="container">
+
+    <select id="select_meta">
+        <option value="config">Config</option>
+        <option value="rule">Rule</option>
+        <option value="parser">Parser</option>
+    </select>
+    <!-- <textarea id="input_rule" rows="10" cols="50" placeholder="JSON Rule Editor"></textarea> -->
 
 </div>
 
@@ -71,6 +83,8 @@
 
     <h2>Message Box</h2>
     <pre id="result-text">&nbsp;</pre>
+
+</div>
 
 <script src="{{ url_for('static', filename='js/index.js') }}"></script>
 
