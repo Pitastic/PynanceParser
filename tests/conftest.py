@@ -2,6 +2,7 @@
 
 import os
 import sys
+import shutil
 import pytest
 
 # Add Parent for importing from Modules
@@ -16,8 +17,8 @@ from app.server import create_app
 def test_app():
     """Managing Test-Flask-App for Tests"""
     # Creating App
-    #shutil.rmtree("/tmp/pihomie-test", ignore_errors=True)
-    #os.makedirs("/tmp/pihomie-test", exist_ok=True)
+    shutil.rmtree("/tmp/pihomie-test", ignore_errors=True)
+    os.makedirs("/tmp/pihomie-test", exist_ok=True)
 
     # Config
     root_path = os.path.dirname(os.path.realpath(__file__))
@@ -32,15 +33,14 @@ def test_app():
         app.host.db_handler.truncate()
         yield app
 
-    #if os.path.isdir("/tmp/pihomie-test"):
-    #    shutil.rmtree("/tmp/pihomie-test")
+    shutil.rmtree("/tmp/pihomie-test", ignore_errors=True)
 
 @pytest.fixture(scope="module")
 def mocked_db():
     """Special Instance with mocked DB"""
     # Creating App
-    #shutil.rmtree("/tmp/pihomie-test", ignore_errors=True)
-    #os.makedirs("/tmp/pihomie-test", exist_ok=True)
+    shutil.rmtree("/tmp/pihomie-test", ignore_errors=True)
+    os.makedirs("/tmp/pihomie-test", exist_ok=True)
 
     # Config
     root_path = os.path.dirname(os.path.realpath(__file__))
@@ -55,8 +55,7 @@ def mocked_db():
         app.host.db_handler = MockDatabase()
         yield app
 
-    #if os.path.isdir("/tmp/pihomie-test"):
-    #    shutil.rmtree("/tmp/pihomie-test")
+    shutil.rmtree("/tmp/pihomie-test", ignore_errors=True)
 
 def mock_method(*args, **kwargs):
     """Function for overwriting Method which return 'None'"""

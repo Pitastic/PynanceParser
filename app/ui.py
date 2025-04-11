@@ -160,34 +160,29 @@ class UserInterface():
                 return r, 201
 
             @current_app.route('/api/getMeta/', methods=['GET'],
-                                                defaults={'rule_type':'-', 'uuid': None})
-            @current_app.route('/api/getMeta/<rule_type>/uuid', methods=['GET'])
-            def getMeta(rule_type, uuid):
+                                                defaults={'rule_filter':None})
+            @current_app.route('/api/getMeta/<rule_filter>', methods=['GET'])
+            def getMeta(rule_filter):
                 """
                 Auflisten von Metadaten (optional gefilter)
                 Args (json):
-                    rule_type, str: Typ der Regel (rule | parser | config)
-                    uuid, str: ID des Metadatums
+                    rule_filter, str: Typ der Regel (rule | parser | config) oder ID
                 """
-                if uuid is not None:
-                    # Select specific Meta
-                    meta = self.db_handler.select(
-                        rule_type, {
-                            'key': 'uuid',
-                            'value': uuid
-                        }
-                    )
-                    return meta[0], 200
+                if rule_filter is not None:
 
-                if rule_type != '-':
-                    # Select specific Meta Type
-                    meta = self.db_handler.select({
-                        'key': 'metatype',
-                        'value': rule_type})
+                    if rule_filter in ['rule', 'parser', 'config']:
+                        # Select specific Meta Type
+                        meta = self.db_handler.filter_metadata({
+                            'key': 'metatype',
+                            'value': rule_filter})
+                        return meta, 200
+
+                    # Select specific Meta ID
+                    meta = self.db_handler.get_metadata(rule_filter)
                     return meta, 200
 
                 # Select all Meta
-                meta = self.db_handler.select(collection='metadata', condition=None)
+                meta = self.db_handler.filter_metadata(condition=None)
                 return meta, 200
 
             @current_app.route('/api/upload/<iban>', methods=['POST'])

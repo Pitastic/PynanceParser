@@ -1,6 +1,7 @@
 #!/usr/bin/python3 # pylint: disable=invalid-name
 """Basisc Module for easy Imports and Methods"""
 
+import json
 import os
 import sys
 import io
@@ -171,9 +172,9 @@ def test_save_meta(test_app):
 
         with test_app.test_client() as client:
 
-            # Parser in MetadaDB schreiben
+            # Parser in MetadaDB schreiben (form)
             parameters = {
-                'uuid': '1234567890',
+                'uuid': '555',
                 'name': 'Test Parsing 4 Digits',
                 'regex': '[0-9]]{4}'
             }
@@ -183,7 +184,24 @@ def test_save_meta(test_app):
 
             result = result.json
             assert result.get('inserted') == 1, "Es wurde nichts eingefügt"
-            #TODO: Upload Rule with file
+
+            # Parser in MetadaDB schreiben (file upload)
+            parameters = {
+                'uuid': '0987654321',
+                'name': 'By File',
+                'regex': '[0-5]]{4}'
+            }
+            parameters = json.dumps(parameters).encode('utf-8')
+            files = {'input_file': (io.BytesIO(parameters), 'commerzbank.csv')}
+            result = client.post(
+                "/api/saveMeta/",
+                data=files, content_type='multipart/form-data'
+            )
+            assert result.status_code == 201, \
+                "Der Statuscode war nicht wie erwartet"
+
+            result = result.json
+            assert result.get('inserted') == 1, "Es wurde nichts eingefügt"
 
 
 def test_list_meta(test_app):
@@ -193,7 +211,7 @@ def test_list_meta(test_app):
         with test_app.test_client() as client:
 
             # Alle Einträge aus MetadatenDB holen
-            result = client.get("/api/getMeta")
+            result = client.get("/api/getMeta/")
             result = result.json
             assert isinstance(result, list), \
                 "Die Antwort war keine Liste"
@@ -209,7 +227,7 @@ def test_list_meta(test_app):
                 "Die Liste war leer"
 
             # Regel mit Namen aus der UserDB holen
-            result = client.get("/api/getMeta/-/1234567890")
+            result = client.get("/api/getMeta/555")
             result = result.json
             assert isinstance(result, dict), \
                 "Die Antwort war kein Dictionary"
@@ -217,7 +235,7 @@ def test_list_meta(test_app):
                 "Die Regel war nicht wie erwartet"
             assert result.get('regex') == '[0-9]]{4}', \
                 "Die Regel war nicht wie erwartet"
-            assert result.get('uuid') == '1234567890', \
+            assert result.get('uuid') == '555', \
                 "Die Regel war nicht wie erwartet"
 
 

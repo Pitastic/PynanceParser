@@ -218,6 +218,11 @@ class TinyDbHandler(BaseDb):
 
     def filter_metadata(self, condition, multi='AND'):
         collection = self.connection.table('metadata')
+        if condition is None:
+            # Return all
+            return collection.all()
+
+        # Form condition into a query
         query = self._form_complete_query(condition, multi)
         results = collection.search(query)
         return results
