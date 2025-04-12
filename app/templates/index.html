@@ -37,47 +37,70 @@
 
 </div>
 
-<div class="container">
 
-    <h2>Input Forms</h2>
-    <ul>
-        <li>Filename: <input type="file" id="input_file"></li>
-    </ul>
-    <ul>
-        <li><input type="text" value="{{iban}}" id="input_iban" placeholder="IBAN"></li>
-        <li><input type="text" value="" id="input_t_id" placeholder="Transaction ID"></li>
-    </ul>
-    <ul>
-        <li><input type="text" value="" id="input_tagging_name" placeholder="Tagging Rule Name"></li>
-    </ul>
-    <ul>
-        <li><input type="text" value="" id="input_manual_primary" placeholder="Primary Manual Tag"></li>
-        <li><input type="text" value="" id="input_manual_secondary" placeholder="Secondary Manual Tag"></li>
-    </ul>
-    
-</div>
 
 <div class="container">
     
-    <h2>Switches to Click</h2>
-    <a class="my-buttons" id="uploadButton" href="javascript:uploadFile();">Upload</a>
-    <a class="my-buttons" id="truncateButton" href="javascript:truncateDB();">truncate Database</a>
-    <a class="my-buttons" id="tagButton" href="javascript:tagEntries();">tag Entries</a>
-    <a class="my-buttons" id="manualTagButton" href="javascript:manualTagEntries();">tag Entries (manually)</a>
-    <a class="my-buttons" id="saveMetaButton" href="javascript:saveMeta();">save Meta</a>
+    <h2>Actions for <input type="text" value="{{iban}}" id="input_iban" placeholder="IBAN"></h2>
+    <style>
+        .tile-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .tile {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 1rem;
+            width: 200px;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .tile h3 {
+            margin-top: 0;
+            font-size: 1.2rem;
+        }
+        .tile input, .tile button {
+            display: block;
+            margin: 0.5rem 0;
+            width: 100%;
+        }
+    </style>
+
+    <div class="tile-container">
+        <div class="tile">
+            <h3>Datenbank</h3>
+            <input type="file" name="input_file" id="input_file">
+            <button onclick="uploadFile()">Upload</button>
+            <button onclick="truncateDB()">DB leeren</button>
+        </div>
+        <div class="tile">
+            <h3>Tagging</h3>
+            <select name="tagging_name" id="tagging_name">
+                <option value=""></option>
+                {% for rule in rule_list %}
+                <option>{{ rule }}</option>
+                {% endfor %}
+            </select>
+            <button onclick="tagEntries()">Auto Tag</button>
+            <input type="text" value="" id="input_manual_primary" placeholder="Primary Manual Tag">
+            <input type="text" value="" id="input_manual_secondary" placeholder="Secondary Manual Tag">
+            <button onclick="manualTagEntries()">Manuelles Taggen</button>
+            <button onclick="removeTags()">Tags entfernen</button>
+        </div>
+        <div class="tile">
+            <h3>Metadata</h3>
+            <input type="file" name="input-json" id="input-json">
+            <select id="select_meta">
+                <option value="rule">Rule</option>
+                <option value="parser">Parser</option>
+                <option value="config">Config</option>
+            </select>
+            <button onclick="saveMeta()">Speichern</button>
+        </div>
+    </div>
 
 </div>
 
-<div class="container">
-
-    <select id="select_meta">
-        <option value="config">Config</option>
-        <option value="rule">Rule</option>
-        <option value="parser">Parser</option>
-    </select>
-    <!-- <textarea id="input_rule" rows="10" cols="50" placeholder="JSON Rule Editor"></textarea> -->
-
-</div>
 
 <div class="container">
 

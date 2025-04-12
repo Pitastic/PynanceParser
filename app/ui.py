@@ -120,9 +120,18 @@ class UserInterface():
                                 'primary_tag', 'secondary_tag',
                                 'prio', 'parsed']
 
+                # Rules for Selection
+                rules = self.db_handler.filter_metadata({
+                    'key': 'metatype',
+                    'value': 'rule'
+                })
+                rule_list = []
+                for rule in rules:
+                    rule_list.append(rule.get('name'))
+
                 return render_template('index.html', iban=iban,
                                        table_header=table_header,
-                                       table_data=rows)
+                                       table_data=rows, rule_list=rule_list)
 
 
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -270,7 +279,7 @@ class UserInterface():
                 )
                 return tx_details[0], 200
 
-            @current_app.route('/api/<iban>/truncateDatabase', methods=['DELETE'])
+            @current_app.route('/api/<iban>/truncateDatabase/', methods=['DELETE'])
             def truncateDatabase(iban):
                 """
                 Leert die Datenbank zu einer IBAN
@@ -283,7 +292,7 @@ class UserInterface():
                 deleted_entries = self.db_handler.truncate(iban)
                 return {'deleted': deleted_entries}, 200
 
-            @current_app.route('/api/<iban>/tag', methods=['PUT'])
+            @current_app.route('/api/<iban>/tag/', methods=['PUT'])
             def tag(iban) -> dict:
                 """
                 Kategorisiert die Kontoumsätze und aktualisiert die Daten in der Instanz.
@@ -313,7 +322,7 @@ class UserInterface():
                 data = request.json
                 return self._set_manual_tag(iban, t_id, data)
 
-            @current_app.route('/api/<iban>/setManualTags', methods=['PUT'])
+            @current_app.route('/api/<iban>/setManualTags/', methods=['PUT'])
             def setManualTags(iban):
                 """
                 Handler für _set_manual_tag() für mehrere Einträge.
@@ -329,10 +338,52 @@ class UserInterface():
                 """
                 data = request.json
                 updated_entries = {'updated': 0}
-
+                #TODO: Frontend prüfen
                 for tx in data.get('t_ids'):
 
                     updated = self._set_manual_tag(iban, tx, data)
+                    updated_entries['updated'] += updated.get('updated')
+
+                return updated_entries
+
+            @current_app.route('/api/<iban>/removeTag/<t_id>', methods=['PUT'])
+            def removeTag(iban, t_id):
+                """
+                Entfernt gesetzte Tags für einen Eintrag-
+
+                Args (uri/json):
+                    iban, str: IBAN
+                    t_id, str: Datenbank ID der Transaktion,
+                               die bereinigt werden soll.
+                Returns:
+                    dict: updated, int: Anzahl der gespeicherten Datensätzen
+                """
+                if t_id is None:
+                    return {'error': 'No t_id provided'}, 400
+
+                return self._remove_tags(iban, t_id)
+
+            @current_app.route('/api/<iban>/removeTags/', methods=['PUT'])
+            def removeTags(iban):
+                """
+                Entfernt gesetzte Tags für mehrere Einträge.
+
+                Args (uri/json):
+                    iban, str: IBAN
+                    t_ids, list[str]: Datenbank IDs der Transaktionen,
+                                      die bereinigt werden sollen.
+                Returns:
+                    dict: updated, int: Anzahl der gespeicherten Datensätzen
+                """
+                data = request.json
+                t_ids = data.get('t_ids')
+                if t_ids is None:
+                    return {'error': 'No t_id provided'}, 400
+
+                updated_entries = {'updated': 0}
+                for t_id in t_ids:
+
+                    updated = self._remove_tags(iban, t_id)
                     updated_entries['updated'] += updated.get('updated')
 
                 return updated_entries
@@ -370,6 +421,31 @@ class UserInterface():
         }
 
         updated_entries = self.db_handler.update(new_tag_data, iban, condition)
+        return updated_entries
+
+    def _remove_tags(self, iban, t_id):
+        """
+        Entfernt ein gesetztes Tag für einen Eintrag.
+
+        Args:
+            iban, str: IBAN
+            t_id, str: Datenbank ID der Transaktion,
+                       die bereinigt werden soll.
+        Returns:
+            dict: updated, int: Anzahl der gespeicherten Datensätzen
+        """
+        new_daata = {
+            'prio': 0,
+            'primary_tag': None,
+            'secondary_tag': None
+        }
+        condition = [{
+            'key': 'uuid',
+            'value': t_id,
+            'compare': '=='
+        }]
+
+        updated_entries = self.db_handler.update(new_daata, iban, condition)
         return updated_entries
 
     def _mv_fileupload(self, input_file, path):

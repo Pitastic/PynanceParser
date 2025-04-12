@@ -49,7 +49,7 @@ class Tagger():
         Args:
             data (dict): Dictionary mit den Parametern für das Tagging:
                 iban            Name der Collection
-                rule_name:      Name der anzuwendenden Taggingregel.
+                rule_name:      UUID der anzuwendenden Taggingregel.
                                 Reserviertes Keyword 'ai' führt nur das AI Tagging aus.
                                 Default: Es werden alle Regeln des Benutzers ohne das
                                 AI Tagging angewendet.
@@ -116,6 +116,12 @@ class Tagger():
                                 'konnte für den User nicht gefunden werden.'))
 
             raise ValueError('Es existieren noch keine Regeln für den Benutzer')
+
+        # Benutzer Regeln überschreibt alle autpomatischen Tags,
+        # setzt aber wieder nur seine eigene Prio.
+        if rule_name is not None:
+            prio_set = rules[rule_name].get('prioriry', prio)
+            prio = 99
 
         # Benutzer Regeln anwenden
         result_rx = self.tag_regex(rules, iban, prio=prio, prio_set=prio_set, dry_run=dry_run)
@@ -405,11 +411,6 @@ class Tagger():
         Args:
             rule_name (str, optional): Lädt die Regel mit diesem Namen.
                                        Default: Es werden alle Regeln geladen.
-            namespace (str, system|user|both): Unterscheidung aus weclhem Set Regeln
-                                               geladen oder gesucht werden soll.
-                                               - system: nur allgemeine Regeln
-                                               - user: nur private Regeln
-                                               - both (default): alle Regeln
         Returns:
             dict: Verzeichnis nach Namen der Filterregeln
         """

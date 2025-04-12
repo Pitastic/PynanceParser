@@ -72,14 +72,55 @@ function truncateDB() {
  * 'input_tagging_name' (more in the Future)
  */
 function tagEntries() {
-    // TODO: Implement more, complex tagging rules
     const iban = document.getElementById('input_iban').value;
-    const rule_name = document.getElementById('input_tagging_name').value;
-    const rules = {
-        'rule_name': rule_name
+    const rule_name = document.getElementById('tagging_name').value;
+    let rules = {}
+    if (rule_name) {
+        rules['rule_name'] = rule_name
     }
 
     apiSubmit(iban + '/tag', rules, function (responseText, error) {
+        if (error) {
+            printResult('Tagging failed: ' + '(' + error + ')' + responseText);
+
+        } else {
+            alert('Entries tagged successfully!' + responseText);
+            window.location.reload();
+
+        }
+    }, false);
+}
+
+
+function removeTags() {
+    const iban = document.getElementById('input_iban').value;
+    const checkboxes = document.querySelectorAll('input[name="entry-select[]"]');
+    const t_ids = [];    
+    checkboxes.forEach((checkbox) => {
+        if (checkbox.checked) {
+            t_ids.push(checkbox.value);
+        }
+    });
+
+    if (!iban) {
+        alert('Please provide an IBAN.');
+        return;
+    }
+    if (!t_ids) {
+        alert('Please provide a Transaction ID (checkbox).');
+        return;
+    }
+
+    let api_function;
+    let tags = {};
+    if (t_ids.length == 1) {
+        api_function = iban+'/removeTag/'+t_ids[0];
+    } else {
+        api_function = iban+'/removeTags';
+        tags['t_ids'] = t_ids;
+    };
+
+    apiSubmit(api_function, tags, function (responseText, error) {
         if (error) {
             printResult('Tagging failed: ' + '(' + error + ')' + responseText);
 
@@ -170,7 +211,7 @@ function getInfo(uuid) {
 
 function saveMeta() {
     const meta_type = document.getElementById('select_meta').value;
-    const fileInput = document.getElementById('input_file');
+    const fileInput = document.getElementById('input-json');
     if (fileInput.files.length === 0) {
         alert('Please select a file to upload.');
         return;
