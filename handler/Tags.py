@@ -29,21 +29,17 @@ class Tagger():
         # RegExes
         # Der Key wird als Bezeichner für das Ergebnis verwendet.
         # Jeder RegEx muss genau eine Gruppe matchen.
-        parse_regexes = {
-            'Mandatsreferenz': re.compile(r"Mandatsref\:\s?([A-z0-9]*)"),
-            'Gläubiger-ID': re.compile(r"([A-Z]{2}[0-9]{2}[0-9A-Z]{3}[0-9]{11})"),
-            'Gläubiger-ID-2': re.compile(r"([A-Z]{2}[0-9]{2}[0-9A-Z]{3}[0-9]{19})"),
-        }
+        parses = self._load_parsers()
 
         for d in input_data:
-            for name, regex in parse_regexes.items():
+            for name, regex in parses.items():
                 re_match = regex.search(d['text_tx'])
                 if re_match:
                     d['parsed'][name] = re_match.group(1)
 
         return input_data
 
-    def tag(self,
+    def tag(self, iban,
             rule_name: str = None, rule_primary: str = None, rule_secondary: str = None,
             rule_regex: str = None, rule_parsed_keys: list = (), rule_parsed_vals: list = (),
             prio: int = 1, prio_set: int = None, dry_run: bool = False) -> dict:
@@ -52,7 +48,8 @@ class Tagger():
 
         Args:
             data (dict): Dictionary mit den Parametern für das Tagging:
-                rule_name:      Name der anzuwendenden Taggingregel.
+                iban            Name der Collection
+                rule_name:      UUID der anzuwendenden Taggingregel.
                                 Reserviertes Keyword 'ai' führt nur das AI Tagging aus.
                                 Default: Es werden alle Regeln des Benutzers ohne das
                                 AI Tagging angewendet.
@@ -108,8 +105,7 @@ class Tagger():
 
         if rule_name == 'ai':
             # AI only
-            return self.tag_ai(rules, prio=prio,
-                               prio_set=prio_set, dry_run=dry_run)
+            return self.tag_ai(dry_run=dry_run)
 
         # Benutzer Regeln laden
         rules = self._load_ruleset(rule_name)
@@ -121,9 +117,16 @@ class Tagger():
 
             raise ValueError('Es existieren noch keine Regeln für den Benutzer')
 
-        # Benutzer Regeln anwenden
-        return self.tag_regex(rules, prio=prio, prio_set=prio_set, dry_run=dry_run)
+        # Benutzer Regeln überschreibt alle autpomatischen Tags,
+        # setzt aber wieder nur seine eigene Prio.
+        if rule_name is not None:
+            prio_set = rules[rule_name].get('prioriry', prio)
+            prio = 99
 
+        # Benutzer Regeln anwenden
+        result_rx = self.tag_regex(rules, iban, prio=prio, prio_set=prio_set, dry_run=dry_run)
+        result_ai = self.tag_ai(iban, dry_run=dry_run)
+        return {**result_rx, **result_ai}
 
     def tag_regex(self, ruleset: dict, collection: str=None, prio: int=1,
                   prio_set: int=1, dry_run: bool=False) -> dict:
@@ -180,9 +183,12 @@ class Tagger():
                 })
 
             # -- Add Parsed Values
+            multi = 'AND'
             if rule.get('parsed') is not None:
                 parsed_condition = rule.get('parsed')
-                for key, val in parsed_condition.items():
+                multi = parsed_condition.get('multi', 'AND')
+
+                for key, val in parsed_condition.get('query', {}).items():
                     rule_args['condition'].append({
                         'key': {'parsed': key},
                         'value': val,
@@ -194,7 +200,7 @@ class Tagger():
             matched = self.db_handler.select(
                 collection=rule_args.get('collection'),
                 condition=rule_args.get('condition'),
-                multi=rule_args.get('multi')
+                multi=multi
             )
 
             # Nothing to update
@@ -228,34 +234,27 @@ class Tagger():
             # Store Result for this Rule
             result['tagged'] += rule_result.get('tagged')
             result[rule_name] = rule_result
+
         return result
 
-
-    def tag_ai(self, collection: str=None, prio: int=1, prio_set: int=None,
-               dry_run: bool=False) -> dict:
+    def tag_ai(self, collection: str=None, dry_run: bool=False) -> dict:
         """
         Automatisches Tagging mit AI.
 
         Args:
             collection:     Name der Collection, in die Werte eingefügt werden sollen.
                             Default: IBAN aus der Config.
-            prio:           Value of priority for this tagging run
-                            in comparison with already tagged transactions (higher = important)
-                            This value will be set as the new priority in DB
-            prio_set        Compare with priority but set this value instead.
-                            Default: prio.
             dry_run         Switch to show, which TX would be updated. Do not update.
         Returns:
             dict:
-            - tagged (int): Summe aller erfolgreichen Taggings (0 bei dry_run)
+            - guessed (int): Summe aller erfolgreichen Taggings (0 bei dry_run)
             - ai (dict):
-                - tagged (int): Anzahl der getaggten Datensätze (0 bei dry_run)
                 - entries (list): UUIDs die selektiert wurden (auch bei dry_run)
         """
         logging.info("Tagging with AI....")
 
         # Allgemeine Startfilter für die Condition
-        query_args = self._form_tag_query(prio, collection=collection)
+        query_args = self._form_tag_query(collection=collection, ai=True)
         matched = self.db_handler.select(**query_args)
 
         tagged = 0
@@ -266,27 +265,22 @@ class Tagger():
         for row in matched:
             c, entry = self._ai_tagging(row)
             count += c
-            entries += entry.get('uuid')
+            entries.append(entry)
 
         # Update Request
         if count and not dry_run:
 
             for entry in entries:
 
-                if entry.get('primmary') is None:
-                    continue
-
                 uuid = entry.get('uuid')
                 query = {'key': 'uuid', 'value': uuid}
-                new_prio = prio if prio_set is None else prio_set
 
                 # Updated Category
                 new_category = {
-                    'prio': new_prio,
-                    'primary_tag': entry.get('primary'),
-                    'secondary_tag': entry.get('secondary', 'sonstiges'),
+                    'guess': entry.get('guess')
                 }
                 updated = self.db_handler.update(data=new_category, condition=query)
+                updated = updated.get('updated')
 
                 # soft Exception Handling
                 if not updated:
@@ -297,38 +291,54 @@ class Tagger():
                 tagged += updated
 
         result = {
-            'tagged': tagged,
+            'guessed': tagged,
             'ai': {
-                'tagged': tagged,
-                'entries': entries
+                'entries': [e.get('uuid') for e in entries],
             }
         }
 
         logging.info("Tagging with AI....DONE")
         return result
 
-    def _form_tag_query(self, prio: int, collection: str=None) -> dict:
+    def _form_tag_query(self, prio: int=1, collection: str=None, ai=False) -> dict:
         """
         Erstellt die Standardabfrage-Filter für den Ausgangsdatensatz eines Taggings.
 
         Args:
             prio, int: Filter more important tags
             collection, str: Collection to select from
+            ai, bool: True if AI Tagging
         Return:
             dict: Query Dict for db_handler.select()
         """
-        # Allgemeine Startfilter für die Condition
-        query_args = {
-            'condition': [{
-                'key': 'prio',
-                'value': prio,
-                'compare': '<'
-            }],
-            'multi': 'AND',
-            'collection': collection
-        }
-        if collection is not None:
-            query_args['collection'] = collection
+        if not ai:
+            # Allgemeine Startfilter für die Condition
+            query_args = {
+                'condition': [{
+                    'key': 'prio',
+                    'value': prio,
+                    'compare': '<'
+                }],
+                'multi': 'AND',
+                'collection': collection
+            }
+        else:
+            # Startfilter für unkategoriesierte Transaktionen
+            query_args = {
+                'condition': [
+                    {
+                        'key': 'primary_tag',
+                        'value': None,
+                        'compare': '=='
+                    }, {
+                        'key': 'secondary_tag',
+                        'value': None,
+                        'compare': '=='
+                    }
+                ],
+                'multi': 'OR',
+                'collection': collection
+            }
 
         return query_args
 
@@ -344,76 +354,93 @@ class Tagger():
             tuple(int, dict): Trefferanzahl (0|1), Aktualisierte Transaktion
         """
         #TODO: Fake Methode
-        list_of_categories = [
-            'Vergnügen', 'Versicherung', 'KFZ', 'Kredite',
-            'Haushalt und Lebensmittel', 'Anschaffung',
+        primary_categories = [
+            'AI_Pri_1', 'AI_Pri_2', 'AI_Pri_3', 'AI_Pri_4',
+            'AI_Pri_5', 'AI_Pri_6', None, None, None, None,
+            None, None, None, None, None, None, None
         ]
-        list_of_categories += 20 * None
+        secondary_categories = [
+            'AI_Sec_1', 'AI_Sec_2', 'AI_Sec_3', 'AI_Sec_4',
+            'AI_Sec_5', 'AI_Sec_6', None, None, None, None,
+            None, None, None, None, None, None, None
+        ]
 
-        found_category = random.choice(list_of_categories)
         c = 0
+        guess = {}
+        primary_tag = transaction.get('primary_tag')
+        if primary_tag is None:
+            # Guess Primary Tag
+            found_category = random.choice(primary_categories)
+            if found_category is not None:
+                primary_tag = found_category
+                guess['primary_tag'] = primary_tag
+                c += 1
 
-        if found_category is not None:
-            transaction['primary_tag'] = found_category
-            transaction['secondary_tag'] = None
-            c = 1
 
+        if primary_tag is not None and transaction.get('secondary_tag') is None:
+            # Guess Secondary Tag
+            found_category = random.choice(secondary_categories)
+            if found_category is not None:
+                guess['secondary_tag'] = found_category
+                c += 1
+
+        # Store result and return
+        transaction['guess'] = guess
         return c, transaction
 
-    def _load_ruleset(self, rule_name=None, namespace='both'):
+    def _load_parsers(self) -> dict:
+        """
+        Parser ermöglichen das Extrahieren von Kerninformationen aus dem Buchungstext.
+        Die Ergebnisse können für Entscheidung beim Tagging genutzt werden.
+        Der Key wird als Bezeichner für das Ergebnis verwendet.
+        Jeder RegEx muss genau eine Gruppe matchen.
+        """
+        raw_parser = self.db_handler.filter_metadata(
+            {"key": "metatype", "value": "parser"}
+        )
+        parsers = {}
+        for p in raw_parser:
+            parsers[p['name']] = re.compile(p.get('regex'))
+
+        return parsers
+
+    def _load_ruleset(self, rule_name=None) -> dict:
         """
         Load Rules from the Settings of for the requesting User.
 
         Args:
             rule_name (str, optional): Lädt die Regel mit diesem Namen.
                                        Default: Es werden alle Regeln geladen.
-            namespace (str, system|user|both): Unterscheidung aus weclhem Set Regeln
-                                               geladen oder gesucht werden soll.
-                                               - system: nur allgemeine Regeln
-                                               - user: nur private Regeln
-                                               - both (default): alle Regeln
         Returns:
-            list(dict): Liste von Filterregeln
+            dict: Verzeichnis nach Namen der Filterregeln
         """
-        #TODO: Fake Funktion
-        system_rules = {
-            'Supermarkets': {
-                'primary': 'Lebenserhaltungskosten',
-                'secondary': 'Lebensmittel',
-                'regex': r"(EDEKA|Wucherpfennig|Penny|Aldi|Kaufland|netto)",
-            },
-        }
-        user_rules = {
-            'City Tax': {
-                'primary': 'Haus und Grund',
-                'secondary': 'Stadtabgaben',
-                'parsed': {
-                    'Gläubiger-ID': r'DE7000100000077777'
-                },
-            }
-        }
-
         if rule_name:
-
             # Bestimmte Regel laden
-            if namespace in ['system', 'both']:
-                # Allgemein
-                rule = system_rules.get(rule_name)
-            if namespace == 'both':
-                # oder speziell (falls vorhanden)
-                rule = user_rules.get(rule_name, rule)
-            if namespace == 'user':
-                # Nur User
-                rule = user_rules.get(rule_name)
+            raw_rule = self.db_handler.filter_metadata(
+                [
+                    {"key": "metatype", "value": "rule"},
+                    {"key": "name", "value": rule_name}
+                ],
+                multi='AND'
+            )
+            rule = raw_rule[0]
+            regex = rule.get('regex')
+            if regex:
+                rule['regex'] = re.compile(regex)
 
             return {rule_name: rule}
 
-        # Alle Regeln einzelner namespaces
-        if namespace == 'system':
-            return system_rules
-        if namespace == 'user':
-            return user_rules
+        # Alle Regeln laden
+        raw_rules = self.db_handler.filter_metadata(
+            {"key": "metatype", "value": "rule"}
+        )
+        rules = {}
+        for r in raw_rules:
+            regex = r.get('regex')
 
-        # Alle Regeln aller namespaces
-        system_rules.update(user_rules)
-        return system_rules
+            if regex:
+                r['regex'] = re.compile(regex)
+
+            rules[r.get('name')] = r
+
+        return rules

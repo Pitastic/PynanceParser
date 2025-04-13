@@ -1,6 +1,7 @@
 #!/usr/bin/python3 # pylint: disable=invalid-name
 """Basisc Module for easy Imports and Methods"""
 
+import json
 import os
 import sys
 import io
@@ -23,7 +24,7 @@ def test_truncate(test_app):
     with test_app.app_context():
 
         with test_app.test_client() as client:
-            result = client.delete('/api/truncateDatabase/')
+            result = client.delete(f'/api/{test_app.config['IBAN']}/truncateDatabase/')
             assert result.status_code == 200, "Fehler beim Leeren der Datenbank"
 
 
@@ -53,7 +54,10 @@ def test_upload_csv_commerzbank(test_app):
             content = get_testfile_contents(EXAMPLE_CSV, binary=True)
             files = {'input_file': (io.BytesIO(content), 'commerzbank.csv')}
             # Post File
-            result = client.post("/api/upload", data=files, content_type='multipart/form-data')
+            result = client.post(
+                f"/api/upload/{test_app.config['IBAN']}",
+                data=files, content_type='multipart/form-data'
+            )
 
             # Check Response
             assert result.status_code == 201, \
@@ -130,7 +134,10 @@ def test_double_upload(test_app):
             content = get_testfile_contents(EXAMPLE_CSV, binary=True)
             files = {'input_file': (io.BytesIO(content), 'commerzbank.csv')}
             # Post File 1
-            result = client.post("/api/upload", data=files, content_type='multipart/form-data')
+            result = client.post(
+                f"/api/upload/{test_app.config['IBAN']}",
+                data=files, content_type='multipart/form-data'
+            )
 
             # Check Response
             assert result.status_code == 201, \
@@ -140,7 +147,10 @@ def test_double_upload(test_app):
 
             # Post File 2
             files = {'input_file': (io.BytesIO(content), 'commerzbank.csv')}
-            result = client.post("/api/upload", data=files, content_type='multipart/form-data')
+            result = client.post(
+                f"/api/upload/{test_app.config['IBAN']}",
+                data=files, content_type='multipart/form-data'
+            )
 
             # Check Response (same TX: Keine neuen Einträge angelegt)
             assert result.status_code == 200, \
@@ -156,6 +166,79 @@ def test_double_upload(test_app):
             assert len(rows) == 5, f"Es wurden zu viele Einträge ({len(rows)}) angelegt"
 
 
+def test_save_meta(test_app):
+    """Testet das Speichern Metadaten"""
+    with test_app.app_context():
+
+        with test_app.test_client() as client:
+
+            # Parser in MetadaDB schreiben (form)
+            parameters = {
+                'uuid': '555',
+                'name': 'Test Parsing 4 Digits',
+                'regex': '[0-9]]{4}'
+            }
+            result = client.post("/api/saveMeta/parser", json=parameters)
+            assert result.status_code == 201, \
+                "Der Statuscode war nicht wie erwartet"
+
+            result = result.json
+            assert result.get('inserted') == 1, "Es wurde nichts eingefügt"
+
+            # Parser in MetadaDB schreiben (file upload)
+            parameters = {
+                'uuid': '0987654321',
+                'name': 'By File',
+                'regex': '[0-5]]{4}'
+            }
+            parameters = json.dumps(parameters).encode('utf-8')
+            files = {'input_file': (io.BytesIO(parameters), 'commerzbank.csv')}
+            result = client.post(
+                "/api/saveMeta/",
+                data=files, content_type='multipart/form-data'
+            )
+            assert result.status_code == 201, \
+                "Der Statuscode war nicht wie erwartet"
+
+            result = result.json
+            assert result.get('inserted') == 1, "Es wurde nichts eingefügt"
+
+
+def test_list_meta(test_app):
+    """Testet das Speichern Metadaten"""
+    with test_app.app_context():
+
+        with test_app.test_client() as client:
+
+            # Alle Einträge aus MetadatenDB holen
+            result = client.get("/api/getMeta/")
+            result = result.json
+            assert isinstance(result, list), \
+                "Die Antwort war keine Liste"
+            assert len(result) > 0, \
+                "Die Liste war leer"
+
+            # Alle Parser aus MetadatenDB holen
+            result = client.get("/api/getMeta/parser")
+            result = result.json
+            assert isinstance(result, list), \
+                "Die Antwort war keine Liste"
+            assert len(result) > 0, \
+                "Die Liste war leer"
+
+            # Regel mit Namen aus der UserDB holen
+            result = client.get("/api/getMeta/555")
+            result = result.json
+            assert isinstance(result, dict), \
+                "Die Antwort war kein Dictionary"
+            assert result.get('name') == 'Test Parsing 4 Digits', \
+                "Die Regel war nicht wie erwartet"
+            assert result.get('regex') == '[0-9]]{4}', \
+                "Die Regel war nicht wie erwartet"
+            assert result.get('uuid') == '555', \
+                "Die Regel war nicht wie erwartet"
+
+
 def test_tag_stored(test_app):
     """Testet das Tagging, wenn es über den API Endpoint angesprochen wird"""
     with test_app.app_context():
@@ -168,7 +251,7 @@ def test_tag_stored(test_app):
                 'dry_run': True,
                 'prio': 2
             }
-            result = client.put("/api/tag", json=parameters)
+            result = client.put(f"/api/{test_app.config['IBAN']}/tag/", json=parameters)
             result = result.json
 
             assert result.get('tagged') == 0, \
@@ -183,7 +266,7 @@ def test_tag_stored(test_app):
                 'rule_name': 'City Tax',
                 'prio': 2
             }
-            result = client.put("/api/tag", json=parameters)
+            result = client.put(f"/api/{test_app.config['IBAN']}/tag/", json=parameters)
             result = result.json
 
             assert result.get('tagged') == 1, \
@@ -217,7 +300,7 @@ def test_own_rules(test_app):
                 'rule_regex': r'EDEKA',
                 'prio': 0,
             }
-            result = client.put("/api/tag", json=parameters)
+            result = client.put(f"/api/{test_app.config['IBAN']}/tag/", json=parameters)
             result = result.json
 
             # Es sollte eine Transaktion zutreffen,
@@ -238,7 +321,7 @@ def test_own_rules(test_app):
                 'prio': 9,
                 'prio_set': 3,
             }
-            result = client.put("/api/tag", json=parameters)
+            result = client.put(f"/api/{test_app.config['IBAN']}/tag/", json=parameters)
             result = result.json
 
             assert result.get('tagged') == 1, \
@@ -258,7 +341,7 @@ def test_manual_tagging(test_app):
                 'secondary_tag': 'Test_SECONDARY'
             }
             r = client.put(
-                f"/api/setManualTag/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd",
+                f"/api/{test_app.config['IBAN']}/setManualTag/6884802db5e07ee68a68e2c64f9c0cdd",
                 json=new_tag
             )
             r = r.json
@@ -277,7 +360,7 @@ def test_manual_multi_tagging(test_app):
                           "fdd4649484137572ac642e2c0f34f9af"]
             }
             r = client.put(
-                f"/api/setManualTags/{test_app.config['IBAN']}",
+                f"/api/{test_app.config['IBAN']}/setManualTags/",
                 json=new_tag
             )
             r = r.json
@@ -291,7 +374,7 @@ def test_get_tx(test_app):
         with test_app.test_client() as client:
             # Get Transaction                
             result = client.get(
-                f"/api/getTx/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd"
+                f"/api/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd"
             )
             assert result.status_code == 200, \
                 "Der Statuscode der Transaktion war falsch"
@@ -300,3 +383,22 @@ def test_get_tx(test_app):
             result = result.json
             assert result.get('primary_tag') == 'Tets_PRIMARY_2', \
                 "Der Primary Tag war nicht wie erwartet"
+
+def test_remove_tag(test_app):
+    """Testet das Entfernen eines Tags"""
+    with test_app.app_context():
+
+        with test_app.test_client() as client:
+            # Remove Tag
+            result = client.put(
+                f"/api/{test_app.config['IBAN']}/removeTag/6884802db5e07ee68a68e2c64f9c0cdd"
+            )
+            result = result.json
+            assert result.get('updated') == 1, \
+                "Der Tag wurde nicht entfernt"
+            assert not result.get('primary_tag'), \
+                "Der Primary Tag war nicht wie erwartet"
+            assert not result.get('secondary_tag'), \
+                "Der Secondary Tag war nicht wie erwartet"
+            assert not result.get('prio'), \
+                "Die Prio war nicht wie erwartet"

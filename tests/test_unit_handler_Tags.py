@@ -19,20 +19,26 @@ from handler.Tags import Tagger
 
 # Test Tagging-Ruleset hinterlegen
 RULESET = {
-    'Supermarkets': {
-        'primary': 'Lebenserhaltungskosten',
-        'secondary': 'Lebensmittel',
-        'regex': r"(EDEKA|Wucherpfennig|Penny|Aldi|Kaufland|netto)",
+    "Supermarkets" : {
+        "name": "Supermarkets",
+        "metatype": "rule",
+        "primary": "Lebenserhaltungskosten",
+        "secondary": "Lebensmittel",
+        "regex": r"(EDEKA|Wucherpfennig|Penny|Aldi|Kaufland|netto)"
     },
-    'City Tax': {
-        'primary': 'Haus und Grund',
-        'secondary': 'Stadtabgaben',
-        'parsed': {
-            'Gläubiger-ID': r'DE7000100000077777'
-        },
+    "City Tax": {
+        "name": "City Tax",
+        "metatype": "rule",
+        "primary": "Haus und Grund",
+        "secondary": "Stadtabgaben",
+        "parsed": {
+            "multi": "AND",
+            "query": {
+                'Gläubiger-ID': r'DE7000100000077777'
+            }
+        }
     }
 }
-
 
 def test_parsing_regex(test_app):
     """Testet das Parsen der Datensätze mit den fest hinterlegten RegExes"""
@@ -98,7 +104,14 @@ def test_regex_custom():
     die vom Benutzer hinterlegt worden sind"""
     return
 
-@pytest.mark.skip(reason="Currently not implemented yet")
-def test_ai():
-    """Testet das Kategorisieren der Datensätze mit Hilfe der KI"""
-    return
+
+def test_ai_guess(test_app):
+    """Prüft zunächst, ob die Methode für das KI Tagging die
+    richtigen Datensätze selektiert und ein Guess hinterlässt"""
+    with test_app.app_context():
+        tagger = Tagger(MockDatabase())
+        tagging_result = tagger.tag_ai(dry_run=True)
+        assert tagging_result.get('guessed') == 0, \
+            "Die Option dry_run hat trotzdem Datensätze verändert"
+        assert len(tagging_result.get('ai').get('entries')) == 5, \
+            "Die Methode hat nicht die richtige Anzahl an Einträgen getroffen"

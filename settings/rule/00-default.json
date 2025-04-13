@@ -1,0 +1,20 @@
+[
+    {
+        "name": "Supermarkets",
+        "metatype": "rule",
+        "primary": "Lebenserhaltungskosten",
+        "secondary": "Lebensmittel",
+        "regex": "(EDEKA|Wucherpfennig|Penny|Aldi|Kaufland|netto)"
+    }, {
+        "name": "City Tax",
+        "metatype": "rule",
+        "primary": "Haus und Grund",
+        "secondary": "Stadtabgaben",
+        "parsed": {
+            "multi": "AND",
+            "query": {
+                "Gläubiger-ID": "DE7000100000077777"
+            }
+        }
+    }
+]
