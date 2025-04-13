@@ -3,13 +3,13 @@
         "name": "Supermarkets",
         "metatype": "rule",
         "primary": "Lebenserhaltungskosten",
-        "secondary": "Lebensmittel",
+        "tags": ["Lebensmittel"],
         "regex": "(EDEKA|Wucherpfennig|Penny|Aldi|Kaufland|netto)"
     }, {
         "name": "City Tax",
         "metatype": "rule",
         "primary": "Haus und Grund",
-        "secondary": "Stadtabgaben",
+        "tags": ["Stadtabgaben"],
         "parsed": {
             "multi": "AND",
             "query": {

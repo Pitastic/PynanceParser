@@ -296,7 +296,7 @@ def test_own_rules(test_app):
             parameters = {
                 'rule_name': 'My low Rule',
                 'rule_primary': 'Lebensmittel',
-                'rule_secondary': 'Supermarkt',
+                'rule_tags': ['Supermarkt'],
                 'rule_regex': r'EDEKA',
                 'prio': 0,
             }
@@ -316,7 +316,7 @@ def test_own_rules(test_app):
             parameters = {
                 'rule_name': 'My high Rule',
                 'rule_primary': 'Haus',
-                'rule_secondary': 'Garten',
+                'rule_tags': ['Garten'],
                 'rule_regex': r'\sGARTEN\w',
                 'prio': 9,
                 'prio_set': 3,
@@ -337,8 +337,8 @@ def test_manual_tagging(test_app):
 
         with test_app.test_client() as client:
             new_tag = {
-                'primary_tag': 'Tets_PRIMARY',
-                'secondary_tag': 'Test_SECONDARY'
+                'category': 'Tets_PRIMARY',
+                'tags': ['Test_SECONDARY']
             }
             r = client.put(
                 f"/api/{test_app.config['IBAN']}/setManualTag/6884802db5e07ee68a68e2c64f9c0cdd",
@@ -354,8 +354,8 @@ def test_manual_multi_tagging(test_app):
 
         with test_app.test_client() as client:
             new_tag = {
-                'primary_tag': 'Tets_PRIMARY_2',
-                'secondary_tag': 'Test_SECONDARY_2',
+                'category': 'Tets_PRIMARY_2',
+                'tags': ['Test_SECONDARY_2'],
                 't_ids': ["6884802db5e07ee68a68e2c64f9c0cdd",
                           "fdd4649484137572ac642e2c0f34f9af"]
             }
@@ -381,7 +381,7 @@ def test_get_tx(test_app):
 
             # Check Content
             result = result.json
-            assert result.get('primary_tag') == 'Tets_PRIMARY_2', \
+            assert result.get('category') == 'Tets_PRIMARY_2', \
                 "Der Primary Tag war nicht wie erwartet"
 
 def test_remove_tag(test_app):
@@ -396,9 +396,9 @@ def test_remove_tag(test_app):
             result = result.json
             assert result.get('updated') == 1, \
                 "Der Tag wurde nicht entfernt"
-            assert not result.get('primary_tag'), \
-                "Der Primary Tag war nicht wie erwartet"
-            assert not result.get('secondary_tag'), \
-                "Der Secondary Tag war nicht wie erwartet"
+            assert not result.get('category'), \
+                "Der Kategorie war nicht wie erwartet"
+            assert not result.get('tags'), \
+                "Die Tags waren nicht wie erwartet"
             assert not result.get('prio'), \
                 "Die Prio war nicht wie erwartet"

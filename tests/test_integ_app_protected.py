@@ -57,8 +57,8 @@ def test_set_manual_tag(test_app):
         r = test_app.host._set_manual_tag( # pylint: disable=protected-access
             iban, t_id,
             {
-                'primary_tag': 'Test_Pri',
-                'secondary_tag': 'Test_Second'
+                'category': 'Test_Pri',
+                'tags': ['Test_Second']
             }
         )
         assert r.get('updated') == 1, 'Es wurde kein Eintrag aktualisiert. '
@@ -70,8 +70,8 @@ def test_set_manual_tag(test_app):
             'compare': '=='
         }
         rows = test_app.host.db_handler.select(iban, condition)
-        assert rows[0].get('primary_tag') == 'Test_Pri' and \
-            rows[0].get('secondary_tag') == 'Test_Second', \
+        assert rows[0].get('category') == 'Test_Pri' and \
+            'Test_Second' in rows[0].get('tags'), \
             f'Der Tag wurde nicht gesetzt: {rows[0]}'
 
 @pytest.mark.skip(reason="Currently not implemented yet")

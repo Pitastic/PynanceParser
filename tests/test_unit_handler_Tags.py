@@ -22,15 +22,15 @@ RULESET = {
     "Supermarkets" : {
         "name": "Supermarkets",
         "metatype": "rule",
-        "primary": "Lebenserhaltungskosten",
-        "secondary": "Lebensmittel",
+        "category": "Lebenserhaltungskosten",
+        "tags": ["Lebensmittel"],
         "regex": r"(EDEKA|Wucherpfennig|Penny|Aldi|Kaufland|netto)"
     },
     "City Tax": {
         "name": "City Tax",
         "metatype": "rule",
-        "primary": "Haus und Grund",
-        "secondary": "Stadtabgaben",
+        "category": "Haus und Grund",
+        "tags": ["Stadtabgaben"],
         "parsed": {
             "multi": "AND",
             "query": {

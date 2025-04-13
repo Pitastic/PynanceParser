@@ -12,7 +12,7 @@ def check_transaktion_list(tx_list):
         # Dict Struktur
         required_keys = [
             'date_tx', 'text_tx', 'betrag', 'iban',
-            'parsed', 'primary_tag', 'secondary_tag', # Leer aber vorhanden
+            'parsed', 'category', 'tags', # Leer aber vorhanden
             'date_wert', 'art', 'currency' # optional aber vorhanden
         ]
 
@@ -88,7 +88,7 @@ def check_entry(tx_entry, key_vals=None):
         'uuid',
         'date_tx', 'text_tx', 'betrag', 'iban',
         'parsed', 'date_wert', 'art', 'currency',
-        'primary_tag', 'secondary_tag'
+        'category', 'tags'
     ]
     for r_key in required_keys:
         assert r_key in tx_entry.keys(), \
@@ -156,11 +156,11 @@ class MockDatabase:
         ]
         self.query3 = [
             {
-                'key': 'primary_tag',
+                'key': 'category',
                 'value': None,
                 'compare': '=='
             }, {
-                'key': 'secondary_tag',
+                'key': 'tags',
                 'value': None,
                 'compare': '=='
             }
@@ -172,7 +172,7 @@ class MockDatabase:
             'text_tx': ('Wucherpfennig sagt Danke 88//HANNOV 2023-01-01T08:59:42 '
                         'KFN 9 VJ 7777 Kartenzahlung'),
             'betrag': -11.63, 'iban': 'DE89370400440532013000', 'currency': 'USD',
-            'parsed': {}, 'primary_tag': 'Updated', 'secondary_tag': None,
+            'parsed': {}, 'category': 'Updated', 'tags': None,
             'uuid': 'b5aaffc31fa63a466a8b55962995ebcc', 'prio': 0
             },
 
@@ -181,7 +181,7 @@ class MockDatabase:
             'text_tx': ('MEIN GARTENCENTER//Berlin 2023-01-02T12:57:02 KFN 9 VJ 7777 '
                         'Kartenzahlung'),
             'betrag': -118.94, 'iban': 'DE89370400440532013000', 'currency': 'USD',
-            'parsed': {}, 'primary_tag': 'Updated', 'secondary_tag': None,
+            'parsed': {}, 'category': 'Updated', 'tags': None,
             'uuid': '13d505688ab3b940dbed47117ffddf95', 'prio': 0
             },
 
@@ -190,7 +190,7 @@ class MockDatabase:
             'text_tx': ('EDEKA, München//München/ 2023-01-03T14:39:49 KFN 9 VJ '
                         '7777 Kartenzahlung'),
             'betrag': -99.58, 'iban': 'DE89370400440532013000', 'currency': 'EUR',
-            'parsed': {}, 'primary_tag': None, 'secondary_tag': None,
+            'parsed': {}, 'category': None, 'tags': None,
             'uuid': 'a8bd1aa187c952358c474ca4775dbff8', 'prio': 0
             },
 
@@ -199,7 +199,7 @@ class MockDatabase:
             'text_tx': ('DM FIL.2222 F:1111//Frankfurt/DE 2023-01-04T13:22:16 KFN 9 VJ '
                         '7777 Kartenzahlung'),
             'betrag': -71.35, 'iban': 'DE89370400440532013000', 'currency': 'EUR',
-            'parsed': {}, 'primary_tag': None, 'secondary_tag': None,
+            'parsed': {}, 'category': None, 'tags': None,
             'uuid': 'a1eb37e4ed4a22a38bdeef2f34fb76c3', 'prio': 0
             },
 
@@ -210,7 +210,7 @@ class MockDatabase:
                         'Mandatsref: M1111111 Gläubiger-ID: DE7000100000077777 '
                         'SEPA-BASISLASTSCHRIFT wiederholend'),
             'betrag': -221.98, 'iban': 'DE89370400440532013000', 'currency': 'EUR',
-            'parsed': {'Mandatsreferenz': 'M1111111'}, 'primary_tag': None, 'secondary_tag': None,
+            'parsed': {'Mandatsreferenz': 'M1111111'}, 'category': None, 'tags': None,
             'uuid': 'ba9e5795e4029213ae67ac052d378d84', 'prio': 0
             }
 

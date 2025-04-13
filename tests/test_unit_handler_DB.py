@@ -174,7 +174,7 @@ def test_update(test_app):
     """Testet das Aktualisieren von Datensätzen"""
     with test_app.app_context():
         # Update some records and multiple fields
-        data = {'currency': 'USD', 'primary_tag': 'Updated'}
+        data = {'currency': 'USD', 'category': 'Updated'}
         query = [
             {'key': 'uuid', 'value': '13d505688ab3b940dbed47117ffddf95'},
             {'key': 'text_tx', 'value': 'Wucherpfennig', 'compare': 'like'}

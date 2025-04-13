@@ -10,8 +10,8 @@
     'betrag': float,
     'iban': str,
     'parsed': str,
-    'primary_tag': str,
-    'secondary_tag': str
+    'category': str,
+    'tags': list[str]
 
     ----------- optional -----------
 
@@ -21,8 +21,8 @@
 
     'parsed': dict( str: str )
 
-    'primary_tag': str,
-    'secondary_tag': str,
+    'category': str,
+    'tags': list[str],
     'priority': int,
 }
 ```
@@ -59,8 +59,8 @@ Regeln können Attribute einer Transaktion untersuchen und anhand dessen klassif
 
     ----------- bei Rules ----------
 
-    'primary': str | None,
-    'secondary': str | None,
+    'category': str | None,
+    'tags': list[str] | None,
 
     ----------- optional -----------
 

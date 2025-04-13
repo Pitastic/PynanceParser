@@ -117,7 +117,7 @@ class UserInterface():
                 # Table with Transactions
                 rows = self.db_handler.select(iban, condition)
                 table_header = ['date_tx', 'betrag', 'currency',
-                                'primary_tag', 'secondary_tag',
+                                'category', 'tags',
                                 'prio', 'parsed']
 
                 # Rules for Selection
@@ -314,8 +314,8 @@ class UserInterface():
                     iban, str: IBAN
                     t_id, int: Datenbank ID der Transaktion, die getaggt werden soll
                     data, dict: Daten für die Aktualisierung (default: request.json)
-                        - primary_tag, str: Bezeichnung der primären Kategorie
-                        - secondary_tag, str: Bezeichnung der sekundären Kategorie
+                        - category, str: Bezeichnung der primären Kategorie
+                        - tags, list[str]: Bezeichnung der sekundären Kategorie
                 Returns:
                     dict: updated, int: Anzahl der gespeicherten Datensätzen
                 """
@@ -331,8 +331,8 @@ class UserInterface():
                     iban, str: IBAN
                     t_ids, list[str]: Liste mit Datenbank IDs der Transaktionen,
                                       die getaggt werden sollen
-                    primary_tag, str: Bezeichnung der primären Kategorie
-                    secondary_tag, str: Bezeichnung der sekundären Kategorie
+                    category, str: Bezeichnung der primären Kategorie
+                    tags, list[str]: Bezeichnung der sekundären Kategorie
                 Returns:
                     dict: updated, int: Anzahl der gespeicherten Datensätzen
                 """
@@ -396,8 +396,8 @@ class UserInterface():
             iban, str: IBAN
             t_id, int: Datenbank ID der Transaktion, die getaggt werden soll
             data, dict: Daten für die Aktualisierung (default: request.json)
-                - primary_tag, str: Bezeichnung der primären Kategorie
-                - secondary_tag, str: Bezeichnung der sekundären Kategorie
+                - category, str: Bezeichnung der primären Kategorie
+                - tags, list[str:] Bezeichnung der sekundären Kategorie
         Returns:
             dict: updated, int: Anzahl der gespeicherten Datensätzen
         """
@@ -405,13 +405,13 @@ class UserInterface():
             'prio': 99
         }
 
-        primary_tag = data['primary_tag']
-        if primary_tag:
-            new_tag_data['primary_tag'] = primary_tag
+        category = data['category']
+        if category:
+            new_tag_data['category'] = category
 
-        secondary_tag = data.get('secondary_tag')
-        if secondary_tag:
-            new_tag_data['secondary_tag'] = secondary_tag
+        tags = data.get('tags')
+        if tags:
+            new_tag_data['tags'] = tags
 
         condition = {
             'key': 'uuid',
@@ -435,8 +435,8 @@ class UserInterface():
         """
         new_daata = {
             'prio': 0,
-            'primary_tag': None,
-            'secondary_tag': None
+            'category': None,
+            'tags': None
         }
         condition = [{
             'key': 'uuid',

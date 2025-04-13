@@ -20,8 +20,8 @@ class Reader:
             'betrag': float,
             'iban': str,
             'parsed': str,
-            'primary_tag': str,
-            'secondary_tag': str
+            'category': str,
+            'tags': list[str]
             'date_wert': int ,      # (optional, UTC)
             'art': str,             # (optional)
             'currency': str,        # (optional)
@@ -62,8 +62,8 @@ class Reader:
                     'iban': row['IBAN Auftraggeberkonto'],
                     'currency': row['Währung'],
                     'parsed': {},
-                    'primary_tag': None,
-                    'secondary_tag': None
+                    'category': None,
+                    'tags': None
                 })
 
         return result

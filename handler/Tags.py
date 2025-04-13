@@ -40,7 +40,7 @@ class Tagger():
         return input_data
 
     def tag(self, iban,
-            rule_name: str = None, rule_primary: str = None, rule_secondary: str = None,
+            rule_name: str = None, rule_category: str = None, rule_tags: list[str] = None,
             rule_regex: str = None, rule_parsed_keys: list = (), rule_parsed_vals: list = (),
             prio: int = 1, prio_set: int = None, dry_run: bool = False) -> dict:
         """
@@ -53,9 +53,9 @@ class Tagger():
                                 Reserviertes Keyword 'ai' führt nur das AI Tagging aus.
                                 Default: Es werden alle Regeln des Benutzers ohne das
                                 AI Tagging angewendet.
-                rule_primary:   Name der zu setzenden Primärkategory.
+                rule_category:  Name der zu setzenden Primärkategory.
                                 Default: Standardname
-                rule_secondary  Name der zu setzenden Sekundärkategory.
+                rule_tags:      Name der zu setzenden Sekundärkategory.
                                 Default: Standardname
                 rule_regex:     Regulärer Ausdrück für die Suche im Transaktionstext.
                                 Default: Wildcard
@@ -82,8 +82,8 @@ class Tagger():
 
             # Custom Rule
             rule = {
-                'primary': rule_primary,
-                'secondary': rule_secondary,
+                'category': rule_category,
+                'tags': rule_tags,
                 'regex': rule_regex
             }
 
@@ -117,13 +117,22 @@ class Tagger():
 
             raise ValueError('Es existieren noch keine Regeln für den Benutzer')
 
-        # Benutzer Regeln überschreibt alle autpomatischen Tags,
+        # Benutzer Regeln ignoriert alle autpomatischen Tags,
         # setzt aber wieder nur seine eigene Prio.
         if rule_name is not None:
             prio_set = rules[rule_name].get('prioriry', prio)
             prio = 99
 
         # Benutzer Regeln anwenden
+        #TODO: Loop >>>
+        # - Regeln anwenden und Tags (nur sekundär) setzen
+        # - Regeln, die geupdated wurden üner uuid merken
+        # - Regeln erneut anwenden und Tags anwenden (nur sekundär)
+        # - Regeln, die geupdated wurden üner uuid merken (Loop)
+        # End Loop <<<
+        # - Regeln zum Kategorisieren der TX (primär) anwenden auf TX.
+        #   Regel mit der höchsten Prio setzt die Kategorie
+        # - AI tagging für alles ohne Kategorie (primär)) durchführen
         result_rx = self.tag_regex(rules, iban, prio=prio, prio_set=prio_set, dry_run=dry_run)
         result_ai = self.tag_ai(iban, dry_run=dry_run)
         return {**result_rx, **result_ai}
@@ -161,8 +170,8 @@ class Tagger():
             # Updated Category
             new_category = {
                 'prio': prio_set,
-                'primary_tag': rule.get('primary', 'sonstiges'),
-                'secondary_tag': rule.get('secondary', 'sonstiges'),
+                'category': rule.get('category', 'sonstiges'),
+                'tags': rule.get('tags'),
             }
 
             # Ergebnisspeicher
@@ -327,11 +336,11 @@ class Tagger():
             query_args = {
                 'condition': [
                     {
-                        'key': 'primary_tag',
+                        'key': 'category',
                         'value': None,
                         'compare': '=='
                     }, {
-                        'key': 'secondary_tag',
+                        'key': 'tags',
                         'value': None,
                         'compare': '=='
                     }
@@ -359,7 +368,7 @@ class Tagger():
             'AI_Pri_5', 'AI_Pri_6', None, None, None, None,
             None, None, None, None, None, None, None
         ]
-        secondary_categories = [
+        possible_tags = [
             'AI_Sec_1', 'AI_Sec_2', 'AI_Sec_3', 'AI_Sec_4',
             'AI_Sec_5', 'AI_Sec_6', None, None, None, None,
             None, None, None, None, None, None, None
@@ -367,21 +376,21 @@ class Tagger():
 
         c = 0
         guess = {}
-        primary_tag = transaction.get('primary_tag')
-        if primary_tag is None:
+        category = transaction.get('category')
+        if category is None:
             # Guess Primary Tag
             found_category = random.choice(primary_categories)
             if found_category is not None:
-                primary_tag = found_category
-                guess['primary_tag'] = primary_tag
+                category = found_category
+                guess['category'] = category
                 c += 1
 
 
-        if primary_tag is not None and transaction.get('secondary_tag') is None:
+        if category is not None and transaction.get('tags') is None:
             # Guess Secondary Tag
-            found_category = random.choice(secondary_categories)
+            found_category = random.choice(possible_tags)
             if found_category is not None:
-                guess['secondary_tag'] = found_category
+                guess['tags'] = found_category
                 c += 1
 
         # Store result and return

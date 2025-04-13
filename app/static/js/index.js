@@ -136,12 +136,12 @@ function removeTags() {
 /**
  * Tags the entries in the database in a direct manner (assign Categories, no rules)
  * Optional Tagging commands are read from the inputs with IDs
- * 'input_manual_primary' , 'input_manual_secondary' , 'input_iban' and 'input_tid'.
+ * 'input_manual_category' , 'input_manual_tags' , 'input_iban' and 'input_tid'.
  * While the IBAN and Transaction_ID are mandatory, the other inputs are optional.
  */
 function manualTagEntries() {
-    const primary_tag = document.getElementById('input_manual_primary').value;
-    const secondary_tag = document.getElementById('input_manual_secondary').value;
+    const category = document.getElementById('input_manual_category').value;
+    const tags = document.getElementById('input_manual_tags').value;
     const iban = document.getElementById('input_iban').value;
 
     const checkboxes = document.querySelectorAll('input[name="entry-select[]"]');
@@ -161,9 +161,9 @@ function manualTagEntries() {
         return;
     }
 
-    let tags = {
-        'primary_tag': primary_tag,
-        'secondary_tag': secondary_tag
+    let tagging = {
+        'category': category,
+        'tags': tags
     }
     
     let api_function;
@@ -174,7 +174,7 @@ function manualTagEntries() {
         tags['t_ids'] = t_ids;
     };
 
-    apiSubmit(api_function, tags, function (responseText, error) {
+    apiSubmit(api_function, tagging, function (responseText, error) {
         if (error) {
             printResult('Tagging failed: ' + '(' + error + ')' + responseText);
 
