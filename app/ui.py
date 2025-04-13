@@ -338,7 +338,6 @@ class UserInterface():
                 """
                 data = request.json
                 updated_entries = {'updated': 0}
-                #TODO: Frontend prüfen
                 for tx in data.get('t_ids'):
 
                     updated = self._set_manual_tag(iban, tx, data)

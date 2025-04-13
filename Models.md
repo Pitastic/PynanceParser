@@ -48,6 +48,8 @@
 
 #### Dictionary eines Rulesets (Tag/Parse)
 
+Regeln können Attribute einer Transaktion untersuchen und anhand dessen klassifizieren oder taggen. Zu den Werten kann nicht die primäre Kategorie zählen, wohl aber andere Tags, parsing Informationen oder Regexes auf den Buchungstext (und mehr).
+
 ```
 {
     'uuid': str             # (generated)
