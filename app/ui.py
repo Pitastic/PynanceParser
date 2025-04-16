@@ -405,7 +405,7 @@ class UserInterface():
             'prio': 99
         }
 
-        category = data['category']
+        category = data.get('category')
         if category:
             new_tag_data['category'] = category
 

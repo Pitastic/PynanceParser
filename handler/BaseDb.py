@@ -181,6 +181,9 @@ class BaseDb():
             # Set start Tagging priority
             transaction['prio'] = 0
 
+            # Set Tags to an empty list
+            transaction['tags'] = []
+
         # Input List or single Dict
         if not isinstance(tx_entries, list):
             return tx_list[0]

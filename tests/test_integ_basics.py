@@ -295,7 +295,7 @@ def test_own_rules(test_app):
             # Eigene Regel taggen lassen (niedrige Prio)
             parameters = {
                 'rule_name': 'My low Rule',
-                'rule_primary': 'Lebensmittel',
+                'rule_category': 'Lebensmittel',
                 'rule_tags': ['Supermarkt'],
                 'rule_regex': r'EDEKA',
                 'prio': 0,
@@ -315,7 +315,7 @@ def test_own_rules(test_app):
             # Eigene Regel taggen lassen (hohe Prio)
             parameters = {
                 'rule_name': 'My high Rule',
-                'rule_primary': 'Haus',
+                'rule_category': 'Haus',
                 'rule_tags': ['Garten'],
                 'rule_regex': r'\sGARTEN\w',
                 'prio': 9,
@@ -347,6 +347,36 @@ def test_manual_tagging(test_app):
             r = r.json
             assert r.get('updated') == 1, "Der Eintrag wurde nicht aktualisiert"
 
+            # Check if new values correct stored
+            r = client.get(
+                f'/api/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd'
+            )
+            r = r.json
+            assert isinstance(r.get('tags'), list), "Tags wurde nicht als Liste gespeichert"
+            assert r.get('tags') == ['Garten', 'Test_SECONDARY'], \
+                "Es wurde ein falsches Tag gespeichert"
+
+            # Add another Tag to the List
+            new_tag = {
+                'tags': ['Test_Another_SECONDARY']
+            }
+            r = client.put(
+                f"/api/{test_app.config['IBAN']}/setManualTag/6884802db5e07ee68a68e2c64f9c0cdd",
+                json=new_tag
+            )
+            r = r.json
+            assert r.get('updated') == 1, "Der Eintrag wurde nicht erneut aktualisiert"
+
+            # Check if new values correct stored
+            r = client.get(
+                f'/api/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd'
+            )
+            r = r.json
+            assert isinstance(r.get('tags'), list), "Tags wurde nicht als Liste gespeichert"
+            tags = r.get('tags')
+            assert 'Test_SECONDARY' in tags and 'Test_Another_SECONDARY' in tags, \
+                "Es wurden falsche Tags gespeichert"
+
 
 def test_manual_multi_tagging(test_app):
     """Mehrere Einträge mit bestimmter Kategorie taggen"""
@@ -372,7 +402,7 @@ def test_get_tx(test_app):
     with test_app.app_context():
 
         with test_app.test_client() as client:
-            # Get Transaction                
+            # Get Transaction
             result = client.get(
                 f"/api/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd"
             )

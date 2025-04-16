@@ -137,7 +137,26 @@ class MongoDbHandler(BaseDb):
         # Form condition into a query
         query = self._form_complete_query(condition, multi)
 
-        update_result = collection.update_many(query, {'$set': data})
+        # Handle Tag-Lists
+        new_tags = data.get('tags')
+        if new_tags:
+            # care about the right format
+            if not isinstance(new_tags, list):
+                data['tags'] = [new_tags]
+
+            # Clean $set data from tags
+            del data['tags']
+
+            # Define Operation
+            update_op = {
+                '$set': data,
+                '$push': {'tags': {'$each': new_tags}}
+            }
+
+        else:
+            update_op = {'$set': data}
+
+        update_result = collection.update_many(query, update_op)
         return {'updated': update_result.modified_count}
 
     def delete(self, collection=None, condition=None, multi='AND'):

@@ -2,6 +2,7 @@
 """Datenbankhandler für die Interaktion mit einer TinyDB Datenbankdatei."""
 
 import os
+import copy
 import operator
 import logging
 from tinydb import TinyDB, Query, where
@@ -149,8 +150,6 @@ class TinyDbHandler(BaseDb):
         if collection is None:
             collection = current_app.config['IBAN']
 
-        collection = self.connection.table(collection)
-
         # Form condition into a query and run
         if condition is None:
             query = Query().noop()
@@ -159,7 +158,35 @@ class TinyDbHandler(BaseDb):
             query = self._form_complete_query(condition, multi)
 
         # run update
-        update_result = collection.update(data, query)
+        new_tags = data.get('tags')
+        if new_tags:
+
+            docs_to_update = self.select(collection, condition, multi)
+            if not docs_to_update:
+                # No match, no update
+                return { 'updated': 0 }
+
+            # Special handling with list to update (select - edit - store)
+            collection = self.connection.table(collection)
+            update_data = {}
+            update_result = []
+
+            # care about the right format
+            if not isinstance(new_tags, list):
+                data['tags'] = [new_tags]
+
+            # Merge DB docs and update data and write it back to DB
+            for doc in docs_to_update:
+                existing_tags = doc.get('tags') or []
+                update_data = copy.deepcopy(data)
+                update_data['tags'] = existing_tags + new_tags
+                update_result += collection.update(update_data, query)
+
+        else:
+            # Plain function (overwrite existing attributes)
+            collection = self.connection.table(collection)
+            update_result = collection.update(data, query)
+
         return { 'updated': len(update_result) }
 
     def delete(self, collection=None, condition=None, multi='AND'):
