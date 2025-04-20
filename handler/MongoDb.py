@@ -8,6 +8,7 @@ import pymongo
 
 from handler.BaseDb import BaseDb
 
+#TODO: _double_check in TinyDB aber nicht in MongoDB ?
 
 class MongoDbHandler(BaseDb):
     """
@@ -45,13 +46,14 @@ class MongoDbHandler(BaseDb):
                 [("uuid", pymongo.TEXT)], unique=True
             )
 
-    def select(self, collection=None, condition=None, multi='AND'):
+    def _select(self, collection=None, condition=None, multi='AND'):
         """
         Selektiert Datensätze aus der Datenbank, die die angegebene Bedingung erfüllen.
 
         Args:
-            collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
-                                        Default: IBAN aus der Config.
+            collection (list, optional): Name der Collection oder Liste von Collections,
+                                         deren Werte selecktiert werden sollen.
+                                         Default: IBAN aus der Config.
             condition (dict | list(dict)): Bedingung als Dictionary
                 - 'key', str    : Spalten- oder Schlüsselname,
                 - 'value', any  : Wert der bei 'key' verglichen werden soll
@@ -64,14 +66,15 @@ class MongoDbHandler(BaseDb):
         Returns:
             list: Liste der ausgewählten Datensätze
         """
-        if collection is None:
-            collection = current_app.config['IBAN']
-        collection = self.connection[collection]
-
         # Form condition into a query
         query = self._form_complete_query(condition, multi)
+        result = []
 
-        return list(collection.find(query))
+        for col in collection:
+            col = self.connection[col]
+            result.extend(list(col.find(query)))
+
+        return result
 
     def insert(self, data, collection=None):
         """
@@ -305,3 +308,17 @@ class MongoDbHandler(BaseDb):
             query = self._form_condition(condition)
 
         return query
+
+    def _get_group_ibans(self, group: str):
+        """
+        Ruft die Liste von IBANs einer Gruppe aus der Datenbank ab.
+
+        Args:
+            group (str): Name der Gruppe.
+        Returns:
+            list: Die IBANs der abgerufene Gruppe.
+        """
+        collection = self.connection['groups']
+        query = {'uuid': group}
+        result = collection.find(query)
+        return [entry.get('iban') for entry in result]

@@ -8,6 +8,7 @@ import logging
 import glob
 import json
 from natsort import natsorted
+from flask import current_app
 
 
 class BaseDb():
@@ -20,12 +21,15 @@ class BaseDb():
         """Erstellen des Datenbankspeichers"""
         raise NotImplementedError()
 
-    def select(self, collection: str, condition: dict|list[dict], multi: str):
+    def select(self, collection:str=None, condition: dict|list[dict]=None, multi: str='AND'):
         """
-        Selektiert Datensätze aus der Datenbank, die die angegebene Bedingung erfüllen.
+        Handler für das Vorbereiten der '_select' Methode, welche Datensätze aus der Datenbank
+        selektiert, die die angegebene Bedingung erfüllen.
 
         Args:
-            collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
+            collection (str, optional): Name der Collection oder Gruppe, aus der selektiert werden soll.
+                                        Es erfolgt automatisch eine Unterscheidung, ob es sich um eine
+                                        IBAN oder einen Gruppenname handelt.
                                         Default: IBAN aus der Config.
             condition (dict | list(dict)): Bedingung als Dictionary
                 - 'key', str    : Spalten- oder Schlüsselname,
@@ -36,6 +40,34 @@ class BaseDb():
                     - 'regex'   : value wird als RegEx behandelt
             multi (str) : ['AND' | 'OR'] Wenn 'condition' eine Liste mit conditions ist,
                           werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
+        Returns:
+            dict:
+                - result, list: Liste der ausgewählten Datensätze
+        """
+        if collection is None:
+            # Default Collection
+            collection = current_app.config['IBAN']
+
+        if not self._check_collection_is_iban(collection):
+            # collection is a group
+            group_ibans = self._get_group_ibans(collection)
+            if not group_ibans:
+                logging.error(f"Group {collection} not found or empty")
+                return {'result': []}
+
+            collection = group_ibans
+
+        # Always create a list of collections for group-Loop
+        if not isinstance(collection, list):
+            collection = [collection]
+
+        return self._select(collection, condition, multi)
+
+    def _select(self, collection: str, condition: dict|list[dict], multi: str):
+        """
+        Private Methode zum Selektieren von Datensätze aus der Datenbank,
+        die die angegebene Bedingung erfüllen. Siehe 'select' Methode.
+
         Returns:
             dict:
                 - result, list: Liste der ausgewählten Datensätze
@@ -301,3 +333,26 @@ class BaseDb():
 
         logging.info(f"Stored {inserted} imported metadata from {path}")
         return {'inserted': inserted}
+
+    def _get_group_ibans(self, group: str):
+        """
+        Ruft die Liste von IBANs einer Gruppe aus der Datenbank ab.
+
+        Args:
+            group (str): Name der Gruppe.
+        Returns:
+            list: Die IBANs der abgerufene Gruppe.
+        """
+        raise NotImplementedError()
+
+    def _check_collection_is_iban(self, collection: str):
+        """
+        Überprüft, ob die angegebene Collection eine IBAN ist.
+
+        Args:
+            collection (str): Name der Collection.
+        Returns:
+            bool: True, wenn die Collection eine IBAN ist, sonst False.
+        """
+        iban_regex = re.compile(r'[A-Z]{2}[0-9]{2}[ ]?([0-9]{4}[ ]?){4,7}[0-9]{1,4}')
+        return bool(re.match(iban_regex, collection))
