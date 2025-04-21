@@ -72,7 +72,13 @@ class MongoDbHandler(BaseDb):
 
         for col in collection:
             col = self.connection[col]
-            result.extend(list(col.find(query)))
+            db_result = list(col.find(query))
+
+            if db_result:
+                # Remove the internal ObjectId
+                for row in db_result:
+                    del row['_id']
+                    result.append(row)
 
         return result
 
@@ -208,12 +214,23 @@ class MongoDbHandler(BaseDb):
     def get_metadata(self, uuid):
         collection = self.connection['metadata']
         result = collection.find_one({'uuid': uuid})
+        if result:
+            # Remove the internal ObjectId
+            del result['_id']
+
         return result
 
     def filter_metadata(self, condition, multi='AND'):
         collection = self.connection['metadata']
         query = self._form_complete_query(condition, multi)
-        return list(collection.find(query))
+        result = list(collection.find(query))
+
+        if result:
+            # Remove the internal ObjectId
+            for r in result:
+                del r['_id']
+
+        return result
 
     def set_metadata(self, entry, overwrite=True):
         # Set uuid if not present
@@ -228,12 +245,12 @@ class MongoDbHandler(BaseDb):
 
             # Insert new Entry
             result = collection.insert_one(entry)
-            return {'inserted': result.modified_count}
+            return {'inserted': (1 if result else 0)}
 
         # Only insert if not exists
-        if not collection.find({'uuid': entry.get('uuid')}):
+        if not collection.find_one({'uuid': entry.get('uuid')}):
             result = collection.insert_one(entry)
-            return {'inserted': result.modified_count}
+            return {'inserted': (1 if result else 0)}
 
         return {'inserted': 0}
 
@@ -250,6 +267,8 @@ class MongoDbHandler(BaseDb):
         if condition is None:
             return query
 
+        # Standard Query
+        stmt = condition.get('value') # default method '=='
         condition_method = condition.get('compare', '==')
 
         # Regex Suche
@@ -260,9 +279,6 @@ class MongoDbHandler(BaseDb):
         if condition_method.lower() == 'like':
             escaped_condition = re.escape(condition.get('value'))
             stmt = re.compile(f".*{escaped_condition}.*", re.IGNORECASE)
-
-        # Standard Query
-        stmt = condition.get('value') # default method '=='
 
         if condition_method == '!=':
             stmt = {'$not': {'$eq': condition.get('value')}}

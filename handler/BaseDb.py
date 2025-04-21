@@ -44,6 +44,10 @@ class BaseDb():
             dict:
                 - result, list: Liste der ausgewählten Datensätze
         """
+        if not condition:
+            # Catch empty lists
+            condition = None
+
         if collection is None:
             # Default Collection
             collection = current_app.config['IBAN']
