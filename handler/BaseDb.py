@@ -27,9 +27,9 @@ class BaseDb():
         selektiert, die die angegebene Bedingung erfüllen.
 
         Args:
-            collection (str, optional): Name der Collection oder Gruppe, aus der selektiert werden soll.
-                                        Es erfolgt automatisch eine Unterscheidung, ob es sich um eine
-                                        IBAN oder einen Gruppenname handelt.
+            collection (str, optional): Name der Collection oder Gruppe, aus der selektiert werden
+                                        soll. Es erfolgt automatisch eine Unterscheidung, ob es
+                                        sich um eine IBAN oder einen Gruppenname handelt.
                                         Default: IBAN aus der Config.
             condition (dict | list(dict)): Bedingung als Dictionary
                 - 'key', str    : Spalten- oder Schlüsselname,
@@ -297,6 +297,7 @@ class BaseDb():
                     inserted += self.set_metadata(data, overwrite=False).get('inserted')
 
                 logging.info(f"Stored {inserted} {metatype} from {json_file}")
+                return {'inserted': inserted}
 
     def import_metadata(self, path: str=None, metatype: str='rule'):
         """Import metadata from given path
