@@ -186,9 +186,12 @@ class BaseDb():
         """
         raise NotImplementedError()
 
-    def _generate_unique(self, tx_entries: dict | list[dict]):
+    def _generate_unique(self, collection: str, tx_entries: dict | list[dict]):
         """
-        Erstellt einen einmaligen ID für jede Transaktion.
+        Erstellt einen einmaligen ID für jede Transaktion aus den
+        Transaktionsdaten sowie dem zugehörigem Konto (letzteres im Klartext).
+        Da diese Funktion bei jedem neuen Dokument ausgeführt wird, werden
+        hier außerdem die notwendigen Default-Werte für jede Transaktion gesetzt.
 
         Args:
             tx_entries (dict | list(dict)): Liste mit Transaktionsobjekten
@@ -211,14 +214,22 @@ class BaseDb():
                               tx_text
             md5_hash.update(combined_string.encode('utf-8'))
 
-            # Store UUID
-            transaction['uuid'] = md5_hash.hexdigest()
+            # Ensure default values
 
-            # Set start Tagging priority
+            # - IBAN
+            if not self._check_collection_is_iban(collection):
+                raise ValueError(f"Collection {collection} is not a valid IBAN")
+
+            transaction['iban'] = collection
+
+            # - Tagging priority
             transaction['prio'] = 0
 
-            # Set Tags to an empty list
+            # - empty Tag list
             transaction['tags'] = []
+
+            # - Store UUID
+            transaction['uuid'] = f'{collection}_{md5_hash.hexdigest()}'
 
         # Input List or single Dict
         if not isinstance(tx_entries, list):

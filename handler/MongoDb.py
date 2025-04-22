@@ -99,7 +99,7 @@ class MongoDbHandler(BaseDb):
         collection = self.connection[collection]
 
         # Add generated IDs
-        data = self._generate_unique(data)
+        data = self._generate_unique(collection, data)
 
         if isinstance(data, list):
             # Insert Many (INSERT IGNORE)

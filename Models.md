@@ -9,19 +9,15 @@
     'text_tx': str,
     'betrag': float,
     'iban': str,
-    'parsed': str,
-    'category': str,
-    'tags': list[str]
 
     ----------- optional -----------
 
     'date_wert': int ,      # (UTC)
     'art': str,
     'currency': str,
-
     'parsed': dict( str: str )
-
     'category': str,
+    'subcategory': str,
     'tags': list[str],
     'priority': int,
 }

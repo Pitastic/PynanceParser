@@ -13,19 +13,9 @@ class Reader:
     def __init__(self):
         """
         Initialisiert eine Instanz von Generic-Reader.
-        Das Standard-Objekt, was vom Parsing zurückgegeben wird, sollte so aussehen:
-        dict({
-            'date_tx': int,         # (UTC)
-            'text_tx': str,
-            'betrag': float,
-            'iban': str,
-            'parsed': str,
-            'category': str,
-            'tags': list[str]
-            'date_wert': int ,      # (optional, UTC)
-            'art': str,             # (optional)
-            'currency': str,        # (optional)
-        })
+        Das Standard-Objekt, was vom Parsing zurückgegeben wird, 
+        folgt dem Template in `Models.md` sofern die Felder mit den Informationen
+        von hier sicher gefüllt werden können.
         """
         return
 
@@ -59,7 +49,6 @@ class Reader:
                     'art': row['Umsatzart'],
                     'text_tx': row['Buchungstext'],
                     'betrag': betrag,
-                    'iban': row['IBAN Auftraggeberkonto'],
                     'currency': row['Währung'],
                     'parsed': {},
                     'category': None,

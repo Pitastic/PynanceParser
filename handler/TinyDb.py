@@ -98,7 +98,7 @@ class TinyDbHandler(BaseDb):
             collection = current_app.config['IBAN']
 
         # Add generated IDs
-        data = self._generate_unique(data)
+        data = self._generate_unique(collection, data)
 
         # Da es keine Unique contraints in TinyDB gibt,
         # müssen die Datensätze zuvor vin der DB gesucht
