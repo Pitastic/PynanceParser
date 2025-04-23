@@ -126,9 +126,9 @@ class Tagger():
         # Benutzer Regeln anwenden
         #TODO: Loop >>>
         # - Regeln anwenden und Tags (nur sekundär) setzen
-        # - Regeln, die geupdated wurden üner uuid merken
+        # - Regeln, die geupdated wurden über uuid merken
         # - Regeln erneut anwenden und Tags anwenden (nur sekundär)
-        # - Regeln, die geupdated wurden üner uuid merken (Loop)
+        # - Regeln, die geupdated wurden über uuid merken (Loop)
         # End Loop <<<
         # - Regeln zum Kategorisieren der TX (primär) anwenden auf TX.
         #   Regel mit der höchsten Prio setzt die Kategorie
@@ -144,7 +144,7 @@ class Tagger():
 
         Args:
             ruleset:         Named rules to be applied on users transactions
-            collection:      Name der Collection, in die Werte eingefügt werden sollen.
+            collection:      Name der Collection, in der gefiltert werden soll.
                              Default: IBAN aus der Config.
             prio:            Value of priority for this tagging run
                              in comparison with already tagged transactions (higher = important)
@@ -432,6 +432,11 @@ class Tagger():
                 ],
                 multi='AND'
             )
+
+            if not raw_rule:
+                raise KeyError(f'Eine Regel mit dem Namen {rule_name} '
+                               'konnte für den User nicht gefunden werden.')
+
             rule = raw_rule[0]
             regex = rule.get('regex')
             if regex:

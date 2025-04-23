@@ -138,6 +138,24 @@ class UserInterface():
             # - API Endpoints - - - - - - - - - - - - - - - - - - - -
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+            @current_app.route('/api/<iban>/<t_id>', methods=['GET'])
+            def getTx(iban, t_id):
+                """
+                Gibt alle Details zu einer bestimmten Transaktion zurück.
+                Args (uri):
+                    iban, str: IBAN
+                    t_id, int: Datenbank ID der Transaktion
+                Returns:
+                    json: Details zu einer bestimmten Transaktion
+                """
+                tx_details = self.db_handler.select(
+                    iban, {
+                        'key': 'uuid',
+                        'value': t_id,
+                        'compare': '=='
+                    }
+                )
+                return tx_details[0], 200
 
             @current_app.route('/api/saveMeta/', defaults={'rule_type':'rule'}, methods=['POST'])
             @current_app.route('/api/saveMeta/<rule_type>', methods=['POST'])
@@ -168,8 +186,7 @@ class UserInterface():
 
                 return r, 201
 
-            @current_app.route('/api/getMeta/', methods=['GET'],
-                                                defaults={'rule_filter':None})
+            @current_app.route('/api/getMeta/', methods=['GET'], defaults={'rule_filter':None})
             @current_app.route('/api/getMeta/<rule_filter>', methods=['GET'])
             def getMeta(rule_filter):
                 """
@@ -260,26 +277,7 @@ class UserInterface():
                 _ = self._mv_fileupload(input_file, path)
                 return self._read_settings(path, metatype=metadata)
 
-            @current_app.route('/api/<iban>/<t_id>', methods=['GET'])
-            def getTx(iban, t_id):
-                """
-                Gibt alle Details zu einer bestimmten Transaktion zurück.
-                Args (uri):
-                    iban, str: IBAN
-                    t_id, int: Datenbank ID der Transaktion
-                Returns:
-                    json: Details zu einer bestimmten Transaktion
-                """
-                tx_details = self.db_handler.select(
-                    iban, {
-                        'key': 'uuid',
-                        'value': t_id,
-                        'compare': '=='
-                    }
-                )
-                return tx_details[0], 200
-
-            @current_app.route('/api/<iban>/truncateDatabase/', methods=['DELETE'])
+            @current_app.route('/api/truncateDatabase/<iban>', methods=['DELETE'])
             def truncateDatabase(iban):
                 """
                 Leert die Datenbank zu einer IBAN
@@ -292,7 +290,7 @@ class UserInterface():
                 deleted_entries = self.db_handler.truncate(iban)
                 return {'deleted': deleted_entries}, 200
 
-            @current_app.route('/api/<iban>/tag/', methods=['PUT'])
+            @current_app.route('/api/tag/<iban>', methods=['PUT'])
             def tag(iban) -> dict:
                 """
                 Kategorisiert die Kontoumsätze und aktualisiert die Daten in der Instanz.
@@ -305,7 +303,7 @@ class UserInterface():
                 """
                 return self.tagger.tag(iban, **request.json)
 
-            @current_app.route('/api/<iban>/setManualTag/<t_id>', methods=['PUT'])
+            @current_app.route('/api/setManualTag/<iban>/<t_id>', methods=['PUT'])
             def setManualTag(iban, t_id):
                 """
                 Handler für _set_manual_tag() für einzelne Einträge.
@@ -322,7 +320,7 @@ class UserInterface():
                 data = request.json
                 return self._set_manual_tag(iban, t_id, data)
 
-            @current_app.route('/api/<iban>/setManualTags/', methods=['PUT'])
+            @current_app.route('/api/setManualTags/<iban>', methods=['PUT'])
             def setManualTags(iban):
                 """
                 Handler für _set_manual_tag() für mehrere Einträge.
@@ -345,7 +343,7 @@ class UserInterface():
 
                 return updated_entries
 
-            @current_app.route('/api/<iban>/removeTag/<t_id>', methods=['PUT'])
+            @current_app.route('/api/removeTag/<iban>/<t_id>', methods=['PUT'])
             def removeTag(iban, t_id):
                 """
                 Entfernt gesetzte Tags für einen Eintrag-
@@ -362,7 +360,7 @@ class UserInterface():
 
                 return self._remove_tags(iban, t_id)
 
-            @current_app.route('/api/<iban>/removeTags/', methods=['PUT'])
+            @current_app.route('/api/removeTags/<iban>', methods=['PUT'])
             def removeTags(iban):
                 """
                 Entfernt gesetzte Tags für mehrere Einträge.

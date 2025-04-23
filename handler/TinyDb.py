@@ -45,14 +45,13 @@ class TinyDbHandler(BaseDb):
         # Table für Metadaten
         self.connection.table('metadata')
 
-    def _select(self, collection=None, condition=None, multi='AND'):
+    def _select(self, collection: list, condition=None, multi='AND'):
         """
         Selektiert Datensätze aus der Datenbank, die die angegebene Bedingung erfüllen.
 
         Args:
-            collection (list, optional): Name der Collection oder Liste von Collections,
-                                         deren Werte selecktiert werden sollen.
-                                         Default: IBAN aus der Config.
+            collection (list):  Name der Collection oder Liste von Collections,
+                                deren Werte selecktiert werden sollen.
             condition (dict | list(dicts)): Bedingung als Dictionary
                 - 'key', str    : Spalten- oder Schlüsselname,
                 - 'value', any  : Wert der bei 'key' verglichen werden soll
@@ -82,7 +81,7 @@ class TinyDbHandler(BaseDb):
 
         return result
 
-    def insert(self, data, collection=None):
+    def _insert(self, data: dict|list[dict], collection: str):
         """
         Fügt einen oder mehrere Datensätze in die Datenbank ein.
 
@@ -94,12 +93,6 @@ class TinyDbHandler(BaseDb):
             dict:
                 - inserted, int: Zahl der neu eingefügten IDs
         """
-        if collection is None:
-            collection = current_app.config['IBAN']
-
-        # Add generated IDs
-        data = self._generate_unique(collection, data)
-
         # Da es keine Unique contraints in TinyDB gibt,
         # müssen die Datensätze zuvor vin der DB gesucht
         # und Duplikate anschließend gefiltert werden.

@@ -78,7 +78,7 @@ class BaseDb():
         """
         raise NotImplementedError()
 
-    def insert(self, data: dict|list[dict], collection: str):
+    def insert(self, data: dict|list[dict], collection: str=None):
         """
         Fügt einen oder mehrere Datensätze in die Datenbank ein.
 
@@ -86,6 +86,40 @@ class BaseDb():
             data (dict or list): Einzelner Datensatz oder eine Liste von Datensätzen
             collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
                                         Default: IBAN aus der Config.
+        Returns:
+            dict:
+                - inserted, int: Zahl der neu eingefügten IDs
+        """
+        if collection is None:
+            collection = current_app.config['IBAN']
+
+        if not self._check_collection_is_iban(collection):
+            raise ValueError(f"Collection {collection} is not a valid IBAN")
+
+        # Always create a list of transactions for loop
+        if not isinstance(data, list):
+            tx_list = [data]
+        else:
+            tx_list = data
+
+        for transaction in tx_list:
+
+            # Add generated IDs
+            transaction = self._generate_unique(transaction)
+
+            # Ensure default values
+            # - IBAN, Tagging priority, empty Tag list
+            transaction['iban'] = collection
+            transaction['prio'] = 0
+            transaction['tags'] = []
+
+        return self._insert(tx_list, collection)
+
+    def _insert(self, data: dict|list[dict], collection: str):
+        """
+        Private Methode zum Einfügen von Datensätzen in die Datenbank.
+        Siehe 'insert' Methode.
+
         Returns:
             dict:
                 - inserted, int: Zahl der neu eingefügten IDs
@@ -186,56 +220,30 @@ class BaseDb():
         """
         raise NotImplementedError()
 
-    def _generate_unique(self, collection: str, tx_entries: dict | list[dict]):
+    def _generate_unique(self, tx_entry: dict | list[dict]):
         """
-        Erstellt einen einmaligen ID für jede Transaktion aus den
-        Transaktionsdaten sowie dem zugehörigem Konto (letzteres im Klartext).
-        Da diese Funktion bei jedem neuen Dokument ausgeführt wird, werden
-        hier außerdem die notwendigen Default-Werte für jede Transaktion gesetzt.
+        Erstellt einen einmaligen ID für jede Transaktion aus den Transaktionsdaten.
 
         Args:
-            tx_entries (dict | list(dict)): Liste mit Transaktionsobjekten
+            tx_entries (dict): Ein Transaktionsobjekt
         Returns:
             dict | list(dict): Die um die IDs ('uuid') erweiterte Eingabeliste
         """
+
         no_special_chars = re.compile("[^A-Za-z0-9]")
+        tx_text = no_special_chars.sub('', tx_entry.get('text_tx', ''))
 
-        # Input List or single Dict
-        if not isinstance(tx_entries, list):
-            tx_list = [tx_entries]
-        else:
-            tx_list = tx_entries
+        md5_hash = hashlib.md5()
 
-        for transaction in tx_list:
-            md5_hash = hashlib.md5()
-            tx_text = no_special_chars.sub('', transaction.get('text_tx', ''))
-            combined_string = str(transaction.get('date_tx', '')) + \
-                              str(transaction.get('betrag', '')) + \
-                              tx_text
-            md5_hash.update(combined_string.encode('utf-8'))
+        combined_string = str(tx_entry.get('date_tx', '')) + \
+                            str(tx_entry.get('betrag', '')) + \
+                            tx_text
+        md5_hash.update(combined_string.encode('utf-8'))
 
-            # Ensure default values
+        # Store UUID
+        tx_entry['uuid'] = md5_hash.hexdigest()
 
-            # - IBAN
-            if not self._check_collection_is_iban(collection):
-                raise ValueError(f"Collection {collection} is not a valid IBAN")
-
-            transaction['iban'] = collection
-
-            # - Tagging priority
-            transaction['prio'] = 0
-
-            # - empty Tag list
-            transaction['tags'] = []
-
-            # - Store UUID
-            transaction['uuid'] = f'{collection}_{md5_hash.hexdigest()}'
-
-        # Input List or single Dict
-        if not isinstance(tx_entries, list):
-            return tx_list[0]
-
-        return tx_list
+        return tx_entry
 
     def _generate_unique_meta(self, entry: dict):
         """
@@ -270,6 +278,7 @@ class BaseDb():
         )
 
         # Load given rules & parsers (do not overwrite)
+        result = {'inserted': 0}
         for metatype in ['config', 'parser', 'rule']:
             json_path = os.path.join(settings_path, metatype)
             json_glob = os.path.join(json_path, '*.json')
@@ -280,6 +289,7 @@ class BaseDb():
             for json_file in json_files:
 
                 if not os.path.isfile(json_file):
+                    logging.warning(f"File {json_file} is not a file")
                     # dead link
                     continue
 
@@ -308,7 +318,9 @@ class BaseDb():
                     inserted += self.set_metadata(data, overwrite=False).get('inserted')
 
                 logging.info(f"Stored {inserted} {metatype} from {json_file}")
-                return {'inserted': inserted}
+                result['inserted'] += inserted
+
+        return result
 
     def import_metadata(self, path: str=None, metatype: str='rule'):
         """Import metadata from given path

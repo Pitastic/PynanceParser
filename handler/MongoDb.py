@@ -82,30 +82,23 @@ class MongoDbHandler(BaseDb):
 
         return result
 
-    def insert(self, data, collection=None):
+    def _insert(self, data: dict|list[dict], collection: str):
         """
         Fügt einen oder mehrere Datensätze in die Datenbank ein.
 
         Args:
             data (dict or list): Einzelner Datensatz oder eine Liste von Datensätzen
-            collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
-                                        Default: IBAN aus der Config.
+            collection (str): Name der Collection, in die Werte eingefügt werden sollen.
         Returns:
             dict:
                 - inserted, int: Zahl der neu eingefügten IDs
         """
-        if collection is None:
-            collection = current_app.config['IBAN']
-        collection = self.connection[collection]
-
-        # Add generated IDs
-        data = self._generate_unique(collection, data)
-
         if isinstance(data, list):
             # Insert Many (INSERT IGNORE)
             try:
-                result = collection.insert_many(data, ordered=False)
+                result = self.connection[collection].insert_many(data, ordered=False)
                 return {'inserted': len(result.inserted_ids)}
+
             except pymongo.errors.BulkWriteError as e:
                 inserted = e.details.get('nInserted')
                 logging.info(f"Dropping Duplicates, just INSERT {inserted}")
@@ -113,8 +106,9 @@ class MongoDbHandler(BaseDb):
 
         # INSERT One
         try:
-            result = collection.insert_one(data)
+            result = self.connection[collection].insert_one(data)
             return {'inserted': 1}
+
         except pymongo.errors.BulkWriteError:
             return {'inserted': 0}
 
