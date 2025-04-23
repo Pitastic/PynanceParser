@@ -6,7 +6,7 @@ import os
 import json
 import logging
 from datetime import datetime
-from flask import request, current_app, render_template
+from flask import request, current_app, render_template, make_response, send_from_directory
 
 # Add Parent for importing Classes
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -133,6 +133,15 @@ class UserInterface():
                                        table_header=table_header,
                                        table_data=rows, rule_list=rule_list)
 
+            @current_app.route('/sw.js')
+            def sw():
+                response = make_response(
+                    send_from_directory(
+                        os.path.join('app', 'static'), path='sw.js'
+                    )
+                )
+                response.headers['Content-Type'] = 'application/javascript'
+                return response
 
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - -
             # - API Endpoints - - - - - - - - - - - - - - - - - - - -
