@@ -404,7 +404,8 @@ class UserInterface():
             t_id, int: Datenbank ID der Transaktion, die getaggt werden soll
             data, dict: Daten für die Aktualisierung (default: request.json)
                 - category, str: Bezeichnung der primären Kategorie
-                - tags, list[str:] Bezeichnung der sekundären Kategorie
+                - subcategory, str: Bezeichnung der sekundären Kategorie
+                - tags, list[str]: Bezeichnung der Tags
         Returns:
             dict: updated, int: Anzahl der gespeicherten Datensätzen
         """
@@ -416,8 +417,15 @@ class UserInterface():
         if category:
             new_tag_data['category'] = category
 
+        subcategory = data.get('subcategory')
+        if subcategory:
+            new_tag_data['subcategory'] = subcategory
+
         tags = data.get('tags')
         if tags:
+            if not isinstance(tags, list):
+                tags = [tags]
+
             new_tag_data['tags'] = tags
 
         condition = {

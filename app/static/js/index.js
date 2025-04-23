@@ -141,7 +141,8 @@ function removeTags() {
  */
 function manualTagEntries() {
     const category = document.getElementById('input_manual_category').value;
-    const tags = document.getElementById('input_manual_tags').value;
+    const subcategory = document.getElementById('input_manual_subcategory').value;
+    let tags = document.getElementById('input_manual_tags').value;
     const iban = document.getElementById('input_iban').value;
 
     const checkboxes = document.querySelectorAll('input[name="entry-select[]"]');
@@ -163,6 +164,7 @@ function manualTagEntries() {
 
     let tagging = {
         'category': category,
+        'subcategory': subcategory,
         'tags': tags
     }
     
@@ -171,7 +173,7 @@ function manualTagEntries() {
         api_function = 'setManualTag/'+iban+'/'+t_ids[0];
     } else {
         api_function = 'setManualTags/'+iban;
-        tags['t_ids'] = t_ids;
+        tagging['t_ids'] = t_ids;
     };
 
     apiSubmit(api_function, tagging, function (responseText, error) {

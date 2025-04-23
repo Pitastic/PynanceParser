@@ -40,9 +40,10 @@ class Tagger():
         return input_data
 
     def tag(self, iban,
-            rule_name: str = None, rule_category: str = None, rule_tags: list[str] = None,
-            rule_regex: str = None, rule_parsed_keys: list = (), rule_parsed_vals: list = (),
-            prio: int = 1, prio_set: int = None, dry_run: bool = False) -> dict:
+            rule_name: str = None, rule_category: str = 'None', rule_subcategory: str = None,
+            rule_tags: list[str] = None, rule_regex: str = None, rule_parsed_keys: list = (),
+            rule_parsed_vals: list = (), prio: int = 1, prio_set: int = None,
+            dry_run: bool = False) -> dict:
         """
         Kategorisiert die Kontoumsätze und aktualisiert die Daten in der Instanz.
 
@@ -54,9 +55,11 @@ class Tagger():
                                 Default: Es werden alle Regeln des Benutzers ohne das
                                 AI Tagging angewendet.
                 rule_category:  Name der zu setzenden Primärkategory.
-                                Default: Standardname
+                                Default: sonstiges
+                rule_subcategory: Name der zu setzenden Sekundärkategorie.
+                                Default: keine Sekundärkategorie
                 rule_tags:      Name der zu setzenden Sekundärkategory.
-                                Default: Standardname
+                                Default: kein Tag
                 rule_regex:     Regulärer Ausdrück für die Suche im Transaktionstext.
                                 Default: Wildcard
                 rule_parsed_keys:   Liste mit Keys zur Prüfung in geparsten Daten.
@@ -83,6 +86,7 @@ class Tagger():
             # Custom Rule
             rule = {
                 'category': rule_category,
+                'subcategory': rule_subcategory,
                 'tags': rule_tags,
                 'regex': rule_regex
             }
@@ -171,6 +175,7 @@ class Tagger():
             new_category = {
                 'prio': prio_set,
                 'category': rule.get('category', 'sonstiges'),
+                'subcategory': rule.get('subcategory'),
                 'tags': rule.get('tags'),
             }
 
