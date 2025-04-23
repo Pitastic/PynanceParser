@@ -8,7 +8,6 @@ import pymongo
 
 from handler.BaseDb import BaseDb
 
-#TODO: _double_check in TinyDB aber nicht in MongoDB ?
 
 class MongoDbHandler(BaseDb):
     """
