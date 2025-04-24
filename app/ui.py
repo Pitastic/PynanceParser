@@ -409,9 +409,7 @@ class UserInterface():
         Returns:
             dict: updated, int: Anzahl der gespeicherten Datensätzen
         """
-        new_tag_data = {
-            'prio': 99
-        }
+        new_tag_data = {}
 
         category = data.get('category')
         if category:
@@ -427,6 +425,10 @@ class UserInterface():
                 tags = [tags]
 
             new_tag_data['tags'] = tags
+
+        if category or subcategory:
+            # Avoid high priority when tagging only
+            new_tag_data['prio'] = 99
 
         condition = {
             'key': 'uuid',
@@ -451,7 +453,7 @@ class UserInterface():
         new_daata = {
             'prio': 0,
             'category': None,
-            'tags': None
+            'tags': []
         }
         condition = [{
             'key': 'uuid',

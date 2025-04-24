@@ -257,7 +257,7 @@ def test_tag_stored(test_app):
             assert result.get('tagged') == 0, \
                 f"Trotz 'dry_run' wurden {result.get('tagged')} Einträge getaggt"
 
-            tagged_entries = result.get('Supermarkets', {}).get('entries')
+            tagged_entries = result.get('entries', [])
             assert len(tagged_entries) == 2, \
                 f"Regel 'Supermarkets' hat {len(tagged_entries)} statt 2 Transactionen getroffen"
 
@@ -308,7 +308,7 @@ def test_own_rules(test_app):
             assert result.get('tagged') == 0, \
                 f"Es wurden {result.get('tagged')} statt 0 Einträge im dry_run getaggt"
 
-            tagged_entries = result.get('My low Rule').get('entries')
+            tagged_entries = result.get('entries', [])
             assert len(tagged_entries) == 0, \
                 f"Regel 'My low Rule' hat {len(tagged_entries)} statt 0 Transactionen getroffen"
 
@@ -326,7 +326,7 @@ def test_own_rules(test_app):
 
             assert result.get('tagged') == 1, \
                 f"Es wurden {result.get('tagged')} statt 1 Eintrag getaggt"
-            tagged_entries = result.get('My high Rule', {}).get('entries')
+            tagged_entries = result.get('entries', [])
             assert len(tagged_entries) == 1, \
                 f"DRegel 'My high Rule' hat {len(tagged_entries)} statt 1 Transactionen getroffen"
 

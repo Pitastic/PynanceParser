@@ -127,16 +127,7 @@ class Tagger():
             prio_set = rules[rule_name].get('prioriry', prio)
             prio = 99
 
-        # Benutzer Regeln anwenden
-        #TODO: Loop >>>
-        # - Regeln anwenden und Tags (nur sekundär) setzen
-        # - Regeln, die geupdated wurden über uuid merken
-        # - Regeln erneut anwenden und Tags anwenden (nur sekundär)
-        # - Regeln, die geupdated wurden über uuid merken (Loop)
-        # End Loop <<<
-        # - Regeln zum Kategorisieren der TX (primär) anwenden auf TX.
-        #   Regel mit der höchsten Prio setzt die Kategorie
-        # - AI tagging für alles ohne Kategorie (primär)) durchführen
+        # Benutzer Regeln anwenden (Tag Loop + Category + AI)
         r = {'tagged': True}
         result_rx = {'tagged': 0, 'entries': []}
         while r.get('tagged'):
@@ -145,17 +136,17 @@ class Tagger():
                                        dry_run=dry_run, tag_only=True)
             result_rx['tagged'] += r.get('tagged')
             result_rx['entries'] += r.get('entries')
-            print('>>>>>>>>>>>', r)
 
         # Final RegEx Tagging (Categories)
         r = self.tag_regex(rules, iban, prio=prio, prio_set=prio_set,
-                                   dry_run=dry_run, tag_only=False)
+                           dry_run=dry_run, tag_only=False)
         result_rx['tagged'] += r.get('tagged')
         result_rx['entries'] += r.get('entries')
-        result_rx['entries'] += list(set(result_rx['entries']))
+        result_rx['entries'] = list(set(result_rx['entries']))
 
         # Guess empty TX
         result_ai = self.tag_ai(iban, dry_run=dry_run)
+
         return {**result_rx, **result_ai}
 
     def tag_regex(self, ruleset: dict, collection: str=None, prio: int=1,
@@ -241,36 +232,39 @@ class Tagger():
                 if uuid is None:
                     raise ValueError(f'The following data in the DB has no UUID ! - {row}')
 
-                # Update Request
-                if dry_run is False:
+                result['entries'].append(uuid)
 
-                    # Do not duplicate Tags
-                    existing_tags = row.get('tags', [])
-                    new_tags = new_category.get('tags', [])
+                # Update Request / Dry run
+                if dry_run:
+                    return result
 
-                    raise Exception('TODO: Check for existing tags leads to endless loop')
-                    for entry in new_tags:
-                        print('>>>>>>>>>>>', entry, 'in', existing_tags, (entry in existing_tags))
-                        if entry in existing_tags:
-                            continue
-                        print('>>>>>>>>>>> Add', entry, 'to', new_category['tags'])
-                        new_category['tags'].append(entry)
+                # Do not duplicate Tags
+                existing_tags = row.get('tags', [])
+                new_tags = [t for t in new_category.get('tags', []) if t not in existing_tags]
+                new_category['tags'] = new_tags
 
-                    if tag_only and not new_category.get('tags'):
-                        logging.info(f"Rule '{rule_name}' hat keine neuen Tags - skipping...")
+                if not new_category.get('tags'):
+                    if tag_only:
+                        # Skip this loop
+                        logging.info((f"Rule '{rule_name}' hat keine neuen Tags "
+                                        f"für {uuid} - skipping (tag only)..."))
                         continue
 
-                    result['entries'].append(uuid)
-                    query = {'key': 'uuid', 'value': uuid}
-                    updated = self.db_handler.update(data=new_category, condition=query)
+                    # Do not update tags (but everything else)
+                    del new_category['tags']
+                    logging.info((f"Rule '{rule_name}' hat keine neuen Tags "
+                                    f"für {uuid} - do not update tags..."))
 
-                    # soft Exception Handling
-                    if not updated:
-                        logging.error((f"Bei Rule '{rule_name}' konnte der Eintrag "
-                                       f"'{uuid}' nicht geupdated werden - skipping..."))
-                        continue
+                query = {'key': 'uuid', 'value': uuid}
+                updated = self.db_handler.update(data=new_category, condition=query)
 
-                    result['tagged'] += updated.get('updated')
+                # soft Exception Handling
+                if not updated:
+                    logging.error((f"Bei Rule '{rule_name}' konnte der Eintrag "
+                                    f"'{uuid}' nicht geupdated werden - skipping..."))
+                    continue
+
+                result['tagged'] += updated.get('updated')
 
         return result
 

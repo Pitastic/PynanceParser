@@ -78,10 +78,8 @@ def test_regex(test_app):
         tagger = Tagger(MockDatabase())
         tagging_result = tagger.tag_regex(ruleset=RULESET)
 
-        assert tagging_result.get('Supermarkets').get('tagged') == 2, \
-            "Die Regel 'Supermarkets' hat nicht die richtige Anzahl an Einträgen getroffen"
-        assert tagging_result.get('City Tax').get('tagged') == 1, \
-            "Die Regel 'City Tax' hat nicht die richtige Anzahl an Einträgen getroffen"
+        assert tagging_result.get('tagged') == 3, \
+            "Die Regeln haben nicht die richtige Anzahl an Einträgen getroffen"
 
 def test_regex_untagged(test_app):
     """Testet das Kategorisieren der Datensätzemit fest hinterlegten Regeln.
