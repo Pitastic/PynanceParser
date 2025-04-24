@@ -45,13 +45,13 @@ class TinyDbHandler(BaseDb):
         # Table für Metadaten
         self.connection.table('metadata')
 
-    def select(self, collection=None, condition=None, multi='AND'):
+    def _select(self, collection: list, condition=None, multi='AND'):
         """
         Selektiert Datensätze aus der Datenbank, die die angegebene Bedingung erfüllen.
 
         Args:
-            collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
-                                   Default: IBAN aus der Config.
+            collection (list):  Name der Collection oder Liste von Collections,
+                                deren Werte selecktiert werden sollen.
             condition (dict | list(dicts)): Bedingung als Dictionary
                 - 'key', str    : Spalten- oder Schlüsselname,
                 - 'value', any  : Wert der bei 'key' verglichen werden soll
@@ -64,19 +64,24 @@ class TinyDbHandler(BaseDb):
         Returns:
             list: Liste der ausgewählten Datensätze
         """
-        if collection is None:
-            collection = current_app.config['IBAN']
-        collection = self.connection.table(collection)
-
         # Form condition into a query
         query = self._form_complete_query(condition, multi)
+        result = []
 
-        if query is None:
-            return collection.all()
+        for col in collection:
+            col = self.connection.table(col)
 
-        return collection.search(query)
+            if query is None:
+                # Get all entries from collection
+                result.extend(col.all())
+                continue
 
-    def insert(self, data, collection=None):
+            # Filter by Query
+            result.extend(col.search(query))
+
+        return result
+
+    def _insert(self, data: dict|list[dict], collection: str):
         """
         Fügt einen oder mehrere Datensätze in die Datenbank ein.
 
@@ -88,12 +93,6 @@ class TinyDbHandler(BaseDb):
             dict:
                 - inserted, int: Zahl der neu eingefügten IDs
         """
-        if collection is None:
-            collection = current_app.config['IBAN']
-
-        # Add generated IDs
-        data = self._generate_unique(data)
-
         # Da es keine Unique contraints in TinyDB gibt,
         # müssen die Datensätze zuvor vin der DB gesucht
         # und Duplikate anschließend gefiltert werden.
@@ -396,3 +395,25 @@ class TinyDbHandler(BaseDb):
         duplicate_ids = [r.get('uuid') for r in results]
 
         return duplicate_ids
+
+    def _get_group_ibans(self, group: str):
+        """
+        Ruft die Liste von IBANs einer Gruppe aus der Datenbank ab.
+
+        Args:
+            group (str): Name der Gruppe.
+        Returns:
+            list: Die IBANs der abgerufene Gruppe.
+        """
+        # Get all IBANs from group
+        collection = self.connection.table('groups')
+        result = collection.get(Query().uuid == group)
+        if not result:
+            return []
+
+        # Get IBANs from result
+        iban_list = result.get('iban')
+        if not iban_list:
+            return []
+
+        return iban_list

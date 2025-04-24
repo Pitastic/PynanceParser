@@ -1,3 +1,7 @@
+#!/usr/bin/python3
+"""App Settings zum Zeitpunkt der Initalisierung von PynanceParser"""
+
+
 LOG_ACCESS_FILE = '/tmp/pynance_access.log'
 LOG_ERROR_FILE = '/tmp/pynance_error.log'
 

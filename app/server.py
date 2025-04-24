@@ -1,4 +1,4 @@
-#!/usr/bin/python3 # pylint: disable=invalid-name
+#!/usr/bin/python3
 """Basisklasse mit Methoden für den Programmablauf."""
 
 import os
