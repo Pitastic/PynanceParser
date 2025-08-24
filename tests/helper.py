@@ -172,7 +172,7 @@ class MockDatabase:
             'text_tx': ('Wucherpfennig sagt Danke 88//HANNOV 2023-01-01T08:59:42 '
                         'KFN 9 VJ 7777 Kartenzahlung'),
             'betrag': -11.63, 'iban': 'DE89370400440532013000', 'currency': 'USD',
-            'parsed': {}, 'category': 'Updated', 'tags': None,
+            'parsed': {}, 'category': 'Updated', 'tags': [],
             'uuid': 'b5aaffc31fa63a466a8b55962995ebcc', 'prio': 0
             },
 
@@ -181,7 +181,7 @@ class MockDatabase:
             'text_tx': ('MEIN GARTENCENTER//Berlin 2023-01-02T12:57:02 KFN 9 VJ 7777 '
                         'Kartenzahlung'),
             'betrag': -118.94, 'iban': 'DE89370400440532013000', 'currency': 'USD',
-            'parsed': {}, 'category': 'Updated', 'tags': None,
+            'parsed': {}, 'category': 'Updated', 'tags': [],
             'uuid': '13d505688ab3b940dbed47117ffddf95', 'prio': 0
             },
 
@@ -190,7 +190,7 @@ class MockDatabase:
             'text_tx': ('EDEKA, München//München/ 2023-01-03T14:39:49 KFN 9 VJ '
                         '7777 Kartenzahlung'),
             'betrag': -99.58, 'iban': 'DE89370400440532013000', 'currency': 'EUR',
-            'parsed': {}, 'category': None, 'tags': None,
+            'parsed': {}, 'category': None, 'tags': [],
             'uuid': 'a8bd1aa187c952358c474ca4775dbff8', 'prio': 0
             },
 
@@ -199,7 +199,7 @@ class MockDatabase:
             'text_tx': ('DM FIL.2222 F:1111//Frankfurt/DE 2023-01-04T13:22:16 KFN 9 VJ '
                         '7777 Kartenzahlung'),
             'betrag': -71.35, 'iban': 'DE89370400440532013000', 'currency': 'EUR',
-            'parsed': {}, 'category': None, 'tags': None,
+            'parsed': {}, 'category': None, 'tags': [],
             'uuid': 'a1eb37e4ed4a22a38bdeef2f34fb76c3', 'prio': 0
             },
 
@@ -210,7 +210,7 @@ class MockDatabase:
                         'Mandatsref: M1111111 Gläubiger-ID: DE7000100000077777 '
                         'SEPA-BASISLASTSCHRIFT wiederholend'),
             'betrag': -221.98, 'iban': 'DE89370400440532013000', 'currency': 'EUR',
-            'parsed': {'Mandatsreferenz': 'M1111111'}, 'category': None, 'tags': None,
+            'parsed': {'Mandatsreferenz': 'M1111111'}, 'category': None, 'tags': [],
             'uuid': 'ba9e5795e4029213ae67ac052d378d84', 'prio': 0
             }
 

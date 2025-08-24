@@ -1,6 +1,6 @@
 #!/usr/bin/python3 # pylint: disable=invalid-name
 """Ausgelagerter Handler für die Umsatzuntersuchung."""
-import sys
+
 import copy
 import random
 import re
@@ -128,9 +128,10 @@ class Tagger():
             prio = 99
 
         # Benutzer Regeln anwenden (Tag Loop + Category + AI)
-        r = {'tagged': True}
+        # (kein Loop bei dry_run, da keine DB Updates gemacht werden)
+        r = {'tagged': True, 'entries': [True] }  # Dummy Start
         result_rx = {'tagged': 0, 'entries': []}
-        while r.get('tagged'):
+        while r.get('tagged') and not dry_run:
             # Loop RegEx Tagging (Tags-only)
             r = self.tag_regex(rules, iban, prio=prio, prio_set=prio_set,
                                        dry_run=dry_run, tag_only=True)
@@ -236,7 +237,7 @@ class Tagger():
 
                 # Update Request / Dry run
                 if dry_run:
-                    return result
+                    continue
 
                 # Do not duplicate Tags
                 existing_tags = row.get('tags', [])

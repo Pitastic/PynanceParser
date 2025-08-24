@@ -269,10 +269,11 @@ def test_tag_stored(test_app):
             result = client.put(f"/api/tag/{test_app.config['IBAN']}", json=parameters)
             result = result.json
 
-            assert result.get('tagged') == 1, \
+            # (1x getagged + 1x Categorie gesetzt)
+            assert result.get('tagged') == 2, \
                 f"Ohne 'dry_run' wurden trotzdem nur {result.get('tagged')} Einträge getaggt"
 
-            tagged_entries = result.get('City Tax', {}).get('entries')
+            tagged_entries = result.get('entries')
             assert len(tagged_entries) == 1, \
                 f"Die Regel 'City Tax' hat {len(tagged_entries)} statt 1 Transactionen getroffen"
 
