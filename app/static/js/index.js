@@ -52,7 +52,7 @@ function uploadFile() {
 function truncateDB() {
     const iban = document.getElementById('input_iban').value;
 
-    apiGet(iban + '/truncateDatabase', {}, function (responseText, error) {
+    apiGet('truncateDatabase/'+iban, {}, function (responseText, error) {
         if (error) {
             printResult('Truncate failed: ' + '(' + error + ')' + responseText);
 
@@ -79,7 +79,7 @@ function tagEntries() {
         rules['rule_name'] = rule_name
     }
 
-    apiSubmit(iban + '/tag', rules, function (responseText, error) {
+    apiSubmit('tag/'+iban, rules, function (responseText, error) {
         if (error) {
             printResult('Tagging failed: ' + '(' + error + ')' + responseText);
 
@@ -114,9 +114,9 @@ function removeTags() {
     let api_function;
     let tags = {};
     if (t_ids.length == 1) {
-        api_function = iban+'/removeTag/'+t_ids[0];
+        api_function = 'removeTag/'+iban+'/'+t_ids[0];
     } else {
-        api_function = iban+'/removeTags';
+        api_function = 'removeTags/'+iban;
         tags['t_ids'] = t_ids;
     };
 
@@ -141,7 +141,8 @@ function removeTags() {
  */
 function manualTagEntries() {
     const category = document.getElementById('input_manual_category').value;
-    const tags = document.getElementById('input_manual_tags').value;
+    const subcategory = document.getElementById('input_manual_subcategory').value;
+    let tags = document.getElementById('input_manual_tags').value;
     const iban = document.getElementById('input_iban').value;
 
     const checkboxes = document.querySelectorAll('input[name="entry-select[]"]');
@@ -163,15 +164,16 @@ function manualTagEntries() {
 
     let tagging = {
         'category': category,
+        'subcategory': subcategory,
         'tags': tags
     }
     
     let api_function;
     if (t_ids.length == 1) {
-        api_function = iban+'/setManualTag/'+t_ids[0];
+        api_function = 'setManualTag/'+iban+'/'+t_ids[0];
     } else {
-        api_function = iban+'/setManualTags';
-        tags['t_ids'] = t_ids;
+        api_function = 'setManualTags/'+iban;
+        tagging['t_ids'] = t_ids;
     };
 
     apiSubmit(api_function, tagging, function (responseText, error) {

@@ -14,21 +14,21 @@
         </tr></thead>
 
         <tbody>
-            {% for entry in table_data %}
-            <tr id="tr-{{entry.get('uuid')}}">
-                <td><input type="checkbox" name="entry-select[]" value="{{ entry.get('uuid') }}"></td>
+            {% for row in table_data %}
+            <tr id="tr-{{ row.get('uuid') }}">
+                <td><input type="checkbox" name="entry-select[]" value="{{ row.get('uuid') }}"></td>
                 {% for key in table_header %}
                 {% if key != 'parsed' %}
-                <td class="td-{{ key }}">{{ entry.get(key) or '' }}</td>
+                <td class="td-{{ key }}">{{ row.get(key) or '' }}</td>
                 {% endif %}
                 {% endfor %}
                 <td class="td-parsed">
-                    {% for info in entry.get('parsed') %}
+                    {% for info in row.get('parsed') %}
                     <p>{{ info }}</p>
                     {% endfor %}
                 </td>
                 <td>
-                    <a class="my-buttons" href="javascript:getInfo('{{ entry.get('uuid') }}');">(i)</a>
+                    <a class="my-buttons" href="javascript:getInfo('{{ row.get('uuid') }}');">(i)</a>
                 </td>
             </tr>
             {% endfor %}
@@ -83,6 +83,7 @@
             </select>
             <button onclick="tagEntries()">Auto Tag</button>
             <input type="text" value="" id="input_manual_category" placeholder="Manual Category">
+            <input type="text" value="" id="input_manual_subcategory" placeholder="Manual Sub-Category">
             <input type="text" value="" id="input_manual_tags" placeholder="Manual Tag">
             <button onclick="manualTagEntries()">Manuelles Taggen</button>
             <button onclick="removeTags()">Tags entfernen</button>

@@ -6,7 +6,7 @@ import os
 import json
 import logging
 from datetime import datetime
-from flask import request, current_app, render_template
+from flask import request, current_app, render_template, make_response, send_from_directory
 
 # Add Parent for importing Classes
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -133,11 +133,38 @@ class UserInterface():
                                        table_header=table_header,
                                        table_data=rows, rule_list=rule_list)
 
+            @current_app.route('/sw.js')
+            def sw():
+                response = make_response(
+                    send_from_directory(
+                        os.path.join('app', 'static'), path='sw.js'
+                    )
+                )
+                response.headers['Content-Type'] = 'application/javascript'
+                return response
 
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - -
             # - API Endpoints - - - - - - - - - - - - - - - - - - - -
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+            @current_app.route('/api/<iban>/<t_id>', methods=['GET'])
+            def getTx(iban, t_id):
+                """
+                Gibt alle Details zu einer bestimmten Transaktion zurück.
+                Args (uri):
+                    iban, str: IBAN
+                    t_id, int: Datenbank ID der Transaktion
+                Returns:
+                    json: Details zu einer bestimmten Transaktion
+                """
+                tx_details = self.db_handler.select(
+                    iban, {
+                        'key': 'uuid',
+                        'value': t_id,
+                        'compare': '=='
+                    }
+                )
+                return tx_details[0], 200
 
             @current_app.route('/api/saveMeta/', defaults={'rule_type':'rule'}, methods=['POST'])
             @current_app.route('/api/saveMeta/<rule_type>', methods=['POST'])
@@ -168,8 +195,7 @@ class UserInterface():
 
                 return r, 201
 
-            @current_app.route('/api/getMeta/', methods=['GET'],
-                                                defaults={'rule_filter':None})
+            @current_app.route('/api/getMeta/', methods=['GET'], defaults={'rule_filter':None})
             @current_app.route('/api/getMeta/<rule_filter>', methods=['GET'])
             def getMeta(rule_filter):
                 """
@@ -260,26 +286,7 @@ class UserInterface():
                 _ = self._mv_fileupload(input_file, path)
                 return self._read_settings(path, metatype=metadata)
 
-            @current_app.route('/api/<iban>/<t_id>', methods=['GET'])
-            def getTx(iban, t_id):
-                """
-                Gibt alle Details zu einer bestimmten Transaktion zurück.
-                Args (uri):
-                    iban, str: IBAN
-                    t_id, int: Datenbank ID der Transaktion
-                Returns:
-                    json: Details zu einer bestimmten Transaktion
-                """
-                tx_details = self.db_handler.select(
-                    iban, {
-                        'key': 'uuid',
-                        'value': t_id,
-                        'compare': '=='
-                    }
-                )
-                return tx_details[0], 200
-
-            @current_app.route('/api/<iban>/truncateDatabase/', methods=['DELETE'])
+            @current_app.route('/api/truncateDatabase/<iban>', methods=['DELETE'])
             def truncateDatabase(iban):
                 """
                 Leert die Datenbank zu einer IBAN
@@ -292,7 +299,7 @@ class UserInterface():
                 deleted_entries = self.db_handler.truncate(iban)
                 return {'deleted': deleted_entries}, 200
 
-            @current_app.route('/api/<iban>/tag/', methods=['PUT'])
+            @current_app.route('/api/tag/<iban>', methods=['PUT'])
             def tag(iban) -> dict:
                 """
                 Kategorisiert die Kontoumsätze und aktualisiert die Daten in der Instanz.
@@ -305,7 +312,7 @@ class UserInterface():
                 """
                 return self.tagger.tag(iban, **request.json)
 
-            @current_app.route('/api/<iban>/setManualTag/<t_id>', methods=['PUT'])
+            @current_app.route('/api/setManualTag/<iban>/<t_id>', methods=['PUT'])
             def setManualTag(iban, t_id):
                 """
                 Handler für _set_manual_tag() für einzelne Einträge.
@@ -322,7 +329,7 @@ class UserInterface():
                 data = request.json
                 return self._set_manual_tag(iban, t_id, data)
 
-            @current_app.route('/api/<iban>/setManualTags/', methods=['PUT'])
+            @current_app.route('/api/setManualTags/<iban>', methods=['PUT'])
             def setManualTags(iban):
                 """
                 Handler für _set_manual_tag() für mehrere Einträge.
@@ -345,7 +352,7 @@ class UserInterface():
 
                 return updated_entries
 
-            @current_app.route('/api/<iban>/removeTag/<t_id>', methods=['PUT'])
+            @current_app.route('/api/removeTag/<iban>/<t_id>', methods=['PUT'])
             def removeTag(iban, t_id):
                 """
                 Entfernt gesetzte Tags für einen Eintrag-
@@ -362,7 +369,7 @@ class UserInterface():
 
                 return self._remove_tags(iban, t_id)
 
-            @current_app.route('/api/<iban>/removeTags/', methods=['PUT'])
+            @current_app.route('/api/removeTags/<iban>', methods=['PUT'])
             def removeTags(iban):
                 """
                 Entfernt gesetzte Tags für mehrere Einträge.
@@ -397,21 +404,31 @@ class UserInterface():
             t_id, int: Datenbank ID der Transaktion, die getaggt werden soll
             data, dict: Daten für die Aktualisierung (default: request.json)
                 - category, str: Bezeichnung der primären Kategorie
-                - tags, list[str:] Bezeichnung der sekundären Kategorie
+                - subcategory, str: Bezeichnung der sekundären Kategorie
+                - tags, list[str]: Bezeichnung der Tags
         Returns:
             dict: updated, int: Anzahl der gespeicherten Datensätzen
         """
-        new_tag_data = {
-            'prio': 99
-        }
+        new_tag_data = {}
 
         category = data.get('category')
         if category:
             new_tag_data['category'] = category
 
+        subcategory = data.get('subcategory')
+        if subcategory:
+            new_tag_data['subcategory'] = subcategory
+
         tags = data.get('tags')
         if tags:
+            if not isinstance(tags, list):
+                tags = [tags]
+
             new_tag_data['tags'] = tags
+
+        if category or subcategory:
+            # Avoid high priority when tagging only
+            new_tag_data['prio'] = 99
 
         condition = {
             'key': 'uuid',
@@ -436,7 +453,7 @@ class UserInterface():
         new_daata = {
             'prio': 0,
             'category': None,
-            'tags': None
+            'tags': []
         }
         condition = [{
             'key': 'uuid',

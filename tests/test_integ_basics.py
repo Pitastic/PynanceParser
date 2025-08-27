@@ -24,7 +24,7 @@ def test_truncate(test_app):
     with test_app.app_context():
 
         with test_app.test_client() as client:
-            result = client.delete(f'/api/{test_app.config['IBAN']}/truncateDatabase/')
+            result = client.delete(f"/api/truncateDatabase/{test_app.config['IBAN']}")
             assert result.status_code == 200, "Fehler beim Leeren der Datenbank"
 
 
@@ -251,13 +251,13 @@ def test_tag_stored(test_app):
                 'dry_run': True,
                 'prio': 2
             }
-            result = client.put(f"/api/{test_app.config['IBAN']}/tag/", json=parameters)
+            result = client.put(f"/api/tag/{test_app.config['IBAN']}", json=parameters)
             result = result.json
 
             assert result.get('tagged') == 0, \
                 f"Trotz 'dry_run' wurden {result.get('tagged')} Einträge getaggt"
 
-            tagged_entries = result.get('Supermarkets', {}).get('entries')
+            tagged_entries = result.get('entries', [])
             assert len(tagged_entries) == 2, \
                 f"Regel 'Supermarkets' hat {len(tagged_entries)} statt 2 Transactionen getroffen"
 
@@ -266,13 +266,14 @@ def test_tag_stored(test_app):
                 'rule_name': 'City Tax',
                 'prio': 2
             }
-            result = client.put(f"/api/{test_app.config['IBAN']}/tag/", json=parameters)
+            result = client.put(f"/api/tag/{test_app.config['IBAN']}", json=parameters)
             result = result.json
 
-            assert result.get('tagged') == 1, \
+            # (1x getagged + 1x Categorie gesetzt)
+            assert result.get('tagged') == 2, \
                 f"Ohne 'dry_run' wurden trotzdem nur {result.get('tagged')} Einträge getaggt"
 
-            tagged_entries = result.get('City Tax', {}).get('entries')
+            tagged_entries = result.get('entries')
             assert len(tagged_entries) == 1, \
                 f"Die Regel 'City Tax' hat {len(tagged_entries)} statt 1 Transactionen getroffen"
 
@@ -300,7 +301,7 @@ def test_own_rules(test_app):
                 'rule_regex': r'EDEKA',
                 'prio': 0,
             }
-            result = client.put(f"/api/{test_app.config['IBAN']}/tag/", json=parameters)
+            result = client.put(f"/api/tag/{test_app.config['IBAN']}", json=parameters)
             result = result.json
 
             # Es sollte eine Transaktion zutreffen,
@@ -308,7 +309,7 @@ def test_own_rules(test_app):
             assert result.get('tagged') == 0, \
                 f"Es wurden {result.get('tagged')} statt 0 Einträge im dry_run getaggt"
 
-            tagged_entries = result.get('My low Rule').get('entries')
+            tagged_entries = result.get('entries', [])
             assert len(tagged_entries) == 0, \
                 f"Regel 'My low Rule' hat {len(tagged_entries)} statt 0 Transactionen getroffen"
 
@@ -321,12 +322,12 @@ def test_own_rules(test_app):
                 'prio': 9,
                 'prio_set': 3,
             }
-            result = client.put(f"/api/{test_app.config['IBAN']}/tag/", json=parameters)
+            result = client.put(f"/api/tag/{test_app.config['IBAN']}", json=parameters)
             result = result.json
 
             assert result.get('tagged') == 1, \
                 f"Es wurden {result.get('tagged')} statt 1 Eintrag getaggt"
-            tagged_entries = result.get('My high Rule', {}).get('entries')
+            tagged_entries = result.get('entries', [])
             assert len(tagged_entries) == 1, \
                 f"DRegel 'My high Rule' hat {len(tagged_entries)} statt 1 Transactionen getroffen"
 
@@ -341,7 +342,7 @@ def test_manual_tagging(test_app):
                 'tags': ['Test_SECONDARY']
             }
             r = client.put(
-                f"/api/{test_app.config['IBAN']}/setManualTag/6884802db5e07ee68a68e2c64f9c0cdd",
+                f"/api/setManualTag/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd",
                 json=new_tag
             )
             r = r.json
@@ -349,7 +350,7 @@ def test_manual_tagging(test_app):
 
             # Check if new values correct stored
             r = client.get(
-                f'/api/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd'
+                f"/api/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd"
             )
             r = r.json
             assert isinstance(r.get('tags'), list), "Tags wurde nicht als Liste gespeichert"
@@ -361,7 +362,7 @@ def test_manual_tagging(test_app):
                 'tags': ['Test_Another_SECONDARY']
             }
             r = client.put(
-                f"/api/{test_app.config['IBAN']}/setManualTag/6884802db5e07ee68a68e2c64f9c0cdd",
+                f"/api/setManualTag/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd",
                 json=new_tag
             )
             r = r.json
@@ -390,7 +391,7 @@ def test_manual_multi_tagging(test_app):
                           "fdd4649484137572ac642e2c0f34f9af"]
             }
             r = client.put(
-                f"/api/{test_app.config['IBAN']}/setManualTags/",
+                f"/api/setManualTags/{test_app.config['IBAN']}",
                 json=new_tag
             )
             r = r.json
@@ -421,7 +422,7 @@ def test_remove_tag(test_app):
         with test_app.test_client() as client:
             # Remove Tag
             result = client.put(
-                f"/api/{test_app.config['IBAN']}/removeTag/6884802db5e07ee68a68e2c64f9c0cdd"
+                f"/api/removeTag/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd"
             )
             result = result.json
             assert result.get('updated') == 1, \

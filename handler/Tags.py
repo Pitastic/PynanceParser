@@ -40,9 +40,10 @@ class Tagger():
         return input_data
 
     def tag(self, iban,
-            rule_name: str = None, rule_category: str = None, rule_tags: list[str] = None,
-            rule_regex: str = None, rule_parsed_keys: list = (), rule_parsed_vals: list = (),
-            prio: int = 1, prio_set: int = None, dry_run: bool = False) -> dict:
+            rule_name: str = None, rule_category: str = 'None', rule_subcategory: str = None,
+            rule_tags: list[str] = None, rule_regex: str = None, rule_parsed_keys: list = (),
+            rule_parsed_vals: list = (), prio: int = 1, prio_set: int = None,
+            dry_run: bool = False) -> dict:
         """
         Kategorisiert die Kontoumsätze und aktualisiert die Daten in der Instanz.
 
@@ -54,9 +55,11 @@ class Tagger():
                                 Default: Es werden alle Regeln des Benutzers ohne das
                                 AI Tagging angewendet.
                 rule_category:  Name der zu setzenden Primärkategory.
-                                Default: Standardname
+                                Default: sonstiges
+                rule_subcategory: Name der zu setzenden Sekundärkategorie.
+                                Default: keine Sekundärkategorie
                 rule_tags:      Name der zu setzenden Sekundärkategory.
-                                Default: Standardname
+                                Default: kein Tag
                 rule_regex:     Regulärer Ausdrück für die Suche im Transaktionstext.
                                 Default: Wildcard
                 rule_parsed_keys:   Liste mit Keys zur Prüfung in geparsten Daten.
@@ -83,6 +86,7 @@ class Tagger():
             # Custom Rule
             rule = {
                 'category': rule_category,
+                'subcategory': rule_subcategory,
                 'tags': rule_tags,
                 'regex': rule_regex
             }
@@ -123,28 +127,37 @@ class Tagger():
             prio_set = rules[rule_name].get('prioriry', prio)
             prio = 99
 
-        # Benutzer Regeln anwenden
-        #TODO: Loop >>>
-        # - Regeln anwenden und Tags (nur sekundär) setzen
-        # - Regeln, die geupdated wurden üner uuid merken
-        # - Regeln erneut anwenden und Tags anwenden (nur sekundär)
-        # - Regeln, die geupdated wurden üner uuid merken (Loop)
-        # End Loop <<<
-        # - Regeln zum Kategorisieren der TX (primär) anwenden auf TX.
-        #   Regel mit der höchsten Prio setzt die Kategorie
-        # - AI tagging für alles ohne Kategorie (primär)) durchführen
-        result_rx = self.tag_regex(rules, iban, prio=prio, prio_set=prio_set, dry_run=dry_run)
+        # Benutzer Regeln anwenden (Tag Loop + Category + AI)
+        # (kein Loop bei dry_run, da keine DB Updates gemacht werden)
+        r = {'tagged': True, 'entries': [True] }  # Dummy Start
+        result_rx = {'tagged': 0, 'entries': []}
+        while r.get('tagged') and not dry_run:
+            # Loop RegEx Tagging (Tags-only)
+            r = self.tag_regex(rules, iban, prio=prio, prio_set=prio_set,
+                                       dry_run=dry_run, tag_only=True)
+            result_rx['tagged'] += r.get('tagged')
+            result_rx['entries'] += r.get('entries')
+
+        # Final RegEx Tagging (Categories)
+        r = self.tag_regex(rules, iban, prio=prio, prio_set=prio_set,
+                           dry_run=dry_run, tag_only=False)
+        result_rx['tagged'] += r.get('tagged')
+        result_rx['entries'] += r.get('entries')
+        result_rx['entries'] = list(set(result_rx['entries']))
+
+        # Guess empty TX
         result_ai = self.tag_ai(iban, dry_run=dry_run)
+
         return {**result_rx, **result_ai}
 
     def tag_regex(self, ruleset: dict, collection: str=None, prio: int=1,
-                  prio_set: int=1, dry_run: bool=False) -> dict:
+                  prio_set: int=1, dry_run: bool=False, tag_only: bool=False) -> dict:
         """
         Automatische Kategorisierung anhand von hinterlegten RegExes je Kategorie.
 
         Args:
             ruleset:         Named rules to be applied on users transactions
-            collection:      Name der Collection, in die Werte eingefügt werden sollen.
+            collection:      Name der Collection, in der gefiltert werden soll.
                              Default: IBAN aus der Config.
             prio:            Value of priority for this tagging run
                              in comparison with already tagged transactions (higher = important)
@@ -152,14 +165,13 @@ class Tagger():
             prio_set:        Compare with 'prio' but set this value instead.
                              Default: prio.
             dry_run:         Switch to show, which TX would be updated. Do not update.
+            tag_only:        Add to only the tags to the transactions.
         Returns:
             dict:
             - tagged (int): Summe aller erfolgreichen Taggings (0 bei dry_run)
-            - Regelname (dict):
-                - tagged (int): Anzahl der getaggten Datensätze (0 bei dry_run)
-                - entries (list): UUIDs die selektiert wurden (auch bei dry_run)
+            - entries (list): UUIDs die selektiert wurden (auch bei dry_run)
         """
-        result = { 'tagged': 0 }
+        result = { 'tagged': 0, 'entries': [] }
 
         # Allgemeine Startfilter für die Condition
         query_args = self._form_tag_query(prio, collection)
@@ -169,16 +181,12 @@ class Tagger():
 
             # Updated Category
             new_category = {
-                'prio': prio_set,
-                'category': rule.get('category', 'sonstiges'),
-                'tags': rule.get('tags'),
+                'tags': rule.get('tags')
             }
-
-            # Ergebnisspeicher
-            rule_result = {
-                'tagged': 0,
-                'entries': []
-            }
+            if not tag_only:
+                new_category['category'] = rule.get('category')
+                new_category['subcategory'] = rule.get('subcategory')
+                new_category['prio'] = prio_set
 
             # Spezielle Conditions einer Rule
             rule_args = copy.deepcopy(query_args)
@@ -215,7 +223,6 @@ class Tagger():
             # Nothing to update
             if not matched:
                 logging.info(f"Rule '{rule_name}' trifft nichts.")
-                result[rule_name] = rule_result
                 continue
 
             # Create updated Data and get UUIDs
@@ -225,24 +232,40 @@ class Tagger():
                 uuid = row.get('uuid')
                 if uuid is None:
                     raise ValueError(f'The following data in the DB has no UUID ! - {row}')
-                rule_result['entries'].append(uuid)
 
-                # Update Request
-                if dry_run is False:
+                result['entries'].append(uuid)
 
-                    query = {'key': 'uuid', 'value': uuid}
-                    updated = self.db_handler.update(data=new_category, condition=query)
+                # Update Request / Dry run
+                if dry_run:
+                    continue
 
-                    # soft Exception Handling
-                    if not updated:
-                        logging.error((f"Bei Rule '{rule_name}' konnte der Eintrag "
-                                       f"'{uuid}' nicht geupdated werden - skipping..."))
+                # Do not duplicate Tags
+                existing_tags = row.get('tags', [])
+                new_tags = [t for t in new_category.get('tags', []) if t not in existing_tags]
+                new_category['tags'] = new_tags
+
+                if not new_category.get('tags'):
+                    if tag_only:
+                        # Skip this loop
+                        logging.info((f"Rule '{rule_name}' hat keine neuen Tags "
+                                        f"für {uuid} - skipping (tag only)..."))
                         continue
-                    rule_result['tagged'] += updated.get('updated')
 
-            # Store Result for this Rule
-            result['tagged'] += rule_result.get('tagged')
-            result[rule_name] = rule_result
+                    # Do not update tags (but everything else)
+                    del new_category['tags']
+                    logging.info((f"Rule '{rule_name}' hat keine neuen Tags "
+                                    f"für {uuid} - do not update tags..."))
+
+                query = {'key': 'uuid', 'value': uuid}
+                updated = self.db_handler.update(data=new_category, condition=query)
+
+                # soft Exception Handling
+                if not updated:
+                    logging.error((f"Bei Rule '{rule_name}' konnte der Eintrag "
+                                    f"'{uuid}' nicht geupdated werden - skipping..."))
+                    continue
+
+                result['tagged'] += updated.get('updated')
 
         return result
 
@@ -432,6 +455,11 @@ class Tagger():
                 ],
                 multi='AND'
             )
+
+            if not raw_rule:
+                raise KeyError(f'Eine Regel mit dem Namen {rule_name} '
+                               'konnte für den User nicht gefunden werden.')
+
             rule = raw_rule[0]
             regex = rule.get('regex')
             if regex:

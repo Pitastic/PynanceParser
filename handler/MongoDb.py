@@ -45,13 +45,14 @@ class MongoDbHandler(BaseDb):
                 [("uuid", pymongo.TEXT)], unique=True
             )
 
-    def select(self, collection=None, condition=None, multi='AND'):
+    def _select(self, collection=None, condition=None, multi='AND'):
         """
         Selektiert Datensätze aus der Datenbank, die die angegebene Bedingung erfüllen.
 
         Args:
-            collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
-                                        Default: IBAN aus der Config.
+            collection (list, optional): Name der Collection oder Liste von Collections,
+                                         deren Werte selecktiert werden sollen.
+                                         Default: IBAN aus der Config.
             condition (dict | list(dict)): Bedingung als Dictionary
                 - 'key', str    : Spalten- oder Schlüsselname,
                 - 'value', any  : Wert der bei 'key' verglichen werden soll
@@ -64,39 +65,39 @@ class MongoDbHandler(BaseDb):
         Returns:
             list: Liste der ausgewählten Datensätze
         """
-        if collection is None:
-            collection = current_app.config['IBAN']
-        collection = self.connection[collection]
-
         # Form condition into a query
         query = self._form_complete_query(condition, multi)
+        result = []
 
-        return list(collection.find(query))
+        for col in collection:
+            col = self.connection[col]
+            db_result = list(col.find(query))
 
-    def insert(self, data, collection=None):
+            if db_result:
+                # Remove the internal ObjectId
+                for row in db_result:
+                    del row['_id']
+                    result.append(row)
+
+        return result
+
+    def _insert(self, data: dict|list[dict], collection: str):
         """
         Fügt einen oder mehrere Datensätze in die Datenbank ein.
 
         Args:
             data (dict or list): Einzelner Datensatz oder eine Liste von Datensätzen
-            collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
-                                        Default: IBAN aus der Config.
+            collection (str): Name der Collection, in die Werte eingefügt werden sollen.
         Returns:
             dict:
                 - inserted, int: Zahl der neu eingefügten IDs
         """
-        if collection is None:
-            collection = current_app.config['IBAN']
-        collection = self.connection[collection]
-
-        # Add generated IDs
-        data = self._generate_unique(data)
-
         if isinstance(data, list):
             # Insert Many (INSERT IGNORE)
             try:
-                result = collection.insert_many(data, ordered=False)
+                result = self.connection[collection].insert_many(data, ordered=False)
                 return {'inserted': len(result.inserted_ids)}
+
             except pymongo.errors.BulkWriteError as e:
                 inserted = e.details.get('nInserted')
                 logging.info(f"Dropping Duplicates, just INSERT {inserted}")
@@ -104,8 +105,9 @@ class MongoDbHandler(BaseDb):
 
         # INSERT One
         try:
-            result = collection.insert_one(data)
+            result = self.connection[collection].insert_one(data)
             return {'inserted': 1}
+
         except pymongo.errors.BulkWriteError:
             return {'inserted': 0}
 
@@ -205,12 +207,23 @@ class MongoDbHandler(BaseDb):
     def get_metadata(self, uuid):
         collection = self.connection['metadata']
         result = collection.find_one({'uuid': uuid})
+        if result:
+            # Remove the internal ObjectId
+            del result['_id']
+
         return result
 
     def filter_metadata(self, condition, multi='AND'):
         collection = self.connection['metadata']
         query = self._form_complete_query(condition, multi)
-        return list(collection.find(query))
+        result = list(collection.find(query))
+
+        if result:
+            # Remove the internal ObjectId
+            for r in result:
+                del r['_id']
+
+        return result
 
     def set_metadata(self, entry, overwrite=True):
         # Set uuid if not present
@@ -225,12 +238,12 @@ class MongoDbHandler(BaseDb):
 
             # Insert new Entry
             result = collection.insert_one(entry)
-            return {'inserted': result.modified_count}
+            return {'inserted': (1 if result else 0)}
 
         # Only insert if not exists
-        if not collection.find({'uuid': entry.get('uuid')}):
+        if not collection.find_one({'uuid': entry.get('uuid')}):
             result = collection.insert_one(entry)
-            return {'inserted': result.modified_count}
+            return {'inserted': (1 if result else 0)}
 
         return {'inserted': 0}
 
@@ -247,6 +260,8 @@ class MongoDbHandler(BaseDb):
         if condition is None:
             return query
 
+        # Standard Query
+        stmt = condition.get('value') # default method '=='
         condition_method = condition.get('compare', '==')
 
         # Regex Suche
@@ -257,9 +272,6 @@ class MongoDbHandler(BaseDb):
         if condition_method.lower() == 'like':
             escaped_condition = re.escape(condition.get('value'))
             stmt = re.compile(f".*{escaped_condition}.*", re.IGNORECASE)
-
-        # Standard Query
-        stmt = condition.get('value') # default method '=='
 
         if condition_method == '!=':
             stmt = {'$not': {'$eq': condition.get('value')}}

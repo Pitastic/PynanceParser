@@ -8,6 +8,7 @@ import logging
 import glob
 import json
 from natsort import natsorted
+from flask import current_app
 
 
 class BaseDb():
@@ -20,12 +21,15 @@ class BaseDb():
         """Erstellen des Datenbankspeichers"""
         raise NotImplementedError()
 
-    def select(self, collection: str, condition: dict|list[dict], multi: str):
+    def select(self, collection:str=None, condition: dict|list[dict]=None, multi: str='AND'):
         """
-        Selektiert Datensätze aus der Datenbank, die die angegebene Bedingung erfüllen.
+        Handler für das Vorbereiten der '_select' Methode, welche Datensätze aus der Datenbank
+        selektiert, die die angegebene Bedingung erfüllen.
 
         Args:
-            collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
+            collection (str, optional): Name der Collection oder Gruppe, aus der selektiert werden
+                                        soll. Es erfolgt automatisch eine Unterscheidung, ob es
+                                        sich um eine IBAN oder einen Gruppenname handelt.
                                         Default: IBAN aus der Config.
             condition (dict | list(dict)): Bedingung als Dictionary
                 - 'key', str    : Spalten- oder Schlüsselname,
@@ -40,9 +44,41 @@ class BaseDb():
             dict:
                 - result, list: Liste der ausgewählten Datensätze
         """
+        if not condition:
+            # Catch empty lists
+            condition = None
+
+        if collection is None:
+            # Default Collection
+            collection = current_app.config['IBAN']
+
+        if not self._check_collection_is_iban(collection):
+            # collection is a group
+            group_ibans = self.get_group_ibans(collection)
+            if not group_ibans:
+                logging.error(f"Group {collection} not found or empty")
+                return []
+
+            collection = group_ibans
+
+        # Always create a list of collections for group-Loop
+        if not isinstance(collection, list):
+            collection = [collection]
+
+        return self._select(collection, condition, multi)
+
+    def _select(self, collection: str, condition: dict|list[dict], multi: str):
+        """
+        Private Methode zum Selektieren von Datensätze aus der Datenbank,
+        die die angegebene Bedingung erfüllen. Siehe 'select' Methode.
+
+        Returns:
+            dict:
+                - result, list: Liste der ausgewählten Datensätze
+        """
         raise NotImplementedError()
 
-    def insert(self, data: dict|list[dict], collection: str):
+    def insert(self, data: dict|list[dict], collection: str=None):
         """
         Fügt einen oder mehrere Datensätze in die Datenbank ein.
 
@@ -50,6 +86,40 @@ class BaseDb():
             data (dict or list): Einzelner Datensatz oder eine Liste von Datensätzen
             collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
                                         Default: IBAN aus der Config.
+        Returns:
+            dict:
+                - inserted, int: Zahl der neu eingefügten IDs
+        """
+        if collection is None:
+            collection = current_app.config['IBAN']
+
+        if not self._check_collection_is_iban(collection):
+            raise ValueError(f"Collection {collection} is not a valid IBAN")
+
+        # Always create a list of transactions for loop
+        if not isinstance(data, list):
+            tx_list = [data]
+        else:
+            tx_list = data
+
+        for transaction in tx_list:
+
+            # Add generated IDs
+            transaction = self._generate_unique(transaction)
+
+            # Ensure default values
+            # - IBAN, Tagging priority, empty Tag list
+            transaction['iban'] = collection
+            transaction['prio'] = 0
+            transaction['tags'] = []
+
+        return self._insert(tx_list, collection)
+
+    def _insert(self, data: dict|list[dict], collection: str):
+        """
+        Private Methode zum Einfügen von Datensätzen in die Datenbank.
+        Siehe 'insert' Methode.
+
         Returns:
             dict:
                 - inserted, int: Zahl der neu eingefügten IDs
@@ -124,12 +194,12 @@ class BaseDb():
         """
         raise NotImplementedError()
 
-    def filter_metadata(self, condition: dict, multi: str):
+    def filter_metadata(self, condition: dict|list, multi: str):
         """
         Ruft Metadaten aus der Datenbank anhand von Kriterien ab.
 
         Args:
-            condition (dict): key-value-Paare für die Filterung der Metadaten.
+            condition (dict|list): key-value-Paare für die Filterung der Metadaten.
             multi (str) : ['AND' | 'OR'] Wenn 'condition' eine Liste mit conditions ist,
                           werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
         Returns:
@@ -150,45 +220,58 @@ class BaseDb():
         """
         raise NotImplementedError()
 
-    def _generate_unique(self, tx_entries: dict | list[dict]):
+    def get_group_ibans(self, group: str):
         """
-        Erstellt einen einmaligen ID für jede Transaktion.
+        Ruft die Liste von IBANs einer Gruppe aus der Datenbank ab.
 
         Args:
-            tx_entries (dict | list(dict)): Liste mit Transaktionsobjekten
+            group (str): Name der Gruppe.
+        Returns:
+            list: Die IBANs der abgerufene Gruppe.
+        """
+        meta_results = self.filter_metadata([
+            {
+                'key': 'metatype',
+                'value': 'config'
+            },{
+                'key': 'name',
+                'value': 'group'
+            },{
+                'key': 'groupname',
+                'value': group
+            }
+        ], multi='AND')
+
+        ibans = []
+        if meta_results:
+            ibans = meta_results[0].get('ibans', [])
+
+        return ibans
+
+    def _generate_unique(self, tx_entry: dict | list[dict]):
+        """
+        Erstellt einen einmaligen ID für jede Transaktion aus den Transaktionsdaten.
+
+        Args:
+            tx_entries (dict): Ein Transaktionsobjekt
         Returns:
             dict | list(dict): Die um die IDs ('uuid') erweiterte Eingabeliste
         """
+
         no_special_chars = re.compile("[^A-Za-z0-9]")
+        tx_text = no_special_chars.sub('', tx_entry.get('text_tx', ''))
 
-        # Input List or single Dict
-        if not isinstance(tx_entries, list):
-            tx_list = [tx_entries]
-        else:
-            tx_list = tx_entries
+        md5_hash = hashlib.md5()
 
-        for transaction in tx_list:
-            md5_hash = hashlib.md5()
-            tx_text = no_special_chars.sub('', transaction.get('text_tx', ''))
-            combined_string = str(transaction.get('date_tx', '')) + \
-                              str(transaction.get('betrag', '')) + \
-                              tx_text
-            md5_hash.update(combined_string.encode('utf-8'))
+        combined_string = str(tx_entry.get('date_tx', '')) + \
+                            str(tx_entry.get('betrag', '')) + \
+                            tx_text
+        md5_hash.update(combined_string.encode('utf-8'))
 
-            # Store UUID
-            transaction['uuid'] = md5_hash.hexdigest()
+        # Store UUID
+        tx_entry['uuid'] = md5_hash.hexdigest()
 
-            # Set start Tagging priority
-            transaction['prio'] = 0
-
-            # Set Tags to an empty list
-            transaction['tags'] = []
-
-        # Input List or single Dict
-        if not isinstance(tx_entries, list):
-            return tx_list[0]
-
-        return tx_list
+        return tx_entry
 
     def _generate_unique_meta(self, entry: dict):
         """
@@ -223,6 +306,7 @@ class BaseDb():
         )
 
         # Load given rules & parsers (do not overwrite)
+        result = {'inserted': 0}
         for metatype in ['config', 'parser', 'rule']:
             json_path = os.path.join(settings_path, metatype)
             json_glob = os.path.join(json_path, '*.json')
@@ -233,6 +317,7 @@ class BaseDb():
             for json_file in json_files:
 
                 if not os.path.isfile(json_file):
+                    logging.warning(f"File {json_file} is not a file")
                     # dead link
                     continue
 
@@ -261,6 +346,9 @@ class BaseDb():
                     inserted += self.set_metadata(data, overwrite=False).get('inserted')
 
                 logging.info(f"Stored {inserted} {metatype} from {json_file}")
+                result['inserted'] += inserted
+
+        return result
 
     def import_metadata(self, path: str=None, metatype: str='rule'):
         """Import metadata from given path
@@ -301,3 +389,15 @@ class BaseDb():
 
         logging.info(f"Stored {inserted} imported metadata from {path}")
         return {'inserted': inserted}
+
+    def _check_collection_is_iban(self, collection: str):
+        """
+        Überprüft, ob die angegebene Collection eine IBAN ist.
+
+        Args:
+            collection (str): Name der Collection.
+        Returns:
+            bool: True, wenn die Collection eine IBAN ist, sonst False.
+        """
+        iban_regex = re.compile(r'[A-Z]{2}[0-9]{2}[ ]?([0-9]{4}[ ]?){4,7}[0-9]{1,4}')
+        return bool(re.match(iban_regex, collection))
