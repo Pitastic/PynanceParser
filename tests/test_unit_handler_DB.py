@@ -41,6 +41,12 @@ def test_insert(test_app):
         assert id_count == 1, \
             f"Es wurden doppelte Datensätze eingefügt: {id_count}"
 
+        # Zweite IBAN in der gleichen Gruppe
+        data = generate_fake_data(2, json_path='commerzbank2.json')
+        inserted_db = test_app.host.db_handler.insert(data, collection='DE89370400440532011111')
+        id_count = inserted_db.get('inserted')
+        assert id_count == 2, \
+            f"Es konnten keine Datensätze zu einer weiteren IBAN eingefügt werden: {id_count}"
 
 def test_select_all(test_app):
     """Testet das Auslesen von allen Datensätzen"""
@@ -224,27 +230,6 @@ def test_select_nested(test_app):
             check_entry(entry, {'uuid': 'ba9e5795e4029213ae67ac052d378d84'})
 
 
-def test_delete(test_app):
-    """Testet das Löschen von Datensätzen"""
-    with test_app.app_context():
-        # Einzelnen Datensatz löschen
-        query = {'key': 'uuid', 'value': '13d505688ab3b940dbed47117ffddf95'}
-        deleted_db = test_app.host.db_handler.delete(condition=query)
-        delete_one = deleted_db.get('deleted')
-        assert delete_one == 1, \
-            f'Es wurde nicht die richtige Anzahl an Datensätzen gelöscht: {delete_one}'
-
-        # Mehrere Datensätze löschen
-        query = [
-            {'key': 'currency', 'value': 'EUR'},
-            {'key': 'currency', 'value': 'USD'}
-        ]
-        deleted_db = test_app.host.db_handler.delete(condition=query, multi='OR')
-        delete_many = deleted_db.get('deleted')
-        assert delete_many == 4, \
-            f'Es wurde nicht die richtige Anzahl an Datensätzen gelöscht: {delete_many}'
-
-
 def test_set_metadata(test_app):
     """Testet das Setzen von Metadaten"""
     with test_app.app_context():
@@ -252,7 +237,7 @@ def test_set_metadata(test_app):
         metadata = {
             "uuid": "1234567890",
             "name": "Wild Regex",
-            "metatype": "test",
+            "metatype": "parser",
             "regex": "Mandatsref\\:\\s?([A-z0-9]*)"
         }
         set_metadata = test_app.host.db_handler.set_metadata(metadata)
@@ -265,6 +250,23 @@ def test_set_metadata(test_app):
         # Do not overwrite equal uuids
         set_metadata = test_app.host.db_handler.set_metadata(metadata, overwrite=False)
         assert set_metadata.get('inserted') == 0, "Die Metadaten wurden überschrieben"
+
+        # Set a group
+        metadata = {
+            "metatype": "config",
+            "name": "group",
+            "groupname": "testgroup",
+            "ibans": [
+                test_app.config['IBAN'],
+                'DE89370400440532011111'
+            ],
+            "members": [
+                { "user": "anna", "role": "owner" },
+                { "user": "bob", "role": "viewer" }
+            ]
+        }
+        set_metadata = test_app.host.db_handler.set_metadata(metadata)
+        assert set_metadata.get('inserted') == 1, "Die Gruppe wurd enict gespeichert"
 
 
 def test_get_metadata(test_app):
@@ -286,3 +288,48 @@ def test_filter_metadata(test_app):
         assert isinstance(metadata, list), "Metadaten sind keine Liste"
         assert len(metadata) == 1, "Es wurden nicht die erwarteten Metadaten zurückgegeben"
         assert metadata[0].get('uuid') == '1234567890', "Es wurden der falsche Eintrag geladen"
+
+
+def test_select_all_group(test_app):
+    """Testet das Auslesen von allen Datensätzen aller IBANs einer Gruppe"""
+    with test_app.app_context():
+        # Alles selektieren mit Gruppierung
+        result_all_group = test_app.host.db_handler.select('testgroup')
+        assert len(result_all_group) == 7, \
+            f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_all_group)}"
+        for entry in result_all_group:
+            check_entry(entry)
+
+
+def test_select_group_filter(test_app):
+    """Selektiert in allen IBANs einer Gruppe Einträge anhand eines Filters"""
+    with test_app.app_context():
+        query = {'key': 'betrag', 'compare': '<', 'value': -100}
+        result_filtered = test_app.host.db_handler.select('testgroup', condition=query)
+
+        # 2 aus IBAN 1 + 1 aus IBAN 2
+        assert len(result_filtered) == 3, \
+            f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
+        for entry in result_filtered:
+            check_entry(entry)
+
+
+def test_delete(test_app):
+    """Testet das Löschen von Datensätzen"""
+    with test_app.app_context():
+        # Einzelnen Datensatz löschen
+        query = {'key': 'uuid', 'value': '13d505688ab3b940dbed47117ffddf95'}
+        deleted_db = test_app.host.db_handler.delete(condition=query)
+        delete_one = deleted_db.get('deleted')
+        assert delete_one == 1, \
+            f'Es wurde nicht die richtige Anzahl an Datensätzen gelöscht: {delete_one}'
+
+        # Mehrere Datensätze löschen
+        query = [
+            {'key': 'currency', 'value': 'EUR'},
+            {'key': 'currency', 'value': 'USD'}
+        ]
+        deleted_db = test_app.host.db_handler.delete(condition=query, multi='OR')
+        delete_many = deleted_db.get('deleted')
+        assert delete_many == 4, \
+            f'Es wurde nicht die richtige Anzahl an Datensätzen gelöscht: {delete_many}'

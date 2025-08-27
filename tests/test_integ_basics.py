@@ -24,7 +24,7 @@ def test_truncate(test_app):
     with test_app.app_context():
 
         with test_app.test_client() as client:
-            result = client.delete(f'/api/truncateDatabase/{test_app.config['IBAN']}')
+            result = client.delete(f"/api/truncateDatabase/{test_app.config['IBAN']}")
             assert result.status_code == 200, "Fehler beim Leeren der Datenbank"
 
 
@@ -350,7 +350,7 @@ def test_manual_tagging(test_app):
 
             # Check if new values correct stored
             r = client.get(
-                f'/api/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd'
+                f"/api/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd"
             )
             r = r.json
             assert isinstance(r.get('tags'), list), "Tags wurde nicht als Liste gespeichert"

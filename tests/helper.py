@@ -56,7 +56,7 @@ def check_transaktion_list(tx_list):
             f"'currency' wurde nicht oder falsch erkannt: {currency}"
 
 
-def generate_fake_data(count):
+def generate_fake_data(count, json_path='commerzbank.json'):
     """
     Erstellt ausgedachte Transaktionen in gewünschter Anzahl.
     Zunächst auf Grundlage einer Beispieldatei.
@@ -68,7 +68,7 @@ def generate_fake_data(count):
     """
     path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
-        'commerzbank.json'
+        json_path
     )
     with open(path, 'rb') as test_data:
         object_list = json.load(test_data)

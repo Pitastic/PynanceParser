@@ -317,17 +317,3 @@ class MongoDbHandler(BaseDb):
             query = self._form_condition(condition)
 
         return query
-
-    def _get_group_ibans(self, group: str):
-        """
-        Ruft die Liste von IBANs einer Gruppe aus der Datenbank ab.
-
-        Args:
-            group (str): Name der Gruppe.
-        Returns:
-            list: Die IBANs der abgerufene Gruppe.
-        """
-        collection = self.connection['groups']
-        query = {'uuid': group}
-        result = collection.find(query)
-        return [entry.get('iban') for entry in result]

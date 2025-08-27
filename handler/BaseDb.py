@@ -54,10 +54,10 @@ class BaseDb():
 
         if not self._check_collection_is_iban(collection):
             # collection is a group
-            group_ibans = self._get_group_ibans(collection)
+            group_ibans = self.get_group_ibans(collection)
             if not group_ibans:
                 logging.error(f"Group {collection} not found or empty")
-                return {'result': []}
+                return []
 
             collection = group_ibans
 
@@ -194,12 +194,12 @@ class BaseDb():
         """
         raise NotImplementedError()
 
-    def filter_metadata(self, condition: dict, multi: str):
+    def filter_metadata(self, condition: dict|list, multi: str):
         """
         Ruft Metadaten aus der Datenbank anhand von Kriterien ab.
 
         Args:
-            condition (dict): key-value-Paare für die Filterung der Metadaten.
+            condition (dict|list): key-value-Paare für die Filterung der Metadaten.
             multi (str) : ['AND' | 'OR'] Wenn 'condition' eine Liste mit conditions ist,
                           werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
         Returns:
@@ -219,6 +219,34 @@ class BaseDb():
             dict: Informationen über den Speichervorgang.
         """
         raise NotImplementedError()
+
+    def get_group_ibans(self, group: str):
+        """
+        Ruft die Liste von IBANs einer Gruppe aus der Datenbank ab.
+
+        Args:
+            group (str): Name der Gruppe.
+        Returns:
+            list: Die IBANs der abgerufene Gruppe.
+        """
+        meta_results = self.filter_metadata([
+            {
+                'key': 'metatype',
+                'value': 'config'
+            },{
+                'key': 'name',
+                'value': 'group'
+            },{
+                'key': 'groupname',
+                'value': group
+            }
+        ], multi='AND')
+
+        ibans = []
+        if meta_results:
+            ibans = meta_results[0].get('ibans', [])
+
+        return ibans
 
     def _generate_unique(self, tx_entry: dict | list[dict]):
         """
@@ -361,17 +389,6 @@ class BaseDb():
 
         logging.info(f"Stored {inserted} imported metadata from {path}")
         return {'inserted': inserted}
-
-    def _get_group_ibans(self, group: str):
-        """
-        Ruft die Liste von IBANs einer Gruppe aus der Datenbank ab.
-
-        Args:
-            group (str): Name der Gruppe.
-        Returns:
-            list: Die IBANs der abgerufene Gruppe.
-        """
-        raise NotImplementedError()
 
     def _check_collection_is_iban(self, collection: str):
         """

@@ -395,25 +395,3 @@ class TinyDbHandler(BaseDb):
         duplicate_ids = [r.get('uuid') for r in results]
 
         return duplicate_ids
-
-    def _get_group_ibans(self, group: str):
-        """
-        Ruft die Liste von IBANs einer Gruppe aus der Datenbank ab.
-
-        Args:
-            group (str): Name der Gruppe.
-        Returns:
-            list: Die IBANs der abgerufene Gruppe.
-        """
-        # Get all IBANs from group
-        collection = self.connection.table('groups')
-        result = collection.get(Query().uuid == group)
-        if not result:
-            return []
-
-        # Get IBANs from result
-        iban_list = result.get('iban')
-        if not iban_list:
-            return []
-
-        return iban_list

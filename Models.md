@@ -23,24 +23,7 @@
 }
 ```
 
-### Datenbankeintrag für User Settings
-
-```
-{
-    'username': str,
-    'password': str,            # (Hashed)
-    'accounts': list(
-        str( IBAN )
-    ),
-
-    ----------- optional -----------
-
-    'preferences': dict( str : Any ),
-    'rules': dict(
-        str( Rulename ) : dict( ruleset )
-    )
-}
-```
+### Metadaten
 
 #### Dictionary eines Rulesets (Tag/Parse)
 
@@ -53,18 +36,49 @@ Regeln können Attribute einer Transaktion untersuchen und anhand dessen klassif
     'name': str,
     'regex': r-str( RegEx ),
 
-    ----------- bei Rules ----------
+    -------- Zusatz bei Rules -------
 
     'category': str | None,
     'tags': list[str] | None,
 
-    ----------- optional -----------
+    . . . . . . . optional . . . . . .
 
     'prioriry': int,
     'parsed': dict(
         'multi': str,       # (AND|OR)
         'query': dict       # (key=Name, val=Value)
     )
+}
+```
+
+#### Dictionary einer Config
+
+```
+{
+    'uuid': str             # (generated)
+    'metatype': str         # (config)
+    'name': str,            # Typ des Configeintrags (user, group, ui...)
+
+    -------- Zusatz je Config Typ -------
+
+    **kwargs
+    
+    . . . . . . . z.B. User . . . . . . .
+
+    'username': str,
+    'password': str         # hashed
+    'ibans': list           # Eigentümer
+    'rules': dict           # private Regeln
+    'parser': dict          # private Parser
+
+    . . . . . . . z.B. Gruppe . . . . . .
+
+    'groupname': str
+    "ibans": list,          # IBANs, die zur Gruppe gheören
+    "members": [
+        { "user": "anna", "role": "owner" },
+        { "user": "bob", "role": "viewer" }
+    ]
 }
 ```
 
