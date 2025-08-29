@@ -310,7 +310,7 @@ class UserInterface():
                 Returns:
                     json: Informationen zum Ergebnis des Taggings.
                 """
-                return self.tagger.tag(iban, **request.json)
+                return self.tagger.tag_and_cat(iban, **request.json)
 
             @current_app.route('/api/setManualTag/<iban>/<t_id>', methods=['PUT'])
             def setManualTag(iban, t_id):
