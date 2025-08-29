@@ -78,7 +78,7 @@ def test_regex(test_app):
     Berücksichtigt alle Umsätze ohne Kategorie"""
     with test_app.app_context():
         tagger = Tagger(MockDatabase())
-        tagging_result = tagger.tag_regex(ruleset=RULESET)
+        tagging_result = tagger.tag(ruleset=RULESET)
 
         assert tagging_result.get('tagged') == 3, \
             "Die Regeln haben nicht die richtige Anzahl an Einträgen getroffen"
@@ -89,7 +89,7 @@ def test_regex_untagged(test_app):
     with test_app.app_context():
         # prio auf 4 aber override auf 1
         tagger = Tagger(MockDatabase())
-        tagging_result = tagger.tag_regex(ruleset=RULESET, dry_run=True, prio=1, prio_set=9)
+        tagging_result = tagger.tag(ruleset=RULESET, dry_run=True, prio=1, prio_set=9)
 
         assert tagging_result.get('tagged') == 0, \
             "Die Option dry_run hat trotzdem Datensätze verändert"
