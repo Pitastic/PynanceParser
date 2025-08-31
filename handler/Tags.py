@@ -47,18 +47,19 @@ class Tagger():
             rules:         Named rules to be applied on users transactions (with category)
             iban:          Name der Collection, in der gefiltert werden soll.
                            Default: IBAN aus der Config.
-            prio:          Value of priority for this tagging run
-                           in comparison with already tagged transactions (higher = important)
-            prio_set:      Compare with 'prio' but set this value instead.
+            prio:          Override ruleset value of priority for this categorization run
+                           in comparison with already cat. transactions (higher = important)
+            prio_set:      Override: Compare with 'prio' but set this value instead.
             dry_run:       Switch to show, which TX would be updated. Do not update.
         Returns:
             dict:
             - categorized (int): Summe aller erfolgreichen Kategorisierungen (0 bei dry_run)
             - entries (list): UUIDs die selektiert wurden (auch bei dry_run)
         """
-        raise NotImplementedError("Function not finished yet !")
-
         result = { 'categorized': 0, 'entries': [] }
+        #TODO: Override prio / prio_set if given or use rule values instead
+        #TODO: Muss Änderungen in der Datenbank machen !
+        raise NotImplementedError("Function not finished yet !")
 
         # Allgemeine Startfilter für die Condition
         query_args = self._form_tag_query(prio, iban)
@@ -120,6 +121,7 @@ class Tagger():
             - tagged (int): Summe aller erfolgreichen Taggings (0 bei dry_run)
             - entries (list): UUIDs die selektiert wurden (auch bei dry_run)
         """
+        #TODO: Muss Änderungen in der Datenbank machen !
         raise NotImplementedError("Function not finished yet !")
         result = { 'tagged': 0, 'entries': [] }
 
@@ -217,8 +219,7 @@ class Tagger():
         Returns:
             dict:
             - guessed (int): Summe aller erfolgreichen Taggings (0 bei dry_run)
-            - ai (dict):
-                - entries (list): UUIDs die selektiert wurden (auch bei dry_run)
+            - entries (list): UUIDs die selektiert wurden (auch bei dry_run)
         """
         logging.info("Tagging with AI....")
 
@@ -261,18 +262,16 @@ class Tagger():
 
         result = {
             'guessed': tagged,
-            'ai': {
-                'entries': [e.get('uuid') for e in entries],
-            }
+            'entries': [e.get('uuid') for e in entries],
         }
 
         logging.info("Tagging with AI....DONE")
         return result
 
-    def tag_and_cat(self, iban: str, rule_name: str = None, category=False,
+    def tag_and_cat(self, iban: str, rule_name: str = None, category_name: str = None,
                     dry_run: bool = False) -> dict:
         """
-        Kategorisiert die Kontoumsätze und aktualisiert die Daten in der Instanz.
+        Tagged und kategorisiert die Kontoumsätze.
 
         Args:
             iban            Name der Collection
@@ -280,70 +279,77 @@ class Tagger():
                             Reserviertes Keyword 'ai' führt nur das AI Tagging aus.
                             Default: Es werden alle Regeln des Benutzers ohne das
                             AI Tagging angewendet.
-            category:       Rulename will be used to load a category rule (default: False)
+            category_name:  UUID der anzuwendenden Kategorisierungsregel.
+                            Default: Es werden alle Regeln des Benutzers angewendet.
             dry_run:        Switch to show, which TX would be updated. Do not update.
                             Default: False
         Returns dict:
             - tagged (int): Summe aller erfolgreichen Taggings (0 bei dry_run)
-            - Regelname (dict):
-                - tagged (int): Anzahl der getaggten Datensätze (0 bei dry_run)
-                - entries (list): UUIDs die selektiert wurden (auch bei dry_run)
+            - categorized (int): Summe aller erfolgreichen Kategorisierungen (0 bei dry_run)
+            - entries (list): Betroffene UUIDs dieser Operation (auch bei dry_run)
         """
-        raise NotImplementedError("Function not finished yet !")
+        result = { 'tagged': 0, 'categorized': 0, 'entries': [] }
 
-        # RegEx Tagging (specific rule or all)
-        if rule_name == 'ai':
+        # Tagging Rules (specific rule or all - but not ai)
+        if rule_name != 'ai':
+
+            # Load specific tagging rule or all
+            tagging_rules = self._load_ruleset(rule_name=rule_name, categories=False)
+
+            # Log and Pre-Flightchecks
+            logging.debug(f"Regeln geladen: {tagging_rules}")
+            if not tagging_rules:
+                if rule_name:
+                    raise KeyError((f'Eine Regel mit dem Namen {rule_name} '
+                                    'konnte für den User nicht gefunden werden.'))
+
+                raise ValueError('Es existieren noch keine Regeln für den Benutzer')
+
+            # Start Tagging (loop until none found)
+            r = self.tag(tagging_rules, iban, dry_run=dry_run)
+            while r.get('tagged'):
+                result['tagged'] += r.get('tagged')
+                result['entries'].append(r.get('entries'))
+
+                if dry_run:
+                    # No recursion
+                    break
+
+                r = self.tag(tagging_rules, iban, dry_run=dry_run)
+
+        else:
             # AI only
-            return self.tag_ai(dry_run=dry_run)
+            result['tagged'], result['entries'] = self.tag_ai(iban, dry_run=dry_run)
 
-        # Benutzer Regeln laden
-        #TODO: Das laden einer Tagging- und einer Kategorisierungsregel erlauben
-        #      Ablauf muss ggf. bei Kat. übersprungen werden...
-        tagging_rules = self._load_ruleset(rule_name, categories=category)
-        logging.debug(f"Regeln geladen: {tagging_rules}")
-        if not tagging_rules:
-            if rule_name:
-                raise KeyError((f'Eine Regel mit dem Namen {rule_name} '
+        # Categorize Rules (specific or all)
+        cat_rules = self._load_ruleset(rule_name=category_name, categories=True)
+
+        # Log and Pre-Flightchecks
+        logging.debug(f"Cat-Regeln geladen: {cat_rules}")
+        if not cat_rules:
+            if category_name:
+                raise KeyError((f'Eine Cat-Regel mit dem Namen {category_name} '
                                 'konnte für den User nicht gefunden werden.'))
 
-            raise ValueError('Es existieren noch keine Regeln für den Benutzer')
+            raise ValueError('Es existieren noch keine Cat-Regeln für den Benutzer')
 
-        # Benutzer Regeln ignoriert alle autpomatischen Tags,
+        # Benutzer Regeln ignoriert alle automatischen Regeln,
         # setzt aber wieder nur seine eigene Prio.
-        if rule_name is not None:
-            prio_set = tagging_rules[rule_name].get('prioriry', prio)
+        prio = prio_set = None
+        if category_name is not None:
+            prio_set = cat_rules[category_name].get('prioriry')
             prio = 99
 
-        # Benutzer Regeln anwenden (Tag Loop + Category)
-        # - Tagging
-        tagging_rules = [r for r in rules if r.get('tags')]
-        r = self.tag(tagging_rules, iban, dry_run=dry_run)
-        result_rx = {
-            'categorized': 0,
-            'tagged': r.get('tagged'),
-            'entries': r.get('entries')
-        }
-        # (kein Loop bei dry_run, da keine DB Updates gemacht werden)
-        while r.get('tagged') and not dry_run:
-            result_rx['tagged'] += r.get('tagged')
-            result_rx['entries'] += r.get('entries')
+        # Kategorisierung wird einmal und nicht rekursiv durchgeführt
+        result['categorized'], more_entries = self.categorize(cat_rules, iban,
+                                                              prio, prio_set, dry_run)
+        result['entries'].append (more_entries)
 
-        # Final RegEx Tagging (Categories)
-        #TODO: Add new function: categorize
-        categorize_rules = self._load_ruleset(categories=True)
-        r = self.categorize(categorize_rules, iban, prio=prio,
-                            prio_set=prio_set, dry_run=dry_run)
-        result_rx['categorized'] += r.get('categorized')
-        result_rx['entries'] += r.get('entries') # duplicate entries are ok
-
-        # Guess empty TX with AI
-        result_ai = self.tag_ai(iban, dry_run=dry_run)
-
-        return {**result_rx, **result_ai}
+        return result
 
     def tag_or_cat_custom(self, iban: str, category: str = None, subcategory: str = None,
                           tags: list[str] = None, regex: str = None,
-                          parsed_keys: list = [], parsed_vals: list = [], multi: str ='AND',
+                          parsed_keys: list = None, parsed_vals: list = None, multi: str ='AND',
                           prio: int = 1, prio_set: int = None, dry_run: bool = False) -> dict:
         """Kategorisierung oder Tagging mit einer Custom Rule.
         Args:
@@ -369,8 +375,9 @@ class Tagger():
         Returns dict:
             - tagged (int): Summe aller erfolgreichen Taggings (0 bei dry_run)
             - categorized (int): Summe aller erfolgreichen Kategorisierungen (0 bei dry_run)
+            - entries (list): Betroffene UUIDs dieser Operation (auch bei dry_run)
         """
-        if len(parsed_keys) != len(parsed_vals):
+        if parsed_keys and parsed_vals and len(parsed_keys) != len(parsed_vals):
             msg = 'Parse-Keys and -Vals were submitted in unequal length !'
             logging.error(msg)
             return {'error': msg}, 400

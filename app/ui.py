@@ -397,7 +397,7 @@ class UserInterface():
 
     def _set_manual_tag(self, iban, t_id, data):
         """
-        Setzt manuell eine Kategorie für einen bestimmten Eintrag.
+        Setzt manuell eine Kategorie und/oder Tags für einen bestimmten Eintrag.
 
         Args:
             iban, str: IBAN
