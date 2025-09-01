@@ -39,7 +39,8 @@ class Tagger():
 
         return input_data
 
-    def categorize(self, rules, iban, prio, prio_set, dry_run):
+    def categorize(self, rules, iban: str = None,
+                   prio: int = 1, prio_set: int = None, dry_run: bool = False) -> dict:
         """
         Kategorisiert die Kontoumsätze anhand von hinterlegten Regeln je Kategorie.
 
@@ -57,30 +58,40 @@ class Tagger():
             - entries (list): UUIDs die selektiert wurden (auch bei dry_run)
         """
         result = { 'categorized': 0, 'entries': [] }
-        #TODO: Override prio / prio_set if given or use rule values instead
-        #TODO: Muss Änderungen in der Datenbank machen !
-        raise NotImplementedError("Function not finished yet !")
-
-        # Allgemeine Startfilter für die Condition
-        query_args = self._form_tag_query(prio, iban)
 
         for rule_name, rule in rules.items():
             logging.info(f"Kategorisierung mit Rule {rule_name}...")
 
-            # Updated Category
-            new_category = rule.get('category')
-            new_subcategory = rule.get('subcategory')
+            # Updated Category Object
+            new_categories = {}
 
-            if new_category is None:
+            if rule.get('category') is not None:
+                new_categories['category'] = rule.get('category')
+
+            if rule.get('subcategory') is not None:
+                new_categories['subcategory'] = rule.get('subcategory')
+
+            if not new_categories:
                 logging.warning(f"Rule '{rule_name}' hat keine Kategorie - skipping...")
                 continue
 
-            # Spezielle Conditions einer Rule
-            rule_args = copy.deepcopy(query_args)
+            if prio_set is not None:
+                new_categories['prio'] = prio_set
+            else:
+                new_categories['prio'] = rule.get('prio', prio)
+
+            # Allgemeiner Startfilter und spezielle Conditions einer Rule
+            if prio > 1:
+                # prio values override
+                query_args = self._form_tag_query(prio, iban)
+
+            else:
+                # use rule prio or default
+                query_args = self._form_tag_query(rule.get('prio', prio))
 
             # -- Add Text RegExes
             if rule.get('regex') is not None:
-                rule_args['condition'].append({
+                query_args['condition'].append({
                     'key': 'text_tx',
                     'value': rule.get('regex'),
                     'compare': 'regex'
@@ -88,7 +99,7 @@ class Tagger():
 
             # -- Add Tags (as criteria)
             if rule.get('tags') is not None:
-                rule_args['condition'].append({
+                query_args['condition'].append({
                     'key': 'tags',
                     'value': rule.get('tags'),
                     'compare': 'in'
@@ -101,11 +112,51 @@ class Tagger():
                 multi = parsed_condition.get('multi', 'AND')
 
                 for key, val in parsed_condition.get('query', {}).items():
-                    rule_args['condition'].append({
+                    query_args['condition'].append({
                         'key': {'parsed': key},
                         'value': val,
                         'compare': 'regex'
                     })
+
+            # Dry Run first (store results)
+            logging.debug(f"Query Args: {query_args.get('condition')}")
+            matched = self.db_handler.select(
+                collection=query_args.get('collection'),
+                condition=query_args.get('condition'),
+                multi=multi
+            )
+
+            # Nothing to update
+            if not matched:
+                logging.info(f"Rule '{rule_name}' trifft nichts.")
+                continue
+
+            # Create updated Data and get UUIDs
+            for row in matched:
+
+                # UUIDs
+                uuid = row.get('uuid')
+                if uuid is None:
+                    raise ValueError(f'The following data in the DB has no UUID ! - {row}')
+
+                result['entries'].append(uuid)
+
+                # Update Request / Dry run
+                if dry_run:
+                    continue
+
+                query = {'key': 'uuid', 'value': uuid}
+                updated = self.db_handler.update(data=new_categories, condition=query)
+
+                # soft Exception Handling
+                if not updated:
+                    logging.error((f"Bei Rule '{rule_name}' konnte der Eintrag "
+                                    f"'{uuid}' nicht geupdated werden - skipping..."))
+                    continue
+
+                result['categorized'] += updated.get('updated')
+
+            return result
 
     def tag(self, ruleset: dict, collection: str=None, dry_run: bool=False) -> dict:
         """
