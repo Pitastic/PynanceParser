@@ -109,7 +109,7 @@ class Tagger():
 
     def tag(self, ruleset: dict, collection: str=None, dry_run: bool=False) -> dict:
         """
-        Automatische Kategorisierung anhand von hinterlegten RegExes je Kategorie.
+        Tagged Transaktionen anhand von Regeln in der Datenbank.
 
         Args:
             ruleset:         Named rules to be applied on users transactions
@@ -121,8 +121,7 @@ class Tagger():
             - tagged (int): Summe aller erfolgreichen Taggings (0 bei dry_run)
             - entries (list): UUIDs die selektiert wurden (auch bei dry_run)
         """
-        #TODO: Muss Änderungen in der Datenbank machen !
-        raise NotImplementedError("Function not finished yet !")
+        #raise NotImplementedError("Function not finished yet !")
         result = { 'tagged': 0, 'entries': [] }
 
         # Allgemeine Startfilter für die Condition (ignore Prio bei Tagging)
@@ -130,9 +129,6 @@ class Tagger():
 
         for rule_name, rule in ruleset.items():
             logging.info(f"RegEx Tagging mit Rule {rule_name}...")
-
-            # Updated Category
-            new_tags = rule.get('tags', [])
 
             # Spezielle Conditions einer Rule
             rule_args = copy.deepcopy(query_args)
@@ -170,6 +166,9 @@ class Tagger():
             if not matched:
                 logging.info(f"Rule '{rule_name}' trifft nichts.")
                 continue
+
+            # Tags to set when matched
+            new_tags = rule.get('tags', [])
 
             # Create updated Data and get UUIDs
             for row in matched:
@@ -271,7 +270,7 @@ class Tagger():
     def tag_and_cat(self, iban: str, rule_name: str = None, category_name: str = None,
                     dry_run: bool = False) -> dict:
         """
-        Tagged und kategorisiert die Kontoumsätze.
+        Tagged und kategorisiert die Kontoumsätze, indem Unterfunktionen aufgerufen werden.
 
         Args:
             iban            Name der Collection
@@ -306,16 +305,7 @@ class Tagger():
                 raise ValueError('Es existieren noch keine Regeln für den Benutzer')
 
             # Start Tagging (loop until none found)
-            r = self.tag(tagging_rules, iban, dry_run=dry_run)
-            while r.get('tagged'):
-                result['tagged'] += r.get('tagged')
-                result['entries'].append(r.get('entries'))
-
-                if dry_run:
-                    # No recursion
-                    break
-
-                r = self.tag(tagging_rules, iban, dry_run=dry_run)
+            result['tagged'], result['entries'] =  self.tag(tagging_rules, iban, dry_run=dry_run)
 
         else:
             # AI only
