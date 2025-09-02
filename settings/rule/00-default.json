@@ -1,22 +1,39 @@
 [
     {
+        "metatype": "category",
         "name": "Supermarkets",
-        "metatype": "rule",
         "category": "Lebenserhaltungskosten",
-        "subcategory": "Supermarkt",
-        "tags": ["Lebensmittel"],
-        "regex": "(EDEKA|Wucherpfennig|Penny|Aldi|Kaufland|netto)"
+        "subcategory": "Essen",
+        "tags": {
+            "tags": ["Lebensmittel"],
+            "compare": "in"
+        }
     }, {
+        "metatype": "category",
         "name": "City Tax",
-        "metatype": "rule",
-        "category": "Haus und Grund",
-        "subcategory": "Abgaben",
-        "tags": ["Stadt"],
+        "category": "Öffentliche Ausgaben",
+        "subcategory": "Steuer & Stadtabgaben",
+        "tags": {
+            "tags": ["Stadt"],
+            "compare": "in"
+        },
         "parsed": {
-            "multi": "AND",
+            "multi": "OR",
             "query": {
                 "Gläubiger-ID": "DE7000100000077777"
             }
         }
+    },
+    {
+        "metatype": "rule",
+        "name": "City Tax",
+        "regex": "(ABGABEN\\sLT\\.\\sBESCHEID)",
+        "tags": ["Stadt"]
+    },
+    {
+        "metatype": "rule",
+        "name": "Supermarkets",
+        "regex": "(EDEKA|Wucherpfennig|Penny|Aldi|Kaufland|netto)",
+        "tags": ["Lebensmittel"]
     }
 ]

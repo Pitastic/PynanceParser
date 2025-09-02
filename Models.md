@@ -54,6 +54,13 @@
 }
 ```
 
+## Parsing Objects
+
+-- TODO:
+
+Der Regex muss genau eine Gruppe treffen.
+
+
 ## Rule Objects
 
 ```
@@ -72,12 +79,15 @@
     )
     'category': str | None,
     'subcategory': str | None,
-    'tags': list | dict | None,
-    'prioriry': int
+    'tags': list | None | dict(
+        'tags': list,
+        'compare': str
+    ),
+    'prioriry': int | None
 }
 ```
 
-Regeln können Attribute einer Transaktion untersuchen und anhand dessen klassifizieren oder taggen. Bei den Regeln zum Tagging können auch zuvor geparste Informationen zählen; bei den Regeln zum Kategorisieren zusätzlich auch bereits gesetzte Tags einer Transaktion. Beide Typen unterscheiden sich in der Angabe beim Schlüssel `metatype`, sind aber sonst sehr ähnlich. Persistente Regeln werden als `json` im Ordner `settings/rule` abgelegt. Die Nummerierung im Dateinamen gibt die Lade-Reihenfolge an. Später geladene Regeln können frühere überschreiben.
+Regeln können Attribute einer Transaktion untersuchen und anhand dessen klassifizieren oder taggen. Bei den Regeln zum Tagging können auch zuvor geparste Informationen zählen; bei den Regeln zum Kategorisieren zusätzlich auch bereits gesetzte Tags einer Transaktion. Beide Typen unterscheiden sich in der Angabe beim Schlüssel `metatype`, sind aber sonst sehr ähnlich. Persistente Regeln werden als `json` im Ordner `settings/rule` abgelegt. Die Nummerierung im Dateinamen gibt die Lade-Reihenfolge an. Später geladene Regeln mit gleichem Namen können frühere überschreiben.
 
 ### Schlüssel dieses Objektes
 
@@ -95,7 +105,7 @@ Frei wählbarer Name der Regel.
 
 #### .regex, r-str (optional)
 
-Regex String, der auf den Buchungstext angewendet werden soll. Dabei muss immer genau eine Treffergruppe definiert werden.
+Regex String, der auf den Buchungstext angewendet werden soll. Ein Teil-Treffer des RegExes wird als Treffer gewertet.
 
 #### .parsed, dict (optional)
 
