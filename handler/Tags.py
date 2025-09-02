@@ -633,7 +633,7 @@ class Tagger():
         Returns:
             dict: Verzeichnis nach Namen der Filterregeln
         """
-        rule_type = "rule" if categories else "category"
+        rule_type = "category" if categories else "rule"
         if rule_name:
             # Bestimmte Regel laden
             raw_rule = self.db_handler.filter_metadata(

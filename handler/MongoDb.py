@@ -45,23 +45,25 @@ class MongoDbHandler(BaseDb):
                 [("uuid", pymongo.TEXT)], unique=True
             )
 
-    def _select(self, collection=None, condition=None, multi='AND'):
+    def _select(self, collection: list, condition=None, multi='AND'):
         """
         Selektiert Datensätze aus der Datenbank, die die angegebene Bedingung erfüllen.
 
         Args:
-            collection (list, optional): Name der Collection oder Liste von Collections,
-                                         deren Werte selecktiert werden sollen.
-                                         Default: IBAN aus der Config.
-            condition (dict | list(dict)): Bedingung als Dictionary
-                - 'key', str    : Spalten- oder Schlüsselname,
-                - 'value', any  : Wert der bei 'key' verglichen werden soll
-                - 'compare', str: (optional, default '==')
-                    - '[==, !=, <, >, <=, >=]': Wert asu DB [compare] value
-                    - 'like'    : Wert aus DB == *value* (case insensitive)
-                    - 'regex'   : value wird als RegEx behandelt
-            multi (str) : ['AND' | 'OR'] Wenn 'condition' eine Liste mit conditions ist,
-                          werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
+            collection, list:               Name der Collection oder Liste von Collections,
+                                            deren Werte selecktiert werden sollen.
+                                            Default: IBAN aus der Config.
+            condition (dict | list(dict)):  Bedingung als Dictionary
+                - 'key', str:               Spalten- oder Schlüsselname,
+                - 'value', str|int|list:    Wert der bei 'key' verglichen werden soll
+                - 'compare', str:           (optional, default '==')
+                    - '[==, !=, <, >, <=, >=, in, notin, all]':
+                                            Wert aus DB [compare] value (Operatoren, siehe Models.md)
+                    - 'like':               Wert aus DB == *value* (case insensitive)
+                    - 'regex':              value wird als RegEx behandelt
+            multi, str ['AND' | 'OR']:      Wenn 'condition' eine Liste mit conditions ist,
+                                            werden diese logisch wie hier angegeben verknüpft.
+                                            Default: 'AND'
         Returns:
             list: Liste der ausgewählten Datensätze
         """
@@ -283,7 +285,13 @@ class MongoDbHandler(BaseDb):
             stmt = {'$gt': condition.get('value')}
         if condition_method == '<':
             stmt = {'$lt': condition.get('value')}
-
+        if condition_method == 'in':
+            stmt = {'$in': condition.get('value')}
+        if condition_method == 'notin':
+            stmt = {'$nin': condition.get('value')}
+        if condition_method == 'all':
+            stmt = {'$all': condition.get('value')}
+            
         # Nested or Plain Key
         condition_key = condition.get('key')
         if isinstance(condition_key, dict):
