@@ -1,57 +1,6 @@
-## Models
+# Models
 
-### Datenbankeintrag für eine Transaktion
-
-```
-{
-    'uuid': str,            # (generated)
-    'date_tx': int,         # (UTC)
-    'text_tx': str,
-    'betrag': float,
-    'iban': str,
-
-    ----------- optional -----------
-
-    'date_wert': int ,      # (UTC)
-    'art': str,
-    'currency': str,
-    'parsed': dict( str: str )
-    'category': str,
-    'subcategory': str,
-    'tags': list[str],
-    'priority': int,
-}
-```
-
-### Metadaten
-
-#### Dictionary eines Rulesets (Tag/Parse)
-
-Regeln können Attribute einer Transaktion untersuchen und anhand dessen klassifizieren oder taggen. Zu den Werten kann nicht die primäre Kategorie zählen, wohl aber andere Tags, parsing Informationen oder Regexes auf den Buchungstext (und mehr).
-
-```
-{
-    'uuid': str             # (generated)
-    'metatype': str         # (config|rule|parser)
-    'name': str,
-    'regex': r-str( RegEx ),
-
-    -------- Zusatz bei Rules -------
-
-    'category': str | None,
-    'tags': list[str] | None,
-
-    . . . . . . . optional . . . . . .
-
-    'prioriry': int,
-    'parsed': dict(
-        'multi': str,       # (AND|OR)
-        'query': dict       # (key=Name, val=Value)
-    )
-}
-```
-
-#### Dictionary einer Config
+## Dictionary einer Config
 
 ```
 {
@@ -82,25 +31,51 @@ Regeln können Attribute einer Transaktion untersuchen und anhand dessen klassif
 }
 ```
 
-## Handling von Prioritäten
+## Datenbankeintrag für eine Transaktion
 
-Die Priorität wird zwischen 0 und 100 automatisch gesetzt, kann aber auch abgegen werden. 0 ist unwichtig, 100 ist wichtig.
+```
+{
+    'uuid': str,            # (generated)
+    'date_tx': int,         # (UTC)
+    'text_tx': str,
+    'betrag': float,
+    'iban': str,
 
-Beim Tagging werden nur Einträge selektiert, die eine niedrigere Priorität haben als die akutelle Regel.
+    ----------- optional -----------
 
-Es wird beim Taggen entweder die Priorität 1 (automatisches Taggen), die der Regel gesetzt (wenn diese höher ist) oder die explizit übermittelte. Ausnahmen sind:
-
-- Das manuelle Taggen: Hier wird immer eine Priorität von 99 gesetzt.
-- Das automatische Tagging mit einer explizit angegebenen Regel: Hier werden Einträge < 99 selektiert und überschrieben, dann aber wieder die Priorät der Regel (oder 1) gesetzt.
-
-
-
-------
-
-Tags als Filter werden immer ODER verknüpft. Es reicht also, wenn mindestens ein Tag der Liste vorhanden ist (Keyword `in`). Sollen alle Tags enthalten sein, muss der Operator `all` heißen. Soll keines enthalten sein, muss der Operator `notin` sein.
-
+    'date_wert': int ,      # (UTC)
+    'art': str,
+    'currency': str,
+    'parsed': dict( str: str )
+    'category': str,
+    'subcategory': str,
+    'tags': list[str],
+    'priority': int,
+}
+```
 
 ## Rule Objects
+
+```
+{
+    'uuid': str
+    'metatype': str
+    'name': str,
+    'regex': r-str(RegEx),
+    'parsed': dict(
+        'multi': str,
+        'query': dict(
+            'key': str,
+            'value': int, str, bool, list,
+            'compare': str
+        )
+    )
+    'category': str | None,
+    'subcategory': str | None,
+    'tags': list | dict | None,
+    'prioriry': int
+}
+```
 
 Regeln können Attribute einer Transaktion untersuchen und anhand dessen klassifizieren oder taggen. Bei den Regeln zum Tagging können auch zuvor geparste Informationen zählen; bei den Regeln zum Kategorisieren zusätzlich auch bereits gesetzte Tags einer Transaktion. Beide Typen unterscheiden sich in der Angabe beim Schlüssel `metatype`, sind aber sonst sehr ähnlich. Persistente Regeln werden als `json` im Ordner `settings/rule` abgelegt. Die Nummerierung im Dateinamen gibt die Lade-Reihenfolge an. Später geladene Regeln können frühere überschreiben.
 
@@ -148,11 +123,36 @@ $compare
 .parsed.query.value
 ```
 
-TODO: Ergänzen
+Dabei haben die Operatoren folgende Bedeutung:
 
-#### .tags, list (nur bei metatype: `rule`)
+- `==` : Die Werte müssen exakt gleich sein (default).
+- `!=` : Die Werte müssen ungleich sein.
+- `<` : Der Wert in der Datenbank muss kleiner sein als der Vergleichswert.
+- `>` : Der Wert in der Datenbank muss größer sein als der Vergleichswert.
+- `<=` : Der Wert in der Datenbank muss kleiner oder gleich sein wie der Vergleichswert.
+- `>=` : Der Wert in der Datenbank muss größer oder gleich sein wie der Vergleichswert.
+- `in`: Mindestens ein Wert der Vergleichsliste muss in dem Listenwert aus der Datenbank vorkommen.
+- `all`: Alle Werte der Vergleichsliste müssen in dem Listenwert aus der Datenbank vorkommen.
+- `notin`: Kein Wert der Vergleichsliste darf in dem Listenwert aus der Datenbank vorkommen.
 
-Liste mit Tags, die bei getroffene Einträge hinzugefügt werden.
+#### .tags, list | dict (optional bei metatype: `category`)
+
+Dieser Schlüssel wird je nach `metatype` unterschiedlich gehandhabt:
+
+- `rule` : Liste mit Tags, die bei getroffene Einträge hinzugefügt werden.
+- `category`: Dictionary, welches als Filterargument hinzugefügt wird.
+
+#### .tags.tags, list (nur bei metatype: `category`)
+
+Liste von Tags, die abgeglichen werden soll.
+
+#### .tags.compare, str (`in` | `notin` | `all`) (nur bei metatype: `category`) (optional)
+
+Art des Listenabgleichs:
+
+- `in`: Mindestens ein Tag der Liste muss in einem Eintrag vorhanden sein (default).
+- `all`: Alle Tags müssen bei einem Eintrag vorhanden sein.
+- `notin`: Es darf kein Eintrag der Liste in einem Eintra vorhanden sein.
 
 #### .category, str (nur bei metatype: `category`)
 
@@ -165,3 +165,5 @@ Name der Sekundärkategorie, die bei einem Treffer für den Eintrag gesetzt werd
 #### .priority, int (nur bei metatype: `category`)
 
 Priorität der Regel. Eine höhere Priorität (größere Zahl) überschreibt zuvor gesetzt Kategorien mit einer niedrigeren Priorität.
+
+Ein manuelles Kategorisieren hat immer die höchste Priorität.

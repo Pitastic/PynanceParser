@@ -99,10 +99,11 @@ class Tagger():
 
             # -- Add Tags (as criteria)
             if rule.get('tags') is not None:
+                tag_rule = rule.get('tags', {})
                 query_args['condition'].append({
                     'key': 'tags',
-                    'value': rule.get('tags'),
-                    'compare': 'in'
+                    'value': tag_rule.get('tags', []),
+                    'compare': tag_rule.get('compare', 'in')
                 })
 
             # -- Add Parsed Values
