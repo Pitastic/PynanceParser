@@ -90,6 +90,7 @@ class Tagger():
                 query_args = self._form_tag_query(rule.get('prio', prio))
 
             # -- Add Text RegExes
+            #TODO: Ersetzen mit Filters (auch in DOku)
             if rule.get('regex') is not None:
                 query_args['condition'].append({
                     'key': 'text_tx',
@@ -97,14 +98,10 @@ class Tagger():
                     'compare': 'regex'
                 })
 
-            # -- Add Tags (as criteria)
-            if rule.get('tags') is not None:
-                tag_rule = rule.get('tags', {})
-                query_args['condition'].append({
-                    'key': 'tags',
-                    'value': tag_rule.get('tags', []),
-                    'compare': tag_rule.get('compare', 'in')
-                })
+            # -- Add all Filters
+            for f in rule.get('filter', []):
+                f['compare'] = f.get('compare', '==')
+                query_args['condition'].append(f)
 
             # -- Add Parsed Values
             if rule.get('parsed') is not None:
@@ -114,7 +111,7 @@ class Tagger():
                     query_args['condition'].append({
                         'key': {'parsed': key},
                         'value': val,
-                        'compare': 'regex'
+                        'compare': '=='
                     })
 
             # Multi AND/OR for all conditions
@@ -187,12 +184,18 @@ class Tagger():
             rule_args = copy.deepcopy(query_args)
 
             # -- Add Text RegExes
+            #TODO: Ersetzen mit Filters (auch in DOku)
             if rule.get('regex') is not None:
                 rule_args['condition'].append({
                     'key': 'text_tx',
                     'value': rule.get('regex'),
                     'compare': 'regex'
                 })
+
+            # -- Add all Filters
+            for f in rule.get('filter', []):
+                f['compare'] = f.get('compare', '==')
+                query_args['condition'].append(f)
 
             # -- Add Parsed Values
             if rule.get('parsed') is not None:
@@ -202,7 +205,7 @@ class Tagger():
                     rule_args['condition'].append({
                         'key': {'parsed': key},
                         'value': val,
-                        'compare': 'regex'
+                        'compare': '=='
                     })
 
             # Multi AND/OR for all conditions
@@ -392,7 +395,7 @@ class Tagger():
         return result
 
     def tag_or_cat_custom(self, iban: str, category: str = None, subcategory: str = None,
-                          tags: list[str] = None, regex: str = None,
+                          tags: list[str] = None, filters: list = None,
                           parsed_keys: list = None, parsed_vals: list = None, multi: str ='AND',
                           prio: int = 1, prio_set: int = None, dry_run: bool = False) -> dict:
         """Kategorisierung oder Tagging mit einer Custom Rule.
@@ -401,9 +404,7 @@ class Tagger():
             category:       Name der zu setzenden Primärkategory.
             subcategory:    Name der zu setzenden Sekundärkategorie.
             tags:           Liste der zu setzenden Tags.
-            tags_multi:     Logische Verknüpfung der Tags (AND|OR).
-                            Default: AND
-            regex:          Regulärer Ausdrück für die Suche im Transaktionstext.
+            filters:        Liste mit Regelsätzen (dict)
             parsed_keys:    Liste mit Keys zur Prüfung in geparsten Daten.
             parsed_vals:    Liste mit Values zur Prüfung in geparsten Daten.
             multi:          Logische Verknüpfung der Kriterien (AND|OR).
@@ -449,14 +450,11 @@ class Tagger():
             # Set Tags: Prio does not matter (tags to set will be uniqued later)
             query_args = self._form_tag_query(99, iban)
 
-
-        # Add RegEx
-        if regex is not None:
-            query_args['condition'].append({
-                'key': 'text_tx',
-                'value': regex,
-                'compare': 'regex'
-            })
+        # Add all Filters
+        filters = [] if filters is None else filters
+        for f in filters.get('filter', []):
+            f['compare'] = f.get('compare', '==')
+            query_args['condition'].append(f)
 
         # Add Parsed Filters
         for i, parse_key in enumerate(parsed_keys):
