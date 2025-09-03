@@ -50,17 +50,19 @@ class TinyDbHandler(BaseDb):
         Selektiert Datensätze aus der Datenbank, die die angegebene Bedingung erfüllen.
 
         Args:
-            collection (list):  Name der Collection oder Liste von Collections,
-                                deren Werte selecktiert werden sollen.
+            collection, list:               Name der Collection oder Liste von Collections,
+                                            deren Werte selecktiert werden sollen.
             condition (dict | list(dicts)): Bedingung als Dictionary
-                - 'key', str    : Spalten- oder Schlüsselname,
-                - 'value', any  : Wert der bei 'key' verglichen werden soll
-                - 'compare', str: (optional, default '==')
-                    - '[==, !=, <, >, <=, >=]': Wert asu DB [compare] value
-                    - 'like'    : Wert aus DB == *value* (case insensitive)
-                    - 'regex'   : value wird als RegEx behandelt
-            multi (str) : ['AND' | 'OR'] Wenn 'condition' eine Liste mit conditions ist,
-                          werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
+                - 'key', str    :           Spalten- oder Schlüsselname,
+                - 'value', str|int|list:    Wert der bei 'key' verglichen werden soll
+                - 'compare', str:           (optional, default '==')
+                    - '[==, !=, <, >, <=, >=, in, notin, all]':
+                                            Wert asu DB [compare] value (Operatoren, siehe Models.md)
+                    - 'like':               Wert aus DB == *value* (case insensitive)
+                    - 'regex':              value wird als RegEx behandelt
+            multi, str ['AND' | 'OR']:      Wenn 'condition' eine Liste mit conditions ist,
+                                            werden diese logisch wie hier angegeben verknüpft.
+                                            Default: 'AND'
         Returns:
             list: Liste der ausgewählten Datensätze
         """
@@ -330,6 +332,12 @@ class TinyDbHandler(BaseDb):
             where_statement = where_statement > condition_val
         if condition_method == '<':
             where_statement = where_statement < condition_val
+        if condition_method == 'in':
+            where_statement = where_statement.one_of(condition_val)
+        if condition_method == 'notin':
+            where_statement = where_statement.none_of(condition_val)
+        if condition_method == 'all':
+            where_statement = where_statement.all(condition_val)
 
         return where_statement
 

@@ -310,7 +310,7 @@ class UserInterface():
                 Returns:
                     json: Informationen zum Ergebnis des Taggings.
                 """
-                return self.tagger.tag(iban, **request.json)
+                return self.tagger.tag_and_cat(iban, **request.json)
 
             @current_app.route('/api/setManualTag/<iban>/<t_id>', methods=['PUT'])
             def setManualTag(iban, t_id):
@@ -397,7 +397,7 @@ class UserInterface():
 
     def _set_manual_tag(self, iban, t_id, data):
         """
-        Setzt manuell eine Kategorie für einen bestimmten Eintrag.
+        Setzt manuell eine Kategorie und/oder Tags für einen bestimmten Eintrag.
 
         Args:
             iban, str: IBAN
