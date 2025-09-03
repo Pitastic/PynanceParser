@@ -4,24 +4,24 @@
         "name": "Supermarkets",
         "category": "Lebenserhaltungskosten",
         "subcategory": "Essen",
-        "tags": {
-            "tags": ["Lebensmittel"],
+        "filter": [{
+            "key": "tags",
+            "value": ["Lebensmittel"],
             "compare": "in"
-        }
+        }]
     }, {
         "metatype": "category",
         "name": "City Tax",
         "category": "Öffentliche Ausgaben",
         "subcategory": "Steuer & Stadtabgaben",
-        "tags": {
-            "tags": ["Stadt"],
+        "multi": "OR",
+        "filter": [{
+            "key": "tags",
+            "value": ["Stadt"],
             "compare": "in"
-        },
+        }],
         "parsed": {
-            "multi": "OR",
-            "query": {
-                "Gläubiger-ID": "DE7000100000077777"
-            }
+            "Gläubiger-ID": "DE7000100000077777"
         }
     },
     {

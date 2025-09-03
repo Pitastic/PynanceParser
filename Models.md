@@ -56,33 +56,49 @@
 
 ## Parsing Objects
 
--- TODO:
+Beim Import eines Kontoauszugs werden die Transaktionen in ihre Grunddaten zerlegt und in einer Datenbankgespeichert. Das Parsing erkennt nach bestimmten Regeln Informationen, die sich aus den Rohdaten ergeben und reichert damit den Informationsgehalt der einzelnen Transaktion an.
 
-Der Regex muss genau eine Gruppe treffen.
+Bei jeder Regex-Regel gilt, dass der Ausdruck genau eine Matching-Group ergeben muss, deren Informationen als Wert des Parsings übernommen wird.
 
+```
+{
+    'metatype': str,
+    'name': str,
+    'regex': r-str(RegEx)
+}
+```
+
+#### .metatype, str (`parser`)
+
+Klassifiziert das Objekt als Regel für das Parsing.
+
+#### .name, str
+
+Frei wählbarer Name der Regel.
+
+#### .regex, r-str (optional)
+
+Regex String, der auf den Buchungstext angewendet werden soll. Er muss genau eine Matching-Group enthalten. Der Wert dieses Treffers (der Gruppe) wird als Wert mit dem Namen der Regel in der Transaktion als Ergebnis gespeichert.
 
 ## Rule Objects
 
 ```
 {
-    'uuid': str
     'metatype': str
     'name': str,
     'regex': r-str(RegEx),
+    'multi': str,
     'parsed': dict(
-        'multi': str,
-        'query': dict(
-            'key': str,
-            'value': int, str, bool, list,
-            'compare': str
-        )
+        key, str | int : value str | int | bool | list
     )
+    'filter': list( dict(
+        'key': str,
+        'value': int, str, bool, list,
+        'compare': str
+    ) )
     'category': str | None,
     'subcategory': str | None,
-    'tags': list | None | dict(
-        'tags': list,
-        'compare': str
-    ),
+    'tags': list,
     'prioriry': int | None
 }
 ```
@@ -90,10 +106,6 @@ Der Regex muss genau eine Gruppe treffen.
 Regeln können Attribute einer Transaktion untersuchen und anhand dessen klassifizieren oder taggen. Bei den Regeln zum Tagging können auch zuvor geparste Informationen zählen; bei den Regeln zum Kategorisieren zusätzlich auch bereits gesetzte Tags einer Transaktion. Beide Typen unterscheiden sich in der Angabe beim Schlüssel `metatype`, sind aber sonst sehr ähnlich. Persistente Regeln werden als `json` im Ordner `settings/rule` abgelegt. Die Nummerierung im Dateinamen gibt die Lade-Reihenfolge an. Später geladene Regeln mit gleichem Namen können frühere überschreiben.
 
 ### Schlüssel dieses Objektes
-
-#### .uuid, str
-
-Generierte Zeichenkette zur eindeutigen Identifizierung des Eintrags.
 
 #### .metatype, str (`rule` | `category`)
 
@@ -107,30 +119,38 @@ Frei wählbarer Name der Regel.
 
 Regex String, der auf den Buchungstext angewendet werden soll. Ein Teil-Treffer des RegExes wird als Treffer gewertet.
 
+##### .multi, str (`AND` | `OR`)
+
+Art der Verkettung der Filter. Ohne diese Angabe wird der Default `AND` gewählt. Wird hier `OR` angegeben, werden alle Filter (`regex`, `filter`, `parsed`-keys) mit `OR` verknüpft.
+
 #### .parsed, dict (optional)
 
-Dictionary mit Argumenten zum durchsuchen von geparsten Werten einer Transaktion:
+Ein Dictionary, bei dem der `key` der Bezeichner für den geparsten Wert einer Transaktion unter `.parsed.$WERT` ist, der mit dem `value` abgeglichen wird.
 
-##### .parsed.multi, str (`AND` | `OR`)
-
-Art der Verkettung der Filter. Ohne diese Angabe oder ohne das `parsed` Objekt wird der Default `AND` gewählt. Wird hier `OR` angegeben, werden alle Filter (`regex`, `tags`, `parsed`-keys) mit `OR` verknüpft.
-
-##### .parsed.query.key, str, int
+##### .parsed[].key, str, int
 
 Die Bezeichnung (Schlüssel) des Werts, der geprüft werden soll.
 
-##### .parsed.query.value, str | int | bool | list
+#### filter, list (optional)
+
+Liste mit Dictionaryies, die Argumenten zum durchsuchen von allgemeinen Werten einer Transaktion enthalten.
+
+##### filter[].key, str | int
+
+Die Bezeichnung (Schlüssel) des Werts, der geprüft werden soll. `key` kann hier jeder Bezeichner sein, der in der ersten Ebene des Transaktionsobjektes vorkommen könnte. Ausgenommen sind hier die `parsed` Werte, für die es ja aber dafür eine eigene Filterangabe gibt.
+
+#### filter[].value, str | int | bool | list
 
 Der Wert, mit dem der Wert aus der Datenbank abgeglichen werden soll.
 
-##### .parsed.query.compare, str (`==` | `!=` | `<` | `>` | `<=` | `>=` | `in` | `notin` | `all`)
+#### filter[].compare, str (`==` | `!=` | `<` | `>` | `<=` | `>=` | `in` | `notin` | `all`)
 
 Art des Vergleichs:
 
 ```
-Wert-aus-DB von .parsed.query.key
+Wert-aus-DB von rule.key
 $compare
-.parsed.query.value
+rule.value
 ```
 
 Dabei haben die Operatoren folgende Bedeutung:
@@ -145,24 +165,9 @@ Dabei haben die Operatoren folgende Bedeutung:
 - `all`: Alle Werte der Vergleichsliste müssen in dem Listenwert aus der Datenbank vorkommen.
 - `notin`: Kein Wert der Vergleichsliste darf in dem Listenwert aus der Datenbank vorkommen.
 
-#### .tags, list | dict (optional bei metatype: `category`)
+#### .tags, list (nur bei metatype: `rule`)
 
-Dieser Schlüssel wird je nach `metatype` unterschiedlich gehandhabt:
-
-- `rule` : Liste mit Tags, die bei getroffene Einträge hinzugefügt werden.
-- `category`: Dictionary, welches als Filterargument hinzugefügt wird.
-
-#### .tags.tags, list (nur bei metatype: `category`)
-
-Liste von Tags, die abgeglichen werden soll.
-
-#### .tags.compare, str (`in` | `notin` | `all`) (nur bei metatype: `category`) (optional)
-
-Art des Listenabgleichs:
-
-- `in`: Mindestens ein Tag der Liste muss in einem Eintrag vorhanden sein (default).
-- `all`: Alle Tags müssen bei einem Eintrag vorhanden sein.
-- `notin`: Es darf kein Eintrag der Liste in einem Eintra vorhanden sein.
+Liste mit Tags, die bei getroffene Einträge hinzugefügt werden.
 
 #### .category, str (nur bei metatype: `category`)
 

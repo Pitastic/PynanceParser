@@ -107,10 +107,8 @@ class Tagger():
                 })
 
             # -- Add Parsed Values
-            multi = 'AND'
             if rule.get('parsed') is not None:
                 parsed_condition = rule.get('parsed')
-                multi = parsed_condition.get('multi', 'AND')
 
                 for key, val in parsed_condition.get('query', {}).items():
                     query_args['condition'].append({
@@ -118,6 +116,9 @@ class Tagger():
                         'value': val,
                         'compare': 'regex'
                     })
+
+            # Multi AND/OR for all conditions
+            multi = rule.get('multi', 'AND')
 
             # Dry Run first (store results)
             logging.debug(f"Query Args: {query_args.get('condition')}")
@@ -194,10 +195,8 @@ class Tagger():
                 })
 
             # -- Add Parsed Values
-            multi = 'AND'
             if rule.get('parsed') is not None:
                 parsed_condition = rule.get('parsed')
-                multi = parsed_condition.get('multi', 'AND')
 
                 for key, val in parsed_condition.get('query', {}).items():
                     rule_args['condition'].append({
@@ -205,6 +204,9 @@ class Tagger():
                         'value': val,
                         'compare': 'regex'
                     })
+
+            # Multi AND/OR for all conditions
+            multi = rule.get('multi', 'AND')
 
             # Dry Run first (store results)
             logging.debug(f"Query Args: {rule_args.get('condition')}")
