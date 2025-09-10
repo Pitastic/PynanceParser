@@ -5,6 +5,7 @@ import os
 import copy
 import operator
 import logging
+import re
 from tinydb import TinyDB, Query, where
 from flask import current_app
 
@@ -308,6 +309,7 @@ class TinyDbHandler(BaseDb):
 
         # RegEx Suche
         if condition_method == 'regex':
+            condition_val = re.compile(condition_val)
             where_statement = where_statement.search(condition_val)
             return where_statement
 

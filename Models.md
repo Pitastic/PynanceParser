@@ -86,7 +86,6 @@ Regex String, der auf den Buchungstext angewendet werden soll. Er muss genau ein
 {
     'metatype': str
     'name': str,
-    'regex': r-str(RegEx),
     'multi': str,
     'parsed': dict(
         key, str | int : value str | int | bool | list
@@ -115,10 +114,6 @@ Klassifiziert das Objekt als Regel für das Tagging oder zur Kategorisierung. Ei
 
 Frei wählbarer Name der Regel.
 
-#### .regex, r-str (optional)
-
-Regex String, der auf den Buchungstext angewendet werden soll. Ein Teil-Treffer des RegExes wird als Treffer gewertet.
-
 ##### .multi, str (`AND` | `OR`)
 
 Art der Verkettung der Filter. Ohne diese Angabe wird der Default `AND` gewählt. Wird hier `OR` angegeben, werden alle Filter (`regex`, `filter`, `parsed`-keys) mit `OR` verknüpft.
@@ -143,7 +138,7 @@ Die Bezeichnung (Schlüssel) des Werts, der geprüft werden soll. `key` kann hie
 
 Der Wert, mit dem der Wert aus der Datenbank abgeglichen werden soll.
 
-#### filter[].compare, str (`==` | `!=` | `<` | `>` | `<=` | `>=` | `in` | `notin` | `all`)
+#### filter[].compare, str (`==` | `!=` | `<` | `>` | `<=` | `>=` | `in` | `notin` | `all` | `regex`)
 
 Art des Vergleichs:
 
@@ -164,6 +159,7 @@ Dabei haben die Operatoren folgende Bedeutung:
 - `in`: Mindestens ein Wert der Vergleichsliste muss in dem Listenwert aus der Datenbank vorkommen.
 - `all`: Alle Werte der Vergleichsliste müssen in dem Listenwert aus der Datenbank vorkommen.
 - `notin`: Kein Wert der Vergleichsliste darf in dem Listenwert aus der Datenbank vorkommen.
+- `regex`: Regex String, der auf den Buchungstext angewendet werden soll. Ein Teil-Treffer des RegExes wird als Treffer gewertet.
 
 #### .tags, list (nur bei metatype: `rule`)
 

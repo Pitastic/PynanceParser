@@ -89,15 +89,6 @@ class Tagger():
                 # use rule prio or default
                 query_args = self._form_tag_query(rule.get('prio', prio))
 
-            # -- Add Text RegExes
-            #TODO: Ersetzen mit Filters (auch in DOku)
-            if rule.get('regex') is not None:
-                query_args['condition'].append({
-                    'key': 'text_tx',
-                    'value': rule.get('regex'),
-                    'compare': 'regex'
-                })
-
             # -- Add all Filters
             for f in rule.get('filter', []):
                 f['compare'] = f.get('compare', '==')
@@ -182,15 +173,6 @@ class Tagger():
 
             # Spezielle Conditions einer Rule
             rule_args = copy.deepcopy(query_args)
-
-            # -- Add Text RegExes
-            #TODO: Ersetzen mit Filters (auch in DOku)
-            if rule.get('regex') is not None:
-                rule_args['condition'].append({
-                    'key': 'text_tx',
-                    'value': rule.get('regex'),
-                    'compare': 'regex'
-                })
 
             # -- Add all Filters
             for f in rule.get('filter', []):
@@ -649,12 +631,7 @@ class Tagger():
                 raise KeyError(f'Eine Regel mit dem Namen {rule_name} '
                                'konnte für den User nicht gefunden werden.')
 
-            rule = raw_rule[0]
-            regex = rule.get('regex')
-            if regex:
-                rule['regex'] = re.compile(regex)
-
-            return {rule_name: rule}
+            return {rule_name: raw_rule[0]}
 
         # Alle Regeln laden
         raw_rules = self.db_handler.filter_metadata(
@@ -662,11 +639,6 @@ class Tagger():
         )
         rules = {}
         for r in raw_rules:
-            regex = r.get('regex')
-
-            if regex:
-                r['regex'] = re.compile(regex)
-
             rules[r.get('name')] = r
 
         return rules

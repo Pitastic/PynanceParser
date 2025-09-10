@@ -27,13 +27,21 @@
     {
         "metatype": "rule",
         "name": "City Tax",
-        "regex": "(ABGABEN\\sLT\\.\\sBESCHEID)",
-        "tags": ["Stadt"]
+        "tags": ["Stadt"],
+        "filter": [{
+            "key": "text_tx",
+            "value": "(ABGABEN\\sLT\\.\\sBESCHEID)",
+            "compare": "regex"
+        }]
     },
     {
         "metatype": "rule",
         "name": "Supermarkets",
-        "regex": "(EDEKA|Wucherpfennig|Penny|Aldi|Kaufland|netto)",
-        "tags": ["Lebensmittel"]
+        "tags": ["Lebensmittel"],
+        "filter": [{
+            "key": "text_tx",
+            "value": "(EDEKA|Wucherpfennig|Penny|Aldi|Kaufland|netto)",
+            "compare": "regex"
+        }]
     }
 ]
