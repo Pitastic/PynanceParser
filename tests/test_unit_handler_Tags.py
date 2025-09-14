@@ -20,27 +20,27 @@ from handler.Tags import Tagger
 # Test Tagging-Ruleset hinterlegen
 RULESET = {
     "Supermarkets" : {
-        "name": "Supermarkets",
         "metatype": "rule",
-        "category": "Lebenserhaltungskosten",
-        "subcategory": "Supermarkt",
+        "name": "Supermarkets",
         "tags": ["Lebensmittel"],
-        "regex": r"(EDEKA|Wucherpfennig|Penny|Aldi|Kaufland|netto)"
+        "filter": [{
+            "key": "text_tx",
+            "value": "(EDEKA|Wucherpfennig|Penny|Aldi|Kaufland|netto)",
+            "compare": "regex"
+        }]
     },
     "City Tax": {
-        "name": "City Tax",
         "metatype": "rule",
-        "category": "Haus und Grund",
-        "subcategory": "Abgaben",
-        "tags": ["Stadtabgaben"],
-        "parsed": {
-            "multi": "AND",
-            "query": {
-                'Gläubiger-ID': r'DE7000100000077777'
-            }
-        }
+        "name": "City Tax",
+        "tags": ["Stadt"],
+        "filter": [{
+            "key": "text_tx",
+            "value": "(ABGABEN\\sLT\\.\\sBESCHEID)",
+            "compare": "regex"
+        }]
     }
 }
+
 
 def test_parsing_regex(test_app):
     """Testet das Parsen der Datensätze mit den fest hinterlegten RegExes"""
@@ -72,6 +72,17 @@ def test_parsing_regex(test_app):
             else:
                 assert not entry.get('parsed'), \
                     f"In Eintrag {i} gab es False-Positives"
+
+def test_categorize(test_app):
+    """Testet das Kategorisieren einzelner Datensätze"""
+    raise NotImplementedError("Test muss noch implementiert werden")
+
+
+def test_tag_and_cat(test_app):
+    """Testet den ganzen Ablauf mit automatischem Tagging und Kategorisierung"""
+    raise NotImplementedError(
+        "Test muss noch implementiert werden und ersetzt test_regex")
+
 
 def test_regex(test_app):
     """Testet das Kategorisieren der Datensätze mit fest hinterlegten Regeln.

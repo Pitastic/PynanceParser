@@ -141,7 +141,6 @@ function removeTags() {
  */
 function manualTagEntries() {
     const category = document.getElementById('input_manual_category').value;
-    const subcategory = document.getElementById('input_manual_subcategory').value;
     let tags = document.getElementById('input_manual_tags').value;
     const iban = document.getElementById('input_iban').value;
 
@@ -164,7 +163,6 @@ function manualTagEntries() {
 
     let tagging = {
         'category': category,
-        'subcategory': subcategory,
         'tags': tags
     }
     

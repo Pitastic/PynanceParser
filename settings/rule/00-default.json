@@ -1,23 +1,22 @@
 [
     {
         "metatype": "category",
-        "name": "Supermarkets",
-        "category": "Lebenserhaltungskosten",
-        "subcategory": "Essen",
+        "name": "Lebensmittel",
+        "category": "Lebensmittel und Haushalt",
         "filter": [{
             "key": "tags",
-            "value": ["Lebensmittel"],
+            "value": ["Supermarkt", "Drogerie", "Apotheke"],
             "compare": "in"
         }]
-    }, {
+    },
+    {
         "metatype": "category",
-        "name": "City Tax",
+        "name": "Abgaben",
         "category": "Öffentliche Ausgaben",
-        "subcategory": "Steuer & Stadtabgaben",
         "multi": "OR",
         "filter": [{
             "key": "tags",
-            "value": ["Stadt"],
+            "value": ["Stadt", "Steuer"],
             "compare": "in"
         }],
         "parsed": {

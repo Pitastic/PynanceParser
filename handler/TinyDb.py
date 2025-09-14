@@ -335,9 +335,9 @@ class TinyDbHandler(BaseDb):
         if condition_method == '<':
             where_statement = where_statement < condition_val
         if condition_method == 'in':
-            where_statement = where_statement.one_of(condition_val)
+            where_statement = where_statement.any(condition_val)
         if condition_method == 'notin':
-            where_statement = where_statement.none_of(condition_val)
+            where_statement = where_statement.test(self.none_of_test, condition_val)
         if condition_method == 'all':
             where_statement = where_statement.all(condition_val)
 
@@ -355,33 +355,39 @@ class TinyDbHandler(BaseDb):
         Returns:
             set: Ein oder mehrere Query Objekte im set
         """
-        # Multi condition
+        logical_concat = operator.or_ if multi.upper() == 'OR' else operator.and_
         if isinstance(condition, list):
-
-            # Create every where_statement from condition
+            # Multi condition
             query = None
             where_statements = []
+            prio_query = None
+
+            # Create every where_statement from condition
             for c in condition:
+                if c.get('key') == 'prio':
+                    # Special handle prio (seek and save here)
+                    prio_query = self._form_where(c)
+                    continue
+
                 where_statements.append(self._form_where(c))
-
-            if multi.upper() == 'OR':
-                # Concat all where_statements with OR later
-                logical_concat = operator.or_
-
-            else:
-                # Concat all where_statements with AND later
-                logical_concat = operator.and_
 
             # Concat conditions logical
             for w in where_statements:
                 if query is None:
                     query = w
                     continue
+
                 query = logical_concat(query, w)
+
+            if prio_query:
+                # prio + other filter(s)
+                query = operator.and_(query, prio_query)
 
         else:
             # Single condition
             query = self._form_where(condition)
+
+        print('+++++++', query)
 
         return query
 
@@ -405,3 +411,7 @@ class TinyDbHandler(BaseDb):
         duplicate_ids = [r.get('uuid') for r in results]
 
         return duplicate_ids
+
+    def none_of_test(value, forbidden_values):
+        """Benutzerdefinierter Test: Keines der Elemente ist in einer Liste vorhanden"""
+        return not any(item in forbidden_values for item in value)

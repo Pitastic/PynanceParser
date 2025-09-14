@@ -239,8 +239,11 @@ def test_list_meta(test_app):
                 "Die Regel war nicht wie erwartet"
 
 
-def test_tag_stored(test_app):
-    """Testet das Tagging, wenn es über den API Endpoint angesprochen wird"""
+def test_tag_stored_rules(test_app):
+    """Testet das Tagging über den API Endpunkt:
+    - Tagging mit einer definierten Regel
+    - Tagging mit allen Default-Regeln
+    """
     with test_app.app_context():
 
         with test_app.test_client() as client:
@@ -248,8 +251,7 @@ def test_tag_stored(test_app):
             # Regel mit Namen aus der SystemDB holen (dry_run)
             parameters = {
                 'rule_name': 'Supermarkets',
-                'dry_run': True,
-                'prio': 2
+                'dry_run': True
             }
             result = client.put(f"/api/tag/{test_app.config['IBAN']}", json=parameters)
             result = result.json
@@ -257,9 +259,9 @@ def test_tag_stored(test_app):
             assert result.get('tagged') == 0, \
                 f"Trotz 'dry_run' wurden {result.get('tagged')} Einträge getaggt"
 
-            tagged_entries = result.get('entries', [])
-            assert len(tagged_entries) == 2, \
-                f"Regel 'Supermarkets' hat {len(tagged_entries)} statt 2 Transactionen getroffen"
+            matched_entries = result.get('entries', [])
+            assert len(matched_entries) == 2, \
+                f"Regel 'Supermarkets' hat {len(matched_entries)} statt 2 Transactionen getroffen"
 
             # Regel mit Namen aus der UserDB holen (no dry_run)
             parameters = {
@@ -269,13 +271,56 @@ def test_tag_stored(test_app):
             result = client.put(f"/api/tag/{test_app.config['IBAN']}", json=parameters)
             result = result.json
 
-            # (1x getagged + 1x Categorie gesetzt)
-            assert result.get('tagged') == 2, \
+            assert result.get('tagged') == 1, \
                 f"Ohne 'dry_run' wurden trotzdem nur {result.get('tagged')} Einträge getaggt"
 
-            tagged_entries = result.get('entries')
-            assert len(tagged_entries) == 1, \
-                f"Die Regel 'City Tax' hat {len(tagged_entries)} statt 1 Transactionen getroffen"
+            matched_entries = result.get('entries')
+            assert len(matched_entries) == 1, \
+                f"Die Regel 'City Tax' hat {len(matched_entries)} statt 1 Transactionen getroffen"
+
+
+def test_categorize_stored_rules(test_app):
+    """Testet das Kategorisieren über den API Endpunkt:
+    - Kategorisieren mit einer definierten Regel
+    - Kategorisieren mit allen Default-Regeln
+    """
+    with test_app.app_context():
+
+        with test_app.test_client() as client:
+
+            # Regel mit Namen aus der SystemDB holen (dry_run)
+            parameters = {
+                'rule_name': 'Abgaben',
+                'dry_run': True
+            }
+            result = client.put(f"/api/cat/{test_app.config['IBAN']}", json=parameters)
+            result = result.json
+
+            assert result.get('categorized') == 0, \
+                f"Trotz 'dry_run' wurden {result.get('tagged')} Einträge getaggt"
+
+            matched_entries = result.get('entries', [])
+            assert len(matched_entries) == 1, \
+                f"Regel 'Abgaben' hat {len(matched_entries)} " + \
+                "statt 2 Transactionen getroffen"
+
+
+            raise NotImplementedError("Test muss noch implementiert werden")
+            # Regel mit Namen aus der UserDB holen (no dry_run)
+            parameters = {
+                'rule_name': 'City Tax',
+                'prio': 2
+            }
+            result = client.put(f"/api/tag/{test_app.config['IBAN']}", json=parameters)
+            result = result.json
+
+            assert result.get('tagged') == 1, \
+                f"Ohne 'dry_run' wurden trotzdem nur {result.get('tagged')} Einträge getaggt"
+
+            matched_entries = result.get('entries')
+            assert len(matched_entries) == 1, \
+                f"Die Regel 'City Tax' hat {len(matched_entries)} statt 1 Transactionen getroffen"
+
 
             # Test 'prio' set correctly
             query = {'key': 'prio', 'compare': '>', 'value': 0}
@@ -287,8 +332,12 @@ def test_tag_stored(test_app):
                 f"Falsche Anzahl an Datensätzen mit 'prio': {len(result_filtered)}"
 
 
-def test_own_rules(test_app):
-    """Eigene Regeln übermitteln; mit und ohne Treffer"""
+def test_tag_custom_rules(test_app):
+    """Testet das Tagging über den API Endpunkt:
+    - Tagging mit einer custom-Regel, die übermittelt wird (mit Treffern)
+    - Tagging mit einer custom-Regel, die übermittelt wird (ohne Treffer)
+    """
+    raise NotImplementedError("Test muss noch implementiert werden")
     with test_app.app_context():
 
         with test_app.test_client() as client:
@@ -332,8 +381,23 @@ def test_own_rules(test_app):
                 f"DRegel 'My high Rule' hat {len(tagged_entries)} statt 1 Transactionen getroffen"
 
 
-def test_manual_tagging(test_app):
-    """Einem bestimmten Datenbankeintrag eine Kategorie zuweisen"""
+def test_categorize_custom_rules(test_app):
+    """Testet das Kategorisieren über den API Endpunkt:
+    - Kategorisieren mit einer custom-Regel, die übermittelt wird (mit Treffern)
+    - Kategorisieren mit einer custom-Regel, die übermittelt wird (ohne Treffer)
+    """
+    with test_app.app_context():
+
+        with test_app.test_client() as client:
+
+            # Eigene Regel kategorisieren lassen (niedrige Prio)
+            raise NotImplementedError("Test muss noch implementiert werden")
+
+
+def test_tag_manual(test_app):
+    """Testet das Tagging über den API Endpunkt:
+    - Einem bestimmten Datenbankeintrag ein bestimmtes Tag zuweisen"""
+    raise NotImplementedError("Test muss noch implementiert werden")
     with test_app.app_context():
 
         with test_app.test_client() as client:
@@ -379,8 +443,19 @@ def test_manual_tagging(test_app):
                 "Es wurden falsche Tags gespeichert"
 
 
-def test_manual_multi_tagging(test_app):
-    """Mehrere Einträge mit bestimmter Kategorie taggen"""
+def test_categorize_manual(test_app):
+    """Testet das Kategorisieren über den API Endpunkt:
+    - Einem bestimmten Datenbankeintrag eine bestimmte Kategorie zuweisen"""
+    with test_app.app_context():
+
+        with test_app.test_client() as client:
+            raise NotImplementedError("Test muss noch implementiert werden")
+
+
+def test_tag_manual_multi(test_app):
+    """Testet das Tagging über den API Endpunkt:
+    - Mehrere Einträge mit bestimmten Tag taggen"""
+    raise NotImplementedError("Test muss noch implementiert werden")
     with test_app.app_context():
 
         with test_app.test_client() as client:
@@ -396,6 +471,15 @@ def test_manual_multi_tagging(test_app):
             )
             r = r.json
             assert r.get('updated') == 2, "Der Eintrag wurde nicht aktualisiert"
+
+
+def test_categorize_manual_multi(test_app):
+    """Testet das Kategorisieren über den API Endpunkt:
+    - Mehrere Einträge mit bestimmten Kategorie kategorisieren"""
+    with test_app.app_context():
+
+        with test_app.test_client() as client:
+            raise NotImplementedError("Test muss noch implementiert werden")
 
 
 def test_get_tx(test_app):
@@ -415,8 +499,11 @@ def test_get_tx(test_app):
             assert result.get('category') == 'Tets_PRIMARY_2', \
                 "Der Primary Tag war nicht wie erwartet"
 
+
 def test_remove_tag(test_app):
-    """Testet das Entfernen eines Tags"""
+    """Testet das Entfernen eines Tags.
+    Alle anderen Einträge zur Transaktion bleiben erhalten."""
+    raise NotImplementedError("Test muss noch implementiert werden")
     with test_app.app_context():
 
         with test_app.test_client() as client:
@@ -430,6 +517,28 @@ def test_remove_tag(test_app):
             assert not result.get('category'), \
                 "Der Kategorie war nicht wie erwartet"
             assert not result.get('tags'), \
+                "Die Tags waren nicht wie erwartet"
+            assert not result.get('prio'), \
+                "Die Prio war nicht wie erwartet"
+
+
+def test_remove_category(test_app):
+    """Testet das Entfernen einer Kategorie.
+    Alle anderen Einträge zur Transaktion bleiben erhalten."""
+    raise NotImplementedError("Test muss noch implementiert werden")
+    with test_app.app_context():
+
+        with test_app.test_client() as client:
+            # Remove Tag
+            result = client.put(
+                f"/api/removeCategory/{test_app.config['IBAN']}/fdd4649484137572ac642e2c0f34f9af"
+            )
+            result = result.json
+            assert result.get('updated') == 1, \
+                "Die Kategorie wurde nicht entfernt"
+            assert not result.get('category'), \
+                "Der Kategorie war nicht wie erwartet"
+            assert result.get('tags'), \
                 "Die Tags waren nicht wie erwartet"
             assert not result.get('prio'), \
                 "Die Prio war nicht wie erwartet"

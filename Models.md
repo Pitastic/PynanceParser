@@ -48,7 +48,6 @@
     'currency': str,
     'parsed': dict( str: str )
     'category': str,
-    'subcategory': str,
     'tags': list[str],
     'priority': int,
 }
@@ -96,7 +95,6 @@ Regex String, der auf den Buchungstext angewendet werden soll. Er muss genau ein
         'compare': str
     ) )
     'category': str | None,
-    'subcategory': str | None,
     'tags': list,
     'prioriry': int | None
 }
@@ -168,10 +166,6 @@ Liste mit Tags, die bei getroffene Einträge hinzugefügt werden.
 #### .category, str (nur bei metatype: `category`)
 
 Name der Hauptkategorie, die bei einem Treffer für den Eintrag gesetzt werden soll. Es muss entweder eine Haupt- oder eine Sekundärkategorie angegeben werden.
-
-#### .subcategory, str (nur bei metatype: `category`)
-
-Name der Sekundärkategorie, die bei einem Treffer für den Eintrag gesetzt werden soll. Es muss entweder eine Haupt- oder eine Sekundärkategorie angegeben werden.
 
 #### .priority, int (nur bei metatype: `category`)
 

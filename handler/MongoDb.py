@@ -314,14 +314,52 @@ class MongoDbHandler(BaseDb):
         Returns:
             dict: MongoDB Query dict
         """
+        operator = '$or' if multi.upper() == 'OR' else '$and'
+        if isinstance(condition, list) and len(condition) == 1:
+            # single filter in list
+            condition = condition[0]
+
         # Single or Multi Conditions
         if isinstance(condition, list):
-            operator = '$or' if multi.upper() == 'OR' else '$and'
-            query = {operator: []}
+            formed_conditions = []
+            prio_query = None
+
             for c in condition:
-                query[operator].append(self._form_condition(c))
+                if c.get('key') == 'prio':
+                    # Special handle prio (seek and save here)
+                    prio_query = self._form_condition(c)
+                    continue
+
+                formed_conditions.append(self._form_condition(c))
+
+            if len(formed_conditions) == 1:
+                # prio + just one other filter (was len(2) before)
+                query = {
+                    '$and': [
+                        prio_query,
+                        formed_conditions[0]
+                    ]
+                }
+
+            else:
+
+                if prio_query is None:
+                    # multiple filters without prio
+                    query = {operator: formed_conditions}
+
+                else:
+                    # prio + more than one other filter
+                    query = {
+                        '$and': [
+                            prio_query,
+                            {operator: formed_conditions}
+                        ]
+                    }
 
         else:
+            # single filter
             query = self._form_condition(condition)
+
+        print('+++++++', query)
 
         return query

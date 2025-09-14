@@ -305,12 +305,57 @@ class UserInterface():
                 Kategorisiert die Kontoumsätze und aktualisiert die Daten in der Instanz.
                 Die Argumente werden nach Prüfung an die Tagger-Klasse weitergegeben.
 
+                Args (json) - siehe Tagger.tag():
+                    rule_name, str: Name der Regel, die angewendet werden soll.
+                                    (Default: Alle Regeln werden angewendet)
+                    dry_run, bool:  Switch to show, which TX would be updated. Do not update.
+                Returns:
+                    json: Informationen zum Ergebnis des Taggings.
+                """
+                rule_name = request.json.get('rule_name')
+                dry_run = request.json.get('dry_run', False)
+                return self.tagger.tag(iban, rule_name, dry_run)
+
+            @current_app.route('/api/cat/<iban>', methods=['PUT'])
+            def cat(iban) -> dict:
+                """
+                Kategorisiert die Kontoumsätze und aktualisiert die Daten in der Instanz.
+                Die Argumente werden nach Prüfung an die Tagger-Klasse weitergegeben.
+
+                Args (json) - siehe Tagger.tag():
+                    rule_name, str: Name der Regel, die angewendet werden soll.
+                                    (Default: Alle Regeln werden angewendet)
+                    dry_run, bool:  Switch to show, which TX would be updated. Do not update.
+                    prio, int:      Override ruleset value of priority for this categorization run
+                                    in comparison with already cat. transactions
+                                    (higher = more important)
+                    prio_set, int:  Override: Compare with 'prio' but set this value instead.
+                Returns:
+                    json: Informationen zum Ergebnis des Taggings.
+                """
+                rule_name = request.json.get('rule_name')
+                dry_run = request.json.get('dry_run', False)
+                prio = request.json.get('prio')
+                prio_set = request.json.get('prio_set')
+                return self.tagger.categorize(iban, rule_name, prio, prio_set, dry_run)
+
+            @current_app.route('/api/tag-and-cat/<iban>', methods=['PUT'])
+            def tag_and_cat(iban) -> dict:
+                """
+                Kategorisiert die Kontoumsätze und aktualisiert die Daten in der Instanz.
+                Die Argumente werden nach Prüfung an die Tagger-Klasse weitergegeben.
+
                 Args (json):
                     siehe Tagger.tag()
                 Returns:
                     json: Informationen zum Ergebnis des Taggings.
                 """
-                return self.tagger.tag_and_cat(iban, **request.json)
+                #TODO: Unterteilen in `tag` und `categorize` sowie ein Endpunkt für beides
+                raise NotImplementedError("not yet implemented")
+                rule_name = request.json.get('rule_name')
+                category_name = request.json.get('category_name')
+                dry_run = request.json.get('dry_run', False)
+                return self.tagger.tag_and_cat(iban, rule_name, category_name, dry_run)
 
             @current_app.route('/api/setManualTag/<iban>/<t_id>', methods=['PUT'])
             def setManualTag(iban, t_id):
@@ -404,7 +449,6 @@ class UserInterface():
             t_id, int: Datenbank ID der Transaktion, die getaggt werden soll
             data, dict: Daten für die Aktualisierung (default: request.json)
                 - category, str: Bezeichnung der primären Kategorie
-                - subcategory, str: Bezeichnung der sekundären Kategorie
                 - tags, list[str]: Bezeichnung der Tags
         Returns:
             dict: updated, int: Anzahl der gespeicherten Datensätzen
@@ -414,10 +458,8 @@ class UserInterface():
         category = data.get('category')
         if category:
             new_tag_data['category'] = category
-
-        subcategory = data.get('subcategory')
-        if subcategory:
-            new_tag_data['subcategory'] = subcategory
+            # Avoid high priority when tagging only
+            new_tag_data['prio'] = 99
 
         tags = data.get('tags')
         if tags:
@@ -425,10 +467,6 @@ class UserInterface():
                 tags = [tags]
 
             new_tag_data['tags'] = tags
-
-        if category or subcategory:
-            # Avoid high priority when tagging only
-            new_tag_data['prio'] = 99
 
         condition = {
             'key': 'uuid',
