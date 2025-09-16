@@ -302,7 +302,7 @@ class UserInterface():
             @current_app.route('/api/tag/<iban>', methods=['PUT'])
             def tag(iban) -> dict:
                 """
-                Kategorisiert die Kontoumsätze und aktualisiert die Daten in der Instanz.
+                Tagged die Kontoumsätze und aktualisiert die Daten in der Instanz.
                 Die Argumente werden nach Prüfung an die Tagger-Klasse weitergegeben.
 
                 Args (json) - siehe Tagger.tag():
@@ -322,7 +322,7 @@ class UserInterface():
                 Kategorisiert die Kontoumsätze und aktualisiert die Daten in der Instanz.
                 Die Argumente werden nach Prüfung an die Tagger-Klasse weitergegeben.
 
-                Args (json) - siehe Tagger.tag():
+                Args (json) - siehe Tagger.categorize():
                     rule_name, str: Name der Regel, die angewendet werden soll.
                                     (Default: Alle Regeln werden angewendet)
                     dry_run, bool:  Switch to show, which TX would be updated. Do not update.
@@ -342,20 +342,61 @@ class UserInterface():
             @current_app.route('/api/tag-and-cat/<iban>', methods=['PUT'])
             def tag_and_cat(iban) -> dict:
                 """
-                Kategorisiert die Kontoumsätze und aktualisiert die Daten in der Instanz.
-                Die Argumente werden nach Prüfung an die Tagger-Klasse weitergegeben.
-
+                Tagged und/oder Kategorisiert die Kontoumsätze und aktualisiert die
+                Daten in der Instanz. Je nach übergebenen Argumenten erfolgt dies
+                automatisch anhand der Regeln in der Datenbank oder
+                anhand einer übergebenen Regel.
+                
+                Nutzt die Methoden:
+                 `Tagger.tag_and_cat()` mit presets
+                 `Tagger.tag_and_cat()` mit angegebenen Regelnamen, wenn
+                                        `rule_name` oder `category_name` gesetzt ist
+                `Tagger.tag_and_cat_custom()` wenn mindestens ein Kriterium gesetzt ist von
+                                        `category`, `tags`, `filters`, `parsed_keys`, `parsed_vals`
+            
                 Args (json):
-                    siehe Tagger.tag()
+                    rule_name:      UUID der anzuwendenden Taggingregel.
+                                    Reserviertes Keyword 'ai' führt nur das AI Tagging aus.
+                    category_name:  UUID der anzuwendenden Kategorisierungsregel.
+                    category:       Name der zu setzenden Primärkategory.
+                    tags:           Liste der zu setzenden Tags.
+                    filters:        Liste mit Regelsätzen (dict)
+                    parsed_keys:    Liste mit Keys zur Prüfung in geparsten Daten.
+                    parsed_vals:    Liste mit Values zur Prüfung in geparsten Daten.
+                    multi:          Logische Verknüpfung der Kriterien (AND|OR).
+                    prio:           Value of priority for this tagging run
+                                    in comparison with already tagged transactions
+                                    This value will be set as the new priority in DB.
+                                    (higher = important)
+                    prio_set:       Compare with 'prio' but set this value instead.
+                    dry_run:        Switch to show, which TX would be updated. Do not update.
                 Returns:
                     json: Informationen zum Ergebnis des Taggings.
                 """
-                #TODO: Unterteilen in `tag` und `categorize` sowie ein Endpunkt für beides
-                raise NotImplementedError("not yet implemented")
-                rule_name = request.json.get('rule_name')
-                category_name = request.json.get('category_name')
-                dry_run = request.json.get('dry_run', False)
-                return self.tagger.tag_and_cat(iban, rule_name, category_name, dry_run)
+                if any(k in request.json for k in (
+                    'category', 'tags', 'filters','parsed_keys', 'parsed_vals'
+                )):
+                    # Custom Rule defined
+                    return self.tagger.tag_or_cat_custom(
+                        iban,
+                        category=request.json.get('category'),
+                        tags=request.json.get('tags'),
+                        filters=request.json.get('filters'),
+                        parsed_keys=request.json.get('parsed_keys'),
+                        parsed_vals=request.json.get('parsed_vals'),
+                        multi=request.json.get('multi', 'AND'),
+                        prio=request.json.get('prio', 1),
+                        prio_set=request.json.get('prio_set'),
+                        dry_run=request.json.get('dry_run', False)
+                    )
+
+                # Preset Rule defined or Default (if all None)
+                return self.tagger.tag_and_cat(
+                    iban,
+                    rule_name=request.json.get('rule_name'),
+                    category_name=request.json.get('category_name'),
+                    dry_run=request.json.get('dry_run', False)
+                )
 
             @current_app.route('/api/setManualTag/<iban>/<t_id>', methods=['PUT'])
             def setManualTag(iban, t_id):
@@ -364,15 +405,60 @@ class UserInterface():
 
                 Args (uri/json):
                     iban, str: IBAN
-                    t_id, int: Datenbank ID der Transaktion, die getaggt werden soll
-                    data, dict: Daten für die Aktualisierung (default: request.json)
-                        - category, str: Bezeichnung der primären Kategorie
-                        - tags, list[str]: Bezeichnung der sekundären Kategorie
+                    t_id, str: Datenbank ID der Transaktion, die getaggt werden soll
+                    data, dict: Daten für die Aktualisierung
+                        - tags, list[str]: Bezeichnung der zu setzenden Tags
                 Returns:
                     dict: updated, int: Anzahl der gespeicherten Datensätzen
                 """
                 data = request.json
-                return self._set_manual_tag(iban, t_id, data)
+                tags = data.get('tags')
+                assert tags is not None, 'No tags provided'
+                return self._set_manual_tag_and_cat(iban, t_id, tags=tags)
+
+            @current_app.route('/api/setManualCat/<iban>/<t_id>', methods=['PUT'])
+            def setManualCat(iban, t_id):
+                """
+                Handler für _set_manual_tag() für einzelne Einträge.
+
+                Args (uri/json):
+                    iban, str: IBAN
+                    t_id, str: Datenbank ID der Transaktion, die getaggt werden soll
+                    data, dict: Daten für die Aktualisierung
+                        - category, str: Bezeichnung der zu setzenden Kategorie
+                Returns:
+                    dict: updated, int: Anzahl der gespeicherten Datensätzen
+                """
+                data = request.json
+                category = data.get('category')
+                assert category is not None, 'No category provided'
+                return self._set_manual_tag_and_cat(iban, t_id, category=category)
+
+            @current_app.route('/api/setManualCats/<iban>', methods=['PUT'])
+            def setManualCats(iban):
+                """
+                Handler für _set_manual_tag() für mehrere Einträge.
+
+                Args (uri/json):
+                    iban, str: IBAN
+                    data, dict: Daten für die Aktualisierung
+                        - t_ids, list[str]: Liste mit Datenbank IDs der Transaktionen,
+                                            die getaggt werden sollen
+                        - category, str: Bezeichnung der zu setzenden Kategorie
+                Returns:
+                    dict: updated, int: Anzahl der gespeicherten Datensätzen
+                """
+                updated_entries = {'updated': 0}
+                data = request.json
+                category = data.get('category')
+                t_ids = data.get('t_ids')
+                assert category and t_ids, 'No category or transactions provided'
+                for tx in t_ids:
+
+                    updated = self._set_manual_tag_and_cat(iban, tx, category=category)
+                    updated_entries['updated'] += updated.get('updated')
+
+                return updated_entries
 
             @current_app.route('/api/setManualTags/<iban>', methods=['PUT'])
             def setManualTags(iban):
@@ -381,18 +467,21 @@ class UserInterface():
 
                 Args (uri/json):
                     iban, str: IBAN
-                    t_ids, list[str]: Liste mit Datenbank IDs der Transaktionen,
-                                      die getaggt werden sollen
-                    category, str: Bezeichnung der primären Kategorie
-                    tags, list[str]: Bezeichnung der sekundären Kategorie
+                    data, dict: Daten für die Aktualisierung
+                        - t_ids, list[str]: Liste mit Datenbank IDs der Transaktionen,
+                                            die getaggt werden sollen
+                        - tags, list[str]: Bezeichnung der zu setzenden Tags
                 Returns:
                     dict: updated, int: Anzahl der gespeicherten Datensätzen
                 """
-                data = request.json
                 updated_entries = {'updated': 0}
-                for tx in data.get('t_ids'):
+                data = request.json
+                tags = data.get('tags')
+                t_ids = data.get('t_ids')
+                assert tags and t_ids, 'No tags or transactions provided'
+                for tx in t_ids:
 
-                    updated = self._set_manual_tag(iban, tx, data)
+                    updated = self._set_manual_tag_and_cat(iban, tx, tags=tags)
                     updated_entries['updated'] += updated.get('updated')
 
                 return updated_entries
@@ -409,10 +498,32 @@ class UserInterface():
                 Returns:
                     dict: updated, int: Anzahl der gespeicherten Datensätzen
                 """
-                if t_id is None:
-                    return {'error': 'No t_id provided'}, 400
-
                 return self._remove_tags(iban, t_id)
+
+            @current_app.route('/api/removeCat/<iban>/<t_id>', methods=['PUT'])
+            def removeCat(iban, t_id):
+                """
+                Entfernt gesetzte Tags für einen Eintrag-
+
+                Args (uri/json):
+                    iban, str: IBAN
+                    t_id, str: Datenbank ID der Transaktion,
+                               die bereinigt werden soll.
+                Returns:
+                    dict: updated, int: Anzahl der gespeicherten Datensätzen
+                """
+                new_data = {
+                    'prio': 0,
+                    'category': None,
+                }
+                condition = [{
+                    'key': 'uuid',
+                    'value': t_id,
+                    'compare': '=='
+                }]
+
+                updated_entries = self.db_handler.update(new_data, iban, condition)
+                return updated_entries
 
             @current_app.route('/api/removeTags/<iban>', methods=['PUT'])
             def removeTags(iban):
@@ -428,8 +539,7 @@ class UserInterface():
                 """
                 data = request.json
                 t_ids = data.get('t_ids')
-                if t_ids is None:
-                    return {'error': 'No t_id provided'}, 400
+                assert t_ids, 'No transactions provided'
 
                 updated_entries = {'updated': 0}
                 for t_id in t_ids:
@@ -440,33 +550,31 @@ class UserInterface():
                 return updated_entries
 
 
-    def _set_manual_tag(self, iban, t_id, data):
+    def _set_manual_tag_and_cat(self, iban, t_id,
+                                tags: list=None, category: str=None) -> dict:
         """
         Setzt manuell eine Kategorie und/oder Tags für einen bestimmten Eintrag.
 
         Args:
             iban, str: IBAN
             t_id, int: Datenbank ID der Transaktion, die getaggt werden soll
-            data, dict: Daten für die Aktualisierung (default: request.json)
-                - category, str: Bezeichnung der primären Kategorie
-                - tags, list[str]: Bezeichnung der Tags
+            tags, list[str]: Bezeichnung der zu setzenden Tags
+            category, str: Bezeichnung der zu setzenden Kategorie
         Returns:
             dict: updated, int: Anzahl der gespeicherten Datensätzen
         """
+        assert tags or category, 'No tags or category provided'
         new_tag_data = {}
 
-        category = data.get('category')
-        if category:
-            new_tag_data['category'] = category
-            # Avoid high priority when tagging only
-            new_tag_data['prio'] = 99
-
-        tags = data.get('tags')
-        if tags:
+        if tags is not None:
             if not isinstance(tags, list):
                 tags = [tags]
 
             new_tag_data['tags'] = tags
+
+        if category is not None:
+            new_tag_data['category'] = category
+            new_tag_data['prio'] = 99  # Manuell gesetzte Tags haben immer hohe Prio
 
         condition = {
             'key': 'uuid',
@@ -488,9 +596,7 @@ class UserInterface():
         Returns:
             dict: updated, int: Anzahl der gespeicherten Datensätzen
         """
-        new_daata = {
-            'prio': 0,
-            'category': None,
+        new_data = {
             'tags': []
         }
         condition = [{
@@ -499,7 +605,31 @@ class UserInterface():
             'compare': '=='
         }]
 
-        updated_entries = self.db_handler.update(new_daata, iban, condition)
+        updated_entries = self.db_handler.update(new_data, iban, condition)
+        return updated_entries
+
+    def _remove_cat(self, iban, t_id):
+        """
+        Entfernt eine Kategorie von einen Eintrag.
+
+        Args:
+            iban, str: IBAN
+            t_id, str: Datenbank ID der Transaktion,
+                       die bereinigt werden soll.
+        Returns:
+            dict: updated, int: Anzahl der gespeicherten Datensätzen
+        """
+        new_data = {
+            'prio': 0,
+            'category': None,
+        }
+        condition = [{
+            'key': 'uuid',
+            'value': t_id,
+            'compare': '=='
+        }]
+
+        updated_entries = self.db_handler.update(new_data, iban, condition)
         return updated_entries
 
     def _mv_fileupload(self, input_file, path):

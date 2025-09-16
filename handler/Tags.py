@@ -377,11 +377,6 @@ class Tagger():
         # Store categorization results
         result['categorized'] = categorization_results['categorized']
         result['entries'] += categorization_results['entries']
-        print()
-        print()
-        print('>>>>', result)
-        print()
-        print()
 
         return result
 
@@ -399,8 +394,8 @@ class Tagger():
             parsed_vals:    Liste mit Values zur Prüfung in geparsten Daten.
             multi:          Logische Verknüpfung der Kriterien (AND|OR).
                             Default: AND
-            prio:           Value of priority for this tagging run
-                            in comparison with already tagged transactions (higher = important)
+            prio:           Value of priority for this categorization run
+                            in comparison with already categorized transactions (higher = important)
                             This value will be set as the new priority in DB.
                             Default: 1
             prio_set:       Compare with 'prio' but set this value instead.
@@ -439,17 +434,18 @@ class Tagger():
 
         # Add all Filters
         filters = [] if filters is None else filters
-        for f in filters.get('filter', []):
+        for f in filters:
             f['compare'] = f.get('compare', '==')
             query_args['condition'].append(f)
 
         # Add Parsed Filters
-        for i, parse_key in enumerate(parsed_keys):
-            query_args['condition'].append({
-                'key': {'parsed': parse_key},
-                'value': parsed_vals[i],
-                'compare': 'regex'
-            })
+        if parsed_keys:
+            for i, parse_key in enumerate(parsed_keys):
+                query_args['condition'].append({
+                    'key': {'parsed': parse_key},
+                    'value': parsed_vals[i],
+                    'compare': 'regex'
+                })
 
         # Dry Run first (store results)
         logging.debug(f"Query Args: {query_args.get('condition')}")
@@ -492,8 +488,6 @@ class Tagger():
                 logging.error(("Bei einer Custom Rule konnte der Eintrag "
                               f"'{uuid}' nicht geupdated werden - skipping..."))
                 return result
-
-            result['entries'].append(uuid)
 
             if category is None:
                 # This was a tagging

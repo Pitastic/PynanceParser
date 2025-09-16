@@ -360,6 +360,4 @@ class MongoDbHandler(BaseDb):
             # single filter
             query = self._form_condition(condition)
 
-        print('+++++++', query)
-
         return query

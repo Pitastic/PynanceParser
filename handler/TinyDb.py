@@ -337,7 +337,7 @@ class TinyDbHandler(BaseDb):
         if condition_method == 'in':
             where_statement = where_statement.any(condition_val)
         if condition_method == 'notin':
-            where_statement = where_statement.test(self.none_of_test, condition_val)
+            where_statement = where_statement.test(self._none_of_test, condition_val)
         if condition_method == 'all':
             where_statement = where_statement.all(condition_val)
 
@@ -356,6 +356,10 @@ class TinyDbHandler(BaseDb):
             set: Ein oder mehrere Query Objekte im set
         """
         logical_concat = operator.or_ if multi.upper() == 'OR' else operator.and_
+        if isinstance(condition, list) and len(condition) == 1:
+            # single filter in list
+            condition = condition[0]
+
         if isinstance(condition, list):
             # Multi condition
             query = None
@@ -387,8 +391,6 @@ class TinyDbHandler(BaseDb):
             # Single condition
             query = self._form_where(condition)
 
-        print('+++++++', query)
-
         return query
 
     def _double_check(self, collection: str, data: list|dict):
@@ -412,6 +414,6 @@ class TinyDbHandler(BaseDb):
 
         return duplicate_ids
 
-    def none_of_test(value, forbidden_values):
+    def _none_of_test(self, value, forbidden_values):
         """Benutzerdefinierter Test: Keines der Elemente ist in einer Liste vorhanden"""
         return not any(item in forbidden_values for item in value)
