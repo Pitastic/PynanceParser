@@ -270,4 +270,21 @@ class MockDatabase:
                     "regex": "([A-Z]{2}[0-9]{2}[0-9A-Z]{3}(?:[0-9]{11}|[0-9]{19}))"
                 }
             ]
+        if condition == {"key": "metatype", "value": "category"}:
+            return [
+                {
+                    "metatype": "category",
+                    "name": "Abgaben",
+                    "category": "Öffentliche Ausgaben",
+                    "multi": "OR",
+                    "filter": [{
+                        "key": "tags",
+                        "value": ["Stadt", "Steuer"],
+                        "compare": "in"
+                    }],
+                    "parsed": {
+                        "Gläubiger-ID": "DE7000100000077777"
+                    }
+                }
+            ]
         return []

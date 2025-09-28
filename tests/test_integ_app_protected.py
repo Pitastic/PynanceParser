@@ -54,12 +54,8 @@ def test_set_manual_tag(test_app):
         t_id = '6884802db5e07ee68a68e2c64f9c0cdd'
 
         # Setzen des Tags
-        r = test_app.host._set_manual_tag( # pylint: disable=protected-access
-            iban, t_id,
-            {
-                'category': 'Test_Pri',
-                'tags': ['Test_Second']
-            }
+        r = test_app.host._set_manual_tag_and_cat( # pylint: disable=protected-access
+            iban, t_id, tags= ['Test_Second'], category='Test_Pri'
         )
         assert r.get('updated') == 1, 'Es wurde kein Eintrag aktualisiert. '
 

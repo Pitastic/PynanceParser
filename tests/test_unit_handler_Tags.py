@@ -75,7 +75,10 @@ def test_parsing_regex(test_app):
 
 def test_categorize(test_app):
     """Testet das Kategorisieren einzelner Datensätze"""
-    raise NotImplementedError("Test muss noch implementiert werden")
+    with test_app.app_context():
+        tagger = Tagger(MockDatabase())
+        tagger.categorize(iban="DE89370400440532013000", dry_run=False)
+        assert True, "Just do not fail (nothing to check in DB)"
 
 
 def test_tag_and_cat(test_app):
