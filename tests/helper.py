@@ -144,26 +144,31 @@ class MockDatabase:
                 'key': 'text_tx', 'value': '(EDEKA|Wucherpfennig|Penny|Aldi|Kaufland|netto)',
                 'compare': 'regex'
             }
-            ]
-        self.query2 = [
-            {
-                'key': 'prio', 'value': 1,
-                'compare': '<'
-            }, {
-                'key': {'parsed': 'Gläubiger-ID'}, 'value': 'DE7000100000077777',
-                'compare': 'regex'
-            }
         ]
-        self.query3 = [
-            {
-                'key': 'category',
-                'value': None,
-                'compare': '=='
-            }, {
-                'key': 'tags',
-                'value': None,
-                'compare': '=='
-            }
+        self.query_categorize = [
+            {'key': 'prio', 'value': 1, 'compare': '<'},
+            {'key': 'tags', 'value': ['Stadt', 'Steuer'], 'compare': 'in'},
+            {'key': {'parsed': 'Gläubiger-ID'}, 'value': 'DE7000100000077777', 'compare': '=='}
+        ]
+        self.query_tag = [
+            {'key': 'prio', 'value': 99, 'compare': '<'},
+            {'key': 'text_tx', 'value': '(ABGABEN\\sLT\\.\\sBESCHEID)', 'compare': 'regex'}
+        ]
+        self.query_ai = [
+            {'key': 'category', 'value': None, 'compare': '=='},
+            {'key': 'tags', 'value': None, 'compare': '=='}
+        ]
+        self.query_custom_tagging = [
+            {'key': 'prio', 'value': 99, 'compare': '<'},
+            {'key': 'betrag', 'compare': '<', 'value': -100},
+            {'key': {'parsed': 'custom_key1'}, 'value': 'custom_val1', 'compare': 'regex'},
+            {'key': {'parsed': 'custom_key2'}, 'value': 'custom_val2', 'compare': 'regex'}
+        ]
+        self.query_custom_cat = [
+            {'key': 'prio', 'value': 22, 'compare': '<'},
+            {'key': 'betrag', 'compare': '<', 'value': -999},
+            {'key': {'parsed': 'custom_key1'}, 'value': 'custom_val1', 'compare': 'regex'},
+            {'key': {'parsed': 'custom_key2'}, 'value': 'custom_val2', 'compare': 'regex'}
         ]
         self.db_all = [
 
@@ -228,11 +233,30 @@ class MockDatabase:
         if condition == self.query1:
             return [self.db_all[0], self.db_all[2]]
 
-        if condition == self.query2:
-            return [self.db_all[4]]
+        if condition == self.query_categorize:
+            return [{'uuid': 'test_categorize'}]
 
-        if condition == self.query3:
-            return self.db_all
+        if condition == self.query_tag:
+            return [{'uuid': 'test_tag'}]
+
+        if condition == self.query_ai:
+            return [
+                {
+                'date_tx': 1672531200, 'date_wert': 1684195200, 'art': 'Überweisung',
+                'text_tx': ('Wucherpfennig sagt Danke 88//HANNOV 2023-01-01T08:59:42 '
+                            'KFN 9 VJ 7777 Kartenzahlung'),
+                'betrag': -11.63, 'iban': 'DE89370400440532013000', 'currency': 'EUR',
+                'parsed': {}, 'category': None, 'tags': [],
+                'uuid': 'b5aaffc31fa63a466a8b55962995ebcc', 'prio': 0
+                }
+            ]
+        if condition == self.query_custom_tagging:
+            return [{'uuid': 'custom_tagging_uuid'}]
+
+        if condition == self.query_custom_cat:
+            return [{'uuid': 'custom_categorize_uuid'}]
+
+        print(f"!!! Condition not found in Mock: {condition}")
 
         return []
 
@@ -246,6 +270,19 @@ class MockDatabase:
                 - updated, int: Anzahl der angeblich aktualisierten Datensätze
         """
         if condition.get('key') == 'uuid':
+
+            if condition.get('value') == 'custom_tagging_uuid':
+                # Test Tags to set wih cstom rule here:
+                assert data.get('tags') == ['custom_tagging1', 'custom_tagging2'], \
+                    "Die Tags der Custom Rule wurden nicht richtig übergeben"
+
+            if condition.get('value') == 'custom_categorize_uuid':
+                # Test Category to set wih cstom rule here:
+                assert data.get('category') == 'custom_category', \
+                    "Die Kategorie der Custom Rule wurde nicht richtig übergeben"
+                assert data.get('prio') == 33, \
+                    "Die Priorität_set der Custom Rule wurde nicht richtig übergeben"
+
             return {'updated': 1}
 
         return {'updated': 0}
@@ -285,6 +322,19 @@ class MockDatabase:
                     "parsed": {
                         "Gläubiger-ID": "DE7000100000077777"
                     }
+                }
+            ]
+        if condition == {"key": "metatype", "value": "rule"}:
+            return [
+                {
+                    "metatype": "rule",
+                    "name": "City Tax",
+                    "tags": ["Stadt"],
+                    "filter": [{
+                        "key": "text_tx",
+                        "value": "(ABGABEN\\sLT\\.\\sBESCHEID)",
+                        "compare": "regex"
+                    }]
                 }
             ]
         return []

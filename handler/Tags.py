@@ -165,12 +165,12 @@ class Tagger():
 
         return result
 
-    def tag(self, collection: str=None, rule_name: str=None, dry_run: bool=False) -> dict:
+    def tag(self, iban: str=None, rule_name: str=None, dry_run: bool=False) -> dict:
         """
         Tagged Transaktionen anhand von Regeln in der Datenbank.
 
         Args:
-            collection:     Name der Collection, in der gefiltert werden soll.
+            iban:           Name der Collection, in der gefiltert werden soll.
             rule_name:      Name of a rule to apply on users transactions.
                             Default: All rules are applied
             dry_run:        Switch to show, which TX would be updated. Do not update.
@@ -195,7 +195,7 @@ class Tagger():
             raise ValueError('Es existieren noch keine Regeln für den Benutzer')
 
         # Allgemeine Startfilter für die Condition (ignore Prio bei Tagging)
-        query_args = self._form_tag_query(99, collection)
+        query_args = self._form_tag_query(99, iban)
 
         for r_name, rule in tagging_rules.items():
             logging.info(f"RegEx Tagging mit Rule {r_name}...")
@@ -276,23 +276,23 @@ class Tagger():
 
         return result
 
-    def tag_ai(self, collection: str=None, dry_run: bool=False) -> dict:
+    def tag_ai(self, iban: str=None, dry_run: bool=False) -> dict:
         """
         Automatisches Tagging mit AI.
 
         Args:
-            collection:     Name der Collection, in die Werte eingefügt werden sollen.
+            iban:           Name der Collection, in die Werte eingefügt werden sollen.
                             Default: IBAN aus der Config.
             dry_run         Switch to show, which TX would be updated. Do not update.
         Returns:
             dict:
-            - guessed (int): Summe aller erfolgreichen Taggings (0 bei dry_run)
+            - tagged (int): Summe aller erfolgreichen Taggings (0 bei dry_run)
             - entries (list): UUIDs die selektiert wurden (auch bei dry_run)
         """
         logging.info("Tagging with AI....")
 
         # Allgemeine Startfilter für die Condition
-        query_args = self._form_tag_query(collection=collection, ai=True)
+        query_args = self._form_tag_query(collection=iban, ai=True)
         matched = self.db_handler.select(**query_args)
 
         tagged = 0
@@ -329,7 +329,7 @@ class Tagger():
                 tagged += updated
 
         result = {
-            'guessed': tagged,
+            'tagged': tagged,
             'entries': [e.get('uuid') for e in entries],
         }
 
@@ -397,9 +397,9 @@ class Tagger():
             prio:           Value of priority for this categorization run
                             in comparison with already categorized transactions (higher = important)
                             This value will be set as the new priority in DB.
-                            Default: 1
+                            Default: 1 (ignored when tagging)
             prio_set:       Compare with 'prio' but set this value instead.
-                            Default: prio.
+                            Default: prio (ignored when tagging)
             dry_run:        Switch to show, which TX would be updated. Do not update.
                             Default: False
         Returns dict:
@@ -420,11 +420,14 @@ class Tagger():
             # Set Category: Tags are filter arguments; Prio matters
             update_data['prio'] = prio_set
             query_args = self._form_tag_query(prio, iban)
-            query_args['condition'].append({
-                'key': 'tags',
-                'value': tags,
-                'compare': 'in'
-            })
+
+            if tags:
+                query_args['condition'].append({
+                    'key': 'tags',
+                    'value': tags,
+                    'compare': 'in'
+                })
+
             if category is not None:
                 update_data['category'] = category
 
