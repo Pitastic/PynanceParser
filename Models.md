@@ -114,7 +114,7 @@ Frei wählbarer Name der Regel.
 
 ##### .multi, str (`AND` | `OR`)
 
-Art der Verkettung der Filter. Ohne diese Angabe wird der Default `AND` gewählt. Wird hier `OR` angegeben, werden alle Filter (`regex`, `filter`, `parsed`-keys) mit `OR` verknüpft.
+Art der Verkettung der Filter. Ohne diese Angabe wird der Default `AND` gewählt. Wird hier `OR` angegeben, werden alle Filter (`tags`, `filter`, `parsed`-keys) mit `OR` verknüpft.
 
 #### .parsed, dict (optional)
 
@@ -130,7 +130,7 @@ Liste mit Dictionaryies, die Argumenten zum durchsuchen von allgemeinen Werten e
 
 ##### filter[].key, str | int
 
-Die Bezeichnung (Schlüssel) des Werts, der geprüft werden soll. `key` kann hier jeder Bezeichner sein, der in der ersten Ebene des Transaktionsobjektes vorkommen könnte. Ausgenommen sind hier die `parsed` Werte, für die es ja aber dafür eine eigene Filterangabe gibt.
+Die Bezeichnung (Schlüssel) des Werts, der geprüft werden soll. `key` kann hier jeder Bezeichner sein, der in der ersten Ebene des Transaktionsobjektes vorkommen könnte. Daher kann auch `tags` mit einer Liste als `filter[].value` verwendet werden (s.u.). Ausgenommen sind hier lediglich `parsed` Werte, für die es ja aber dafür eine eigene Filterangabe gibt.
 
 #### filter[].value, str | int | bool | list
 
