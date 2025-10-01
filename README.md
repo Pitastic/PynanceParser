@@ -1,7 +1,7 @@
 # PynanceParser
 
-![pytest](https://img.shields.io/badge/pytest-passed%20(39/39)-darkgreen)
-![pylint](https://img.shields.io/badge/pylint-9.86-yellow)
+![pytest](https://img.shields.io/badge/pytest-passed%20(46/46)-darkgreen)
+![pylint](https://img.shields.io/badge/pylint-9.81-yellow)
 
 Analyse und Darstellung von Kontoumsätzen bei mehreren Banken.
 
