@@ -331,14 +331,15 @@ class BaseDb():
                         logging.warning(f"Failed to parse JSON file: {e}")
 
                 # Add metadata type and format as list
-                if isinstance(parsed_data, list):
-
-                    for i, _ in enumerate(parsed_data):
-                        parsed_data[i]['metatype'] = metatype
-
-                else:
-                    parsed_data['metatype'] = metatype
+                if not isinstance(parsed_data, list):
                     parsed_data = [parsed_data]
+
+                    #for i, _ in enumerate(parsed_data):
+                    #    parsed_data[i]['metatype'] = metatype
+
+                #else:
+                #    parsed_data['metatype'] = metatype
+                #    parsed_data = [parsed_data]
 
                 # Store in DB (do not overwrite)
                 inserted = 0

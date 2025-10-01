@@ -239,8 +239,29 @@ def test_list_meta(test_app):
                 "Die Regel war nicht wie erwartet"
 
 
-def test_tag_stored(test_app):
-    """Testet das Tagging, wenn es über den API Endpoint angesprochen wird"""
+def test_get_tx(test_app):
+    """Testet den API-Endpoint für die Transaktionsdetails"""
+    with test_app.app_context():
+
+        with test_app.test_client() as client:
+            # Get Transaction
+            result = client.get(
+                f"/api/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd"
+            )
+            assert result.status_code == 200, \
+                "Der Statuscode der Transaktion war falsch"
+
+            # Check Content
+            result = result.json
+            assert result.get('currency') == 'EUR', \
+                "Der Inhalt der Testtransaktion wurde nicht wie erwartet selektiert"
+
+
+def test_tag_stored_rules(test_app):
+    """Testet das Tagging über den API Endpunkt:
+    - Tagging mit einer definierten Regel
+    - Tagging mit allen Default-Regeln
+    """
     with test_app.app_context():
 
         with test_app.test_client() as client:
@@ -248,8 +269,7 @@ def test_tag_stored(test_app):
             # Regel mit Namen aus der SystemDB holen (dry_run)
             parameters = {
                 'rule_name': 'Supermarkets',
-                'dry_run': True,
-                'prio': 2
+                'dry_run': True
             }
             result = client.put(f"/api/tag/{test_app.config['IBAN']}", json=parameters)
             result = result.json
@@ -257,9 +277,9 @@ def test_tag_stored(test_app):
             assert result.get('tagged') == 0, \
                 f"Trotz 'dry_run' wurden {result.get('tagged')} Einträge getaggt"
 
-            tagged_entries = result.get('entries', [])
-            assert len(tagged_entries) == 2, \
-                f"Regel 'Supermarkets' hat {len(tagged_entries)} statt 2 Transactionen getroffen"
+            matched_entries = result.get('entries', [])
+            assert len(matched_entries) == 2, \
+                f"Regel 'Supermarkets' hat {len(matched_entries)} statt 2 Transactionen getroffen"
 
             # Regel mit Namen aus der UserDB holen (no dry_run)
             parameters = {
@@ -269,13 +289,54 @@ def test_tag_stored(test_app):
             result = client.put(f"/api/tag/{test_app.config['IBAN']}", json=parameters)
             result = result.json
 
-            # (1x getagged + 1x Categorie gesetzt)
-            assert result.get('tagged') == 2, \
+            assert result.get('tagged') == 1, \
                 f"Ohne 'dry_run' wurden trotzdem nur {result.get('tagged')} Einträge getaggt"
 
-            tagged_entries = result.get('entries')
-            assert len(tagged_entries) == 1, \
-                f"Die Regel 'City Tax' hat {len(tagged_entries)} statt 1 Transactionen getroffen"
+            matched_entries = result.get('entries')
+            assert len(matched_entries) == 1, \
+                f"Die Regel 'City Tax' hat {len(matched_entries)} statt 1 Transactionen getroffen"
+
+
+def test_categorize_stored_rules(test_app):
+    """Testet das Kategorisieren über den API Endpunkt:
+    - Kategorisieren mit einer definierten Regel
+    - Kategorisieren mit allen Default-Regeln
+    """
+    with test_app.app_context():
+
+        with test_app.test_client() as client:
+
+            # Regel mit Namen aus der SystemDB holen (dry_run)
+            parameters = {
+                'rule_name': 'Abgaben',
+                'dry_run': True
+            }
+            result = client.put(f"/api/cat/{test_app.config['IBAN']}", json=parameters)
+            result = result.json
+
+            assert result.get('categorized') == 0, \
+                f"Trotz 'dry_run' wurden {result.get('tagged')} Einträge getaggt"
+
+            matched_entries = result.get('entries', [])
+            assert len(matched_entries) == 1, \
+                f"Regel 'Abgaben' hat {len(matched_entries)} " + \
+                "statt 2 Transactionen getroffen"
+
+
+            # Regel mit Namen aus der UserDB holen (no dry_run)
+            parameters = {
+                'rule_name': 'Abgaben',
+                'prio': 2
+            }
+            result = client.put(f"/api/cat/{test_app.config['IBAN']}", json=parameters)
+            result = result.json
+
+            assert result.get('categorized') == 1, \
+                f"Ohne 'dry_run' wurden trotzdem nur {result.get('categorized')} Einträge getaggt"
+
+            matched_entries = result.get('entries')
+            assert len(matched_entries) == 1, \
+                f"Die Regel 'City Tax' hat {len(matched_entries)} statt 1 Transactionen getroffen"
 
             # Test 'prio' set correctly
             query = {'key': 'prio', 'compare': '>', 'value': 0}
@@ -284,62 +345,88 @@ def test_tag_stored(test_app):
                 condition=query
             )
             assert len(result_filtered) == 1, \
-                f"Falsche Anzahl an Datensätzen mit 'prio': {len(result_filtered)}"
+                f"Falsche Anzahl an Datensätzen mit 'prio': {len(result_filtered)}"            
 
 
-def test_own_rules(test_app):
-    """Eigene Regeln übermitteln; mit und ohne Treffer"""
+def test_tag_custom_rules(test_app):
+    """Testet das Tagging über den API Endpunkt:
+    - Tagging mit einer custom-Regel, die übermittelt wird (mit Treffern)
+    - Tagging mit einer custom-Regel, die übermittelt wird (ohne Treffer)
+    """
     with test_app.app_context():
 
         with test_app.test_client() as client:
 
             # Eigene Regel taggen lassen (niedrige Prio)
             parameters = {
-                'rule_name': 'My low Rule',
-                'rule_category': 'Lebensmittel',
-                'rule_tags': ['Supermarkt'],
-                'rule_regex': r'EDEKA',
-                'prio': 0,
+                'tags': ['Supermarkt'],
+                'filters': [
+                    {'key':'text_tx', 'value': r'EDEKA', 'compare': 'regex'}
+                ],
             }
-            result = client.put(f"/api/tag/{test_app.config['IBAN']}", json=parameters)
+            result = client.put(f"/api/tag-and-cat/{test_app.config['IBAN']}", json=parameters)
+            result = result.json
+
+            # Es sollte eine Transaktion zutreffen,
+            assert result.get('tagged') == 1, \
+                f"Es wurden {result.get('tagged')} statt 1 Einträge getaggt"
+
+            tagged_entries = result.get('entries', [])
+            assert len(tagged_entries) == 1, \
+                f"Regel hat {len(tagged_entries)} statt 1 Transactionen getroffen"
+
+
+def test_categorize_custom_rules(test_app):
+    """Testet das Kategorisieren über den API Endpunkt:
+    - Kategorisieren mit einer custom-Regel, die übermittelt wird (mit Treffern)
+    - Kategorisieren mit einer custom-Regel, die übermittelt wird (ohne Treffer)
+    """
+    with test_app.app_context():
+
+        with test_app.test_client() as client:
+
+            # Eigene Regel kategorisieren lassen (niedrige Prio)
+            parameters = {
+                'category': "Overwriting Cat",
+                'tags': ['Stadt']
+            }
+            result = client.put(f"/api/tag-and-cat/{test_app.config['IBAN']}", json=parameters)
             result = result.json
 
             # Es sollte eine Transaktion zutreffen,
             # die wegen zu niedriger Prio nicht selektiert wird
-            assert result.get('tagged') == 0, \
-                f"Es wurden {result.get('tagged')} statt 0 Einträge im dry_run getaggt"
+            cat_entries = result.get('entries', [])
+            assert len(cat_entries) == 0, \
+                f"Regel hat {len(cat_entries)} statt 1 Transactionen getroffen"
 
-            tagged_entries = result.get('entries', [])
-            assert len(tagged_entries) == 0, \
-                f"Regel 'My low Rule' hat {len(tagged_entries)} statt 0 Transactionen getroffen"
+            assert result.get('categorized') == 0, \
+                f"Es wurden {result.get('categorized')} statt 0 Einträge getaggt"
 
-            # Eigene Regel taggen lassen (hohe Prio)
+            # Eigene Regel kategorisieren lassen (hohe Prio)
             parameters = {
-                'rule_name': 'My high Rule',
-                'rule_category': 'Haus',
-                'rule_tags': ['Garten'],
-                'rule_regex': r'\sGARTEN\w',
+                'category': 'Force Overwrite',
+                'tags': ['Stadt'],
                 'prio': 9,
                 'prio_set': 3,
             }
-            result = client.put(f"/api/tag/{test_app.config['IBAN']}", json=parameters)
+            result = client.put(f"/api/tag-and-cat/{test_app.config['IBAN']}", json=parameters)
             result = result.json
 
-            assert result.get('tagged') == 1, \
-                f"Es wurden {result.get('tagged')} statt 1 Eintrag getaggt"
-            tagged_entries = result.get('entries', [])
-            assert len(tagged_entries) == 1, \
-                f"DRegel 'My high Rule' hat {len(tagged_entries)} statt 1 Transactionen getroffen"
+            assert result.get('categorized') == 1, \
+                f"Es wurden {result.get('categorized')} statt 1 Eintrag getaggt"
+            cat_entries = result.get('entries', [])
+            assert len(cat_entries) == 1, \
+                f"Die hohe Prio-Regel hat {len(cat_entries)} statt 1 Transactionen getroffen"
 
 
-def test_manual_tagging(test_app):
-    """Einem bestimmten Datenbankeintrag eine Kategorie zuweisen"""
+def test_tag_manual(test_app):
+    """Testet das Tagging über den API Endpunkt:
+    - Einem bestimmten Datenbankeintrag ein bestimmtes Tag zuweisen"""
     with test_app.app_context():
 
         with test_app.test_client() as client:
             new_tag = {
-                'category': 'Tets_PRIMARY',
-                'tags': ['Test_SECONDARY']
+                'tags': ['Test_TAG']
             }
             r = client.put(
                 f"/api/setManualTag/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd",
@@ -354,7 +441,7 @@ def test_manual_tagging(test_app):
             )
             r = r.json
             assert isinstance(r.get('tags'), list), "Tags wurde nicht als Liste gespeichert"
-            assert r.get('tags') == ['Garten', 'Test_SECONDARY'], \
+            assert 'Test_TAG' in r.get('tags', []), \
                 "Es wurde ein falsches Tag gespeichert"
 
             # Add another Tag to the List
@@ -375,17 +462,43 @@ def test_manual_tagging(test_app):
             r = r.json
             assert isinstance(r.get('tags'), list), "Tags wurde nicht als Liste gespeichert"
             tags = r.get('tags')
-            assert 'Test_SECONDARY' in tags and 'Test_Another_SECONDARY' in tags, \
+            assert 'Test_TAG' in tags and 'Test_Another_SECONDARY' in tags, \
                 "Es wurden falsche Tags gespeichert"
 
 
-def test_manual_multi_tagging(test_app):
-    """Mehrere Einträge mit bestimmter Kategorie taggen"""
+def test_categorize_manual(test_app):
+    """Testet das Kategorisieren über den API Endpunkt:
+    - Einem bestimmten Datenbankeintrag eine bestimmte Kategorie zuweisen"""
+    with test_app.app_context():
+
+        with test_app.test_client() as client:
+            new_cat = {
+                'category': 'Test_CAT'
+            }
+            r = client.put(
+                f"/api/setManualCat/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd",
+                json=new_cat
+            )
+            r = r.json
+            assert r.get('updated') == 1, "Der Eintrag wurde nicht aktualisiert"
+
+            # Check if new values correct stored
+            r = client.get(
+                f"/api/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd"
+            )
+            r = r.json
+            assert 'Test_CAT' == r.get('category'), \
+                "Es wurde ein falsches Tag gespeichert"
+            assert r.get('prio') == 99, \
+                "Die Prio wurde nicht korrekt gesetzt"
+
+def test_tag_manual_multi(test_app):
+    """Testet das Tagging über den API Endpunkt:
+    - Mehrere Einträge mit bestimmten Tag taggen"""
     with test_app.app_context():
 
         with test_app.test_client() as client:
             new_tag = {
-                'category': 'Tets_PRIMARY_2',
                 'tags': ['Test_SECONDARY_2'],
                 't_ids': ["6884802db5e07ee68a68e2c64f9c0cdd",
                           "fdd4649484137572ac642e2c0f34f9af"]
@@ -397,26 +510,81 @@ def test_manual_multi_tagging(test_app):
             r = r.json
             assert r.get('updated') == 2, "Der Eintrag wurde nicht aktualisiert"
 
+            # Check if new values correct stored
+            r = client.get(
+                f"/api/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd"
+            )
+            r1 = r.json
+            r = client.get(
+                f"/api/{test_app.config['IBAN']}/fdd4649484137572ac642e2c0f34f9af"
+            )
+            r2 = r.json
+            assert "Test_SECONDARY_2" in r1.get('tags', []) and \
+                "Test_SECONDARY_2" in r2.get('tags', []), \
+                "Es wurden falsche Tags gespeichert"
+            assert "Test_TAG" in r1.get('tags', []), \
+                "Das vorherige Tag wurde überschrieben und nicht ergänzt"
 
-def test_get_tx(test_app):
-    """Testet den API-Endpoint für die Transaktionsdetails"""
+
+def test_categorize_manual_multi(test_app):
+    """Testet das Kategorisieren über den API Endpunkt:
+    - Mehrere Einträge mit bestimmten Kategorie kategorisieren"""
     with test_app.app_context():
 
         with test_app.test_client() as client:
-            # Get Transaction
-            result = client.get(
-                f"/api/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd"
+            new_cat = {
+                'category': 'Multi-Category',
+                't_ids': ["6884802db5e07ee68a68e2c64f9c0cdd",
+                          "fdd4649484137572ac642e2c0f34f9af"]
+            }
+            r = client.put(
+                f"/api/setManualCats/{test_app.config['IBAN']}",
+                json=new_cat
             )
-            assert result.status_code == 200, \
-                "Der Statuscode der Transaktion war falsch"
+            r = r.json
+            assert r.get('updated') == 2, "Der Eintrag wurde nicht aktualisiert"
 
-            # Check Content
+            # Check if new values correct stored
+            r = client.get(
+                f"/api/{test_app.config['IBAN']}/fdd4649484137572ac642e2c0f34f9af"
+            )
+            r = r.json
+            assert 'Multi-Category' == r.get('category'), \
+                "Es wurde eine falsche Kategorie gespeichert"
+            assert r.get('prio') == 99, \
+                "Die Prio wurde nicht korrekt gesetzt"
+
+
+def test_remove_category(test_app):
+    """Testet das Entfernen einer Kategorie.
+    Alle anderen Einträge zur Transaktion bleiben erhalten."""
+    with test_app.app_context():
+
+        with test_app.test_client() as client:
+            # Remove Cat
+            result = client.put(
+                f"/api/removeCat/{test_app.config['IBAN']}/fdd4649484137572ac642e2c0f34f9af"
+            )
             result = result.json
-            assert result.get('category') == 'Tets_PRIMARY_2', \
-                "Der Primary Tag war nicht wie erwartet"
+            assert result.get('updated') == 1, \
+                "Die Kategorie wurde nicht entfernt"
+
+            # Check if new values correct stored
+            result = client.get(
+                f"/api/{test_app.config['IBAN']}/fdd4649484137572ac642e2c0f34f9af"
+            )
+            result = result.json
+            assert result.get('category') is None, \
+                "Der Kategorie wurde nicht entfernt"
+            assert result.get('tags'), \
+                "Die Tags wurden fälschlicherweise entfernt"
+            assert result.get('prio') == 0, \
+                "Die Prio wurde nicht geändert"
+
 
 def test_remove_tag(test_app):
-    """Testet das Entfernen eines Tags"""
+    """Testet das Entfernen aller Tags eines Eintrages.
+    Alle anderen Einträge zur Transaktion bleiben erhalten."""
     with test_app.app_context():
 
         with test_app.test_client() as client:
@@ -427,9 +595,46 @@ def test_remove_tag(test_app):
             result = result.json
             assert result.get('updated') == 1, \
                 "Der Tag wurde nicht entfernt"
-            assert not result.get('category'), \
-                "Der Kategorie war nicht wie erwartet"
+
+            # Check if new values correct stored
+            result = client.get(
+                f"/api/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd"
+            )
+            result = result.json
+            assert result.get('category') is not None, \
+                "Der Kategorie wurde fälschlicherweise entfernt"
             assert not result.get('tags'), \
-                "Die Tags waren nicht wie erwartet"
-            assert not result.get('prio'), \
-                "Die Prio war nicht wie erwartet"
+                "Die Tags wurden nicht entfernt"
+            assert result.get('prio') == 99, \
+                "Die Prio wurde geändert"
+
+
+def test_remove_tag_multi(test_app):
+    """Testet das Entfernen aller Tags mehrerer Einträge.
+    Alle anderen Einträge zur Transaktion bleiben erhalten."""
+    with test_app.app_context():
+
+        with test_app.test_client() as client:
+            # Remove Tag
+            result = client.put(
+                f"/api/removeTags/{test_app.config['IBAN']}",
+                json={
+                    't_ids': ["786e1d4e16832aa321a0176c854fe087",
+                              "fdd4649484137572ac642e2c0f34f9af"]
+                }
+            )
+            result = result.json
+            assert result.get('updated') == 2, \
+                "Die Tags wurde nicht entfernt"
+
+            # Check if new values correct stored
+            result = client.get(
+                f"/api/{test_app.config['IBAN']}/786e1d4e16832aa321a0176c854fe087"
+            )
+            result = result.json
+            assert result.get('category') is not None, \
+                "Der Kategorie wurde fälschlicherweise entfernt"
+            assert not result.get('tags'), \
+                "Die Tags wurden nicht entfernt"
+            assert result.get('prio') != 0, \
+                "Die Prio wurde geändert"

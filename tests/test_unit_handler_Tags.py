@@ -17,31 +17,6 @@ from helper import MockDatabase
 from handler.Tags import Tagger
 
 
-# Test Tagging-Ruleset hinterlegen
-RULESET = {
-    "Supermarkets" : {
-        "name": "Supermarkets",
-        "metatype": "rule",
-        "category": "Lebenserhaltungskosten",
-        "subcategory": "Supermarkt",
-        "tags": ["Lebensmittel"],
-        "regex": r"(EDEKA|Wucherpfennig|Penny|Aldi|Kaufland|netto)"
-    },
-    "City Tax": {
-        "name": "City Tax",
-        "metatype": "rule",
-        "category": "Haus und Grund",
-        "subcategory": "Abgaben",
-        "tags": ["Stadtabgaben"],
-        "parsed": {
-            "multi": "AND",
-            "query": {
-                'Gläubiger-ID': r'DE7000100000077777'
-            }
-        }
-    }
-}
-
 def test_parsing_regex(test_app):
     """Testet das Parsen der Datensätze mit den fest hinterlegten RegExes"""
     with test_app.app_context():
@@ -73,44 +48,65 @@ def test_parsing_regex(test_app):
                 assert not entry.get('parsed'), \
                     f"In Eintrag {i} gab es False-Positives"
 
-def test_regex(test_app):
-    """Testet das Kategorisieren der Datensätze mit fest hinterlegten Regeln.
-    Berücksichtigt alle Umsätze ohne Kategorie"""
+
+def test_categorize(test_app):
+    """Testet das Kategorisieren einzelner Datensätze"""
     with test_app.app_context():
         tagger = Tagger(MockDatabase())
-        tagging_result = tagger.tag_regex(ruleset=RULESET)
-
-        assert tagging_result.get('tagged') == 3, \
-            "Die Regeln haben nicht die richtige Anzahl an Einträgen getroffen"
-
-def test_regex_untagged(test_app):
-    """Testet das Kategorisieren der Datensätzemit fest hinterlegten Regeln.
-    Berücksichtigt alle Umsätze nud überschreibt auch vorhandene Kategorien."""
-    with test_app.app_context():
-        # prio auf 4 aber override auf 1
-        tagger = Tagger(MockDatabase())
-        tagging_result = tagger.tag_regex(ruleset=RULESET, dry_run=True, prio=1, prio_set=9)
-
-        assert tagging_result.get('tagged') == 0, \
-            "Die Option dry_run hat trotzdem Datensätze verändert"
-        # Treffer insgesamt für alle Regeln zählen
-        assert len(tagging_result.get('entries')) == 3, \
-            "Die Regel 'City Tax' hat nicht die richtige Anzahl an Einträgen getroffen"
-
-@pytest.mark.skip(reason="Currently not implemented yet")
-def test_regex_custom():
-    """Testet das Kategorisieren der Datensätze mit Regeln,
-    die vom Benutzer hinterlegt worden sind"""
-    return
+        mocker_result = tagger.categorize(iban="DE89370400440532013000")
+        assert mocker_result.get('entries') == ['test_categorize'], \
+            "Result does not match with Mocker Fake"
 
 
-def test_ai_guess(test_app):
-    """Prüft zunächst, ob die Methode für das KI Tagging die
-    richtigen Datensätze selektiert und ein Guess hinterlässt"""
+def test_tag(test_app):
+    """Testet das vergeben von Tags an einzelne Datensätze"""
     with test_app.app_context():
         tagger = Tagger(MockDatabase())
-        tagging_result = tagger.tag_ai(dry_run=True)
-        assert tagging_result.get('guessed') == 0, \
-            "Die Option dry_run hat trotzdem Datensätze verändert"
-        assert len(tagging_result.get('ai').get('entries')) == 5, \
-            "Die Methode hat nicht die richtige Anzahl an Einträgen getroffen"
+        mocker_result = tagger.tag(iban="DE89370400440532013000")
+        assert mocker_result.get('entries') == ['test_tag'], \
+            "Result does not match with Mocker Fake"
+
+
+def test_tag_and_cat(test_app):
+    """Testet den ganzen Ablauf mit automatischem Tagging und Kategorisierung"""
+    with test_app.app_context():
+        tagger = Tagger(MockDatabase())
+
+        # AI Tagging
+        mocker_result = tagger.tag_and_cat(iban="DE89370400440532013000", rule_name='ai')
+        assert mocker_result.get('entries') == [
+            'b5aaffc31fa63a466a8b55962995ebcc', 'test_categorize'], \
+                "Result does not match with Mocker Fake"
+
+        # Normal Tagging
+        mocker_result = tagger.tag_and_cat(iban="DE89370400440532013000")
+        assert mocker_result.get('entries') == ['test_tag', 'test_categorize'], \
+            "Result does not match with Mocker Fake"
+
+
+def test_tag_or_cat_custom(test_app):
+    """Testet das Kategorisieren und Taggen von Datensätze mit
+    Parametern, die beim Aufruf übergeben werden (benutzerdefinierte Regeln)"""
+    with test_app.app_context():
+        tagger = Tagger(MockDatabase())
+
+        # Tagging
+        mocker_result = tagger.tag_or_cat_custom(
+            iban="DE89370400440532013000", tags=['custom_tagging1', 'custom_tagging2'],
+            filters=[{'key': 'betrag', 'compare': '<', 'value': -100}],
+            parsed_keys=['custom_key1', 'custom_key2'],
+            parsed_vals=['custom_val1', 'custom_val2'], multi='AND',
+        )
+        assert mocker_result.get('entries') == ['custom_tagging_uuid'], \
+            "Result does not match with Mocker Fake"
+
+        # Categorizing
+        mocker_result = tagger.tag_or_cat_custom(
+            iban="DE89370400440532013000", category='custom_category',
+            filters=[{'key': 'betrag', 'compare': '<', 'value': -999}],
+            prio=22, prio_set=33,
+            parsed_keys=['custom_key1', 'custom_key2'],
+            parsed_vals=['custom_val1', 'custom_val2'], multi='AND',
+        )
+        assert mocker_result.get('entries') == ['custom_categorize_uuid'], \
+            "Result does not match with Mocker Fake"

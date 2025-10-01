@@ -5,6 +5,7 @@ import os
 import copy
 import operator
 import logging
+import re
 from tinydb import TinyDB, Query, where
 from flask import current_app
 
@@ -50,17 +51,19 @@ class TinyDbHandler(BaseDb):
         Selektiert Datensätze aus der Datenbank, die die angegebene Bedingung erfüllen.
 
         Args:
-            collection (list):  Name der Collection oder Liste von Collections,
-                                deren Werte selecktiert werden sollen.
+            collection, list:               Name der Collection oder Liste von Collections,
+                                            deren Werte selecktiert werden sollen.
             condition (dict | list(dicts)): Bedingung als Dictionary
-                - 'key', str    : Spalten- oder Schlüsselname,
-                - 'value', any  : Wert der bei 'key' verglichen werden soll
-                - 'compare', str: (optional, default '==')
-                    - '[==, !=, <, >, <=, >=]': Wert asu DB [compare] value
-                    - 'like'    : Wert aus DB == *value* (case insensitive)
-                    - 'regex'   : value wird als RegEx behandelt
-            multi (str) : ['AND' | 'OR'] Wenn 'condition' eine Liste mit conditions ist,
-                          werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
+                - 'key', str    :           Spalten- oder Schlüsselname,
+                - 'value', str|int|list:    Wert der bei 'key' verglichen werden soll
+                - 'compare', str:           (optional, default '==')
+                    - '[==, !=, <, >, <=, >=, in, notin, all]':
+                                            Wert asu DB [compare] value (Operatoren, siehe Models.md)
+                    - 'like':               Wert aus DB == *value* (case insensitive)
+                    - 'regex':              value wird als RegEx behandelt
+            multi, str ['AND' | 'OR']:      Wenn 'condition' eine Liste mit conditions ist,
+                                            werden diese logisch wie hier angegeben verknüpft.
+                                            Default: 'AND'
         Returns:
             list: Liste der ausgewählten Datensätze
         """
@@ -306,6 +309,7 @@ class TinyDbHandler(BaseDb):
 
         # RegEx Suche
         if condition_method == 'regex':
+            condition_val = re.compile(condition_val)
             where_statement = where_statement.search(condition_val)
             return where_statement
 
@@ -330,6 +334,12 @@ class TinyDbHandler(BaseDb):
             where_statement = where_statement > condition_val
         if condition_method == '<':
             where_statement = where_statement < condition_val
+        if condition_method == 'in':
+            where_statement = where_statement.any(condition_val)
+        if condition_method == 'notin':
+            where_statement = where_statement.test(self._none_of_test, condition_val)
+        if condition_method == 'all':
+            where_statement = where_statement.all(condition_val)
 
         return where_statement
 
@@ -345,29 +355,37 @@ class TinyDbHandler(BaseDb):
         Returns:
             set: Ein oder mehrere Query Objekte im set
         """
-        # Multi condition
-        if isinstance(condition, list):
+        logical_concat = operator.or_ if multi.upper() == 'OR' else operator.and_
+        if isinstance(condition, list) and len(condition) == 1:
+            # single filter in list
+            condition = condition[0]
 
-            # Create every where_statement from condition
+        if isinstance(condition, list):
+            # Multi condition
             query = None
             where_statements = []
+            prio_query = None
+
+            # Create every where_statement from condition
             for c in condition:
+                if c.get('key') == 'prio':
+                    # Special handle prio (seek and save here)
+                    prio_query = self._form_where(c)
+                    continue
+
                 where_statements.append(self._form_where(c))
-
-            if multi.upper() == 'OR':
-                # Concat all where_statements with OR later
-                logical_concat = operator.or_
-
-            else:
-                # Concat all where_statements with AND later
-                logical_concat = operator.and_
 
             # Concat conditions logical
             for w in where_statements:
                 if query is None:
                     query = w
                     continue
+
                 query = logical_concat(query, w)
+
+            if prio_query:
+                # prio + other filter(s)
+                query = operator.and_(query, prio_query)
 
         else:
             # Single condition
@@ -395,3 +413,7 @@ class TinyDbHandler(BaseDb):
         duplicate_ids = [r.get('uuid') for r in results]
 
         return duplicate_ids
+
+    def _none_of_test(self, value, forbidden_values):
+        """Benutzerdefinierter Test: Keines der Elemente ist in einer Liste vorhanden"""
+        return not any(item in forbidden_values for item in value)
