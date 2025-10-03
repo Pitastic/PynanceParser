@@ -63,8 +63,11 @@ class BaseDb():
         result_list = self._select(collection, condition, multi)
         for r in result_list:
             # Format Datestrings
-            r['date_tx'] = datetime.fromtimestamp(r['date_tx']).strftime('%d.%m.%Y')
-            r['date_wert'] = datetime.fromtimestamp(r['date_wert']).strftime('%d.%m.%Y')
+            if isinstance(r.get('date_tx'), int):
+                r['date_tx'] = datetime.fromtimestamp(r['date_tx']).strftime('%d.%m.%Y')
+
+            if isinstance(r.get('date_wert'), int):
+                r['date_wert'] = datetime.fromtimestamp(r['date_wert']).strftime('%d.%m.%Y')
 
         return result_list
 

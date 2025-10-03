@@ -74,7 +74,7 @@ def test_select_filter(test_app):
         assert len(result_filtered) == 1, \
             f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
         for entry in result_filtered:
-            check_entry(entry, key_vals={'date_tx': 1672617600, 'betrag': -118.94})
+            check_entry(entry, key_vals={'date_tx': '02.01.2023', 'betrag': -118.94})
 
         # Selektieren mit Filter (by Art)
         query = {'key': 'art', 'value': 'Lastschrift'}
