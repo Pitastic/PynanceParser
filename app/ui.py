@@ -6,7 +6,7 @@ import os
 import json
 import logging
 from datetime import datetime
-from flask import request, current_app, render_template, make_response, send_from_directory
+from flask import request, current_app, render_template, redirect, make_response, send_from_directory
 
 # Add Parent for importing Classes
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -80,11 +80,17 @@ class UserInterface():
                 Returns:
                     html: Startseite mit Navigation
                 """
+                if iban is None:
+                    # No IBAN selected, show Welcome page with IBANs
+                    ibans = self.db_handler.list_ibans()
+                    return render_template('welcome.html', ibans=ibans)
+
+                if not self.db_handler.check_collection_is_iban(iban):
+                    # Do not treat URI as IBAN
+                    return "", 404
+
                 # Check filter args
                 condition = []
-
-                if iban is None:
-                    iban = current_app.config['IBAN']
 
                 start_date = request.args.get('startDate')
                 if start_date is not None:
@@ -116,22 +122,19 @@ class UserInterface():
 
                 # Table with Transactions
                 rows = self.db_handler.select(iban, condition)
-                table_header = ['date_tx', 'betrag', 'currency',
-                                'category', 'tags',
-                                'prio', 'parsed']
+                ibans = self.db_handler.get_group_ibans(iban, check_before=True)
 
-                # Rules for Selection
-                rules = self.db_handler.filter_metadata({
-                    'key': 'metatype',
-                    'value': 'rule'
-                })
-                rule_list = []
-                for rule in rules:
-                    rule_list.append(rule.get('name'))
+                return render_template('index.html', transactions=rows)
 
-                return render_template('index.html', iban=iban,
-                                       table_header=table_header,
-                                       table_data=rows, rule_list=rule_list)
+            @current_app.route('/logout', methods=['GET'])
+            def logout():
+                """
+                Loggt den User aus der Session aus und leitet zur Startseite weiter.
+
+                Returns:
+                    redirect: Weiterleitung zur Startseite
+                """
+                return redirect('/')
 
             @current_app.route('/sw.js')
             def sw():

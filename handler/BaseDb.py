@@ -7,8 +7,8 @@ import os
 import logging
 import glob
 import json
+from datetime import datetime
 from natsort import natsorted
-from flask import current_app
 
 
 class BaseDb():
@@ -21,7 +21,7 @@ class BaseDb():
         """Erstellen des Datenbankspeichers"""
         raise NotImplementedError()
 
-    def select(self, collection:str=None, condition: dict|list[dict]=None, multi: str='AND'):
+    def select(self, collection:str, condition: dict|list[dict]=None, multi: str='AND'):
         """
         Handler für das Vorbereiten der '_select' Methode, welche Datensätze aus der Datenbank
         selektiert, die die angegebene Bedingung erfüllen.
@@ -30,7 +30,6 @@ class BaseDb():
             collection (str, optional): Name der Collection oder Gruppe, aus der selektiert werden
                                         soll. Es erfolgt automatisch eine Unterscheidung, ob es
                                         sich um eine IBAN oder einen Gruppenname handelt.
-                                        Default: IBAN aus der Config.
             condition (dict | list(dict)): Bedingung als Dictionary
                 - 'key', str    : Spalten- oder Schlüsselname,
                 - 'value', any  : Wert der bei 'key' verglichen werden soll
@@ -48,11 +47,7 @@ class BaseDb():
             # Catch empty lists
             condition = None
 
-        if collection is None:
-            # Default Collection
-            collection = current_app.config['IBAN']
-
-        if not self._check_collection_is_iban(collection):
+        if not self.check_collection_is_iban(collection):
             # collection is a group
             group_ibans = self.get_group_ibans(collection)
             if not group_ibans:
@@ -65,7 +60,13 @@ class BaseDb():
         if not isinstance(collection, list):
             collection = [collection]
 
-        return self._select(collection, condition, multi)
+        result_list = self._select(collection, condition, multi)
+        for r in result_list:
+            # Format Datestrings
+            r['date_tx'] = datetime.fromtimestamp(r['date_tx']).strftime('%d.%m.%Y')
+            r['date_wert'] = datetime.fromtimestamp(r['date_wert']).strftime('%d.%m.%Y')
+
+        return result_list
 
     def _select(self, collection: str, condition: dict|list[dict], multi: str):
         """
@@ -78,22 +79,18 @@ class BaseDb():
         """
         raise NotImplementedError()
 
-    def insert(self, data: dict|list[dict], collection: str=None):
+    def insert(self, data: dict|list[dict], collection: str):
         """
         Fügt einen oder mehrere Datensätze in die Datenbank ein.
 
         Args:
             data (dict or list): Einzelner Datensatz oder eine Liste von Datensätzen
             collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
-                                        Default: IBAN aus der Config.
         Returns:
             dict:
                 - inserted, int: Zahl der neu eingefügten IDs
         """
-        if collection is None:
-            collection = current_app.config['IBAN']
-
-        if not self._check_collection_is_iban(collection):
+        if not self.check_collection_is_iban(collection):
             raise ValueError(f"Collection {collection} is not a valid IBAN")
 
         # Always create a list of transactions for loop
@@ -220,15 +217,21 @@ class BaseDb():
         """
         raise NotImplementedError()
 
-    def get_group_ibans(self, group: str):
+    def get_group_ibans(self, group: str, check_before: bool=False):
         """
         Ruft die Liste von IBANs einer Gruppe aus der Datenbank ab.
 
         Args:
             group (str): Name der Gruppe.
+            check_before (bool):    Wenn True, wird überprüft, ob es
+                                    sich um eine Gruppe oder IBAN handelt.
+                                    Default: False
         Returns:
             list: Die IBANs der abgerufene Gruppe.
         """
+        if check_before and self.check_collection_is_iban(group):
+            return [group]
+
         meta_results = self.filter_metadata([
             {
                 'key': 'metatype',
@@ -247,6 +250,26 @@ class BaseDb():
             ibans = meta_results[0].get('ibans', [])
 
         return ibans
+
+    def list_ibans(self):
+        """
+        Listet alle in der Datenbank vorhandenen IBAN-Collections auf.
+
+        Returns:
+            list: Liste der IBAN-Collections.
+        """
+        all_collections = self._get_collections()
+        ibans = [col for col in all_collections if self.check_collection_is_iban(col)]
+        return ibans
+
+    def _get_collections(self):
+        """
+        Ruft alle Collections in der Datenbank ab.
+
+        Returns:
+            list: Liste der Collections.
+        """
+        raise NotImplementedError()
 
     def _generate_unique(self, tx_entry: dict | list[dict]):
         """
@@ -391,7 +414,7 @@ class BaseDb():
         logging.info(f"Stored {inserted} imported metadata from {path}")
         return {'inserted': inserted}
 
-    def _check_collection_is_iban(self, collection: str):
+    def check_collection_is_iban(self, collection: str):
         """
         Überprüft, ob die angegebene Collection eine IBAN ist.
 

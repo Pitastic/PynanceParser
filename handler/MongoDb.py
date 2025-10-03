@@ -361,3 +361,12 @@ class MongoDbHandler(BaseDb):
             query = self._form_condition(condition)
 
         return query
+
+    def _get_collections(self):
+        """
+        Liste alle collections der Datenbank.
+
+        Returns:
+            list: A list of collection names.
+        """
+        return self.connection.list_collection_names()

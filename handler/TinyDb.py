@@ -417,3 +417,12 @@ class TinyDbHandler(BaseDb):
     def _none_of_test(self, value, forbidden_values):
         """Benutzerdefinierter Test: Keines der Elemente ist in einer Liste vorhanden"""
         return not any(item in forbidden_values for item in value)
+
+    def _get_collections(self):
+        """
+        Liste alle tables der Datenbank.
+
+        Returns:
+            list: A list of table names.
+        """
+        return self.connection.tables()

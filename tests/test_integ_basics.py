@@ -47,7 +47,7 @@ def test_upload_csv_commerzbank(test_app):
             # Visit Form
             result = client.get('/')
             assert result.status_code == 200, "Der Statuscode der Startseite war falsch"
-            assert 'Message Box' in result.text, \
+            assert 'All rights reserved.' in result.text, \
                 "Special Heading not found in the response"
 
             # Prepare File
@@ -65,16 +65,18 @@ def test_upload_csv_commerzbank(test_app):
             assert result.json.get('filename') == 'commerzbank.csv', \
                 "Angaben zum Upload wurden nicht gefunden"
 
-            # Aufruf der Transaktionen auf verschiedene Weisen
-            response1 = client.get("/")
+            # Aufruf der Transaktionen
             response2 = client.get(f"/{test_app.config['IBAN']}")
-            assert response1.status_code == response2.status_code == 200, \
+            assert response2.status_code == 200, \
                 "Die Ergebnisseite mit den Transaktionen ist nicht (richtig) erreichbar"
-            assert response2.text == response1.text, \
-                "Der Aufruf des DEFAULT Kontos aus der Konfig ist nicht richtig"
+
+            # Aufruf der Umleitung von Logout nach Welcome
+            response3 = client.get('/logout')
+            assert response3.status_code == 302, \
+                "Die Umleitung von Logout nach Welcome ist nicht (richtig) erreichbar"
 
         # -- Check Parsing --
-        soup = BeautifulSoup(response1.text, features="html.parser")
+        soup = BeautifulSoup(response2.text, features="html.parser")
 
         # 1. Example
         tx_hash = 'cf1fb4e6c131570e4f3b2ac857dead40'
@@ -83,7 +85,7 @@ def test_upload_csv_commerzbank(test_app):
             f"Es wurden {len(row1)} rows für das erste Beispiel gefunden"
 
         content = row1[0].css.filter('.td-betrag')[0].contents[0]
-        assert content == '-11.63', \
+        assert content == 'EUR -11.63', \
             f"Der Content von {tx_hash} ist anders als erwartet: '{content}'"
 
         # 2. Example
@@ -93,12 +95,8 @@ def test_upload_csv_commerzbank(test_app):
             f"Es wurden {len(row2)} rows für das zweite Beispiel gefunden"
 
         content = row2[0].css.filter('.td-betrag')[0].contents[0]
-        assert content == '-221.98', \
+        assert content == 'EUR -221.98', \
             f"Der Content von {tx_hash} / 'betrag' ist anders als erwartet: '{content}'"
-
-        content = [child.contents[0] for child in row2[0].select('.td-parsed p')]
-        assert 'Mandatsreferenz' in content, \
-            f"Der Content von {tx_hash} / 'parsed' ist anders als erwartet: '{content}'"
 
 
 def test_reachable_endpoints(test_app):

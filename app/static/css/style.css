@@ -11,9 +11,14 @@ html, body {
     background-color: silver;
 }
 
+.popup {
+    border: 1px solid silver;
+    display: inline-block;
+}
+
 #result-text {
     display: block;
-    background-color: silver;
+    background-color: green;
     padding: 1em;
     margin: 1em;
 }
