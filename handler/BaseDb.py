@@ -111,7 +111,9 @@ class BaseDb():
             # - IBAN, Tagging priority, empty Tag list
             transaction['iban'] = collection
             transaction['prio'] = 0
-            transaction['tags'] = []
+            transaction['category'] = transaction.get('category')
+            if not transaction.get('tags'):
+                transaction['tags'] = []
 
         return self._insert(tx_list, collection)
 

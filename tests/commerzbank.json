@@ -7,9 +7,7 @@
         "betrag": -11.63,
         "iban": "DE89370400440532013000",
         "currency": "EUR",
-        "parsed": {},
-        "category": null,
-        "tags": null
+        "parsed": {}
     },
     {
         "date_tx": 1672617600,
@@ -19,9 +17,7 @@
         "betrag": -118.94,
         "iban": "DE89370400440532013000",
         "currency": "EUR",
-        "parsed": {},
-        "category": null,
-        "tags": null
+        "parsed": {}
     },
     {
         "date_tx": 1672704000,
@@ -32,8 +28,7 @@
         "iban": "DE89370400440532013000",
         "currency": "EUR",
         "parsed": {},
-        "category": null,
-        "tags": null
+        "tags": ["TestTag3"]
     },
     {
         "date_tx": 1672790400,
@@ -43,9 +38,7 @@
         "betrag": -71.35,
         "iban": "DE89370400440532013000",
         "currency": "EUR",
-        "parsed": {},
-        "category": null,
-        "tags": null
+        "parsed": {}
     },
     {
         "date_tx": 1672876800,
@@ -56,7 +49,6 @@
         "iban": "DE89370400440532013000",
         "currency": "EUR",
         "parsed": {},
-        "category": null,
-        "tags": null
+        "tags": ["TestTag1", "TestTag2"]
     }
 ]

@@ -132,6 +132,41 @@ def test_select_not_eq(test_app):
         for entry in result_filtered:
             check_entry(entry)
 
+def test_select_list_filters(test_app):
+    """Testet das Auslesen von Datensätzen mit 'in' und 'not in'"""
+    with test_app.app_context():
+        # IN
+        query = {'key': 'tags', 'compare': 'in', 'value': ['TestTag1', 'TestTag3']}
+        result_filtered = test_app.host.db_handler.select(test_app.config['IBAN'],
+                                                condition=query)
+        assert len(result_filtered) == 2, \
+            f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
+        for entry in result_filtered:
+            check_entry(entry)
+            assert entry.get('betrag') in [-221.98, -99.58], \
+                f"Es wurde der falsche Eintrag zurückgegeben: {entry.get('betrag')}"
+
+        # NOT IN
+        query = {'key': 'tags', 'compare': 'notin', 'value': ['TestTag1']}
+        result_filtered = test_app.host.db_handler.select(test_app.config['IBAN'],
+                                                condition=query)
+        assert len(result_filtered) == 4, \
+            f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
+        for entry in result_filtered:
+            check_entry(entry)
+            assert entry.get('betrag') != -221.98, \
+                f"Es wurde der falsche Eintrag zurückgegeben: {entry.get('betrag')}"
+
+        # all
+        query = {'key': 'tags', 'compare': 'all', 'value': ['TestTag1', 'TestTag2']}
+        result_filtered = test_app.host.db_handler.select(test_app.config['IBAN'],
+                                                condition=query)
+        assert len(result_filtered) == 1, \
+            f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
+        entry = result_filtered[0]
+        check_entry(entry)
+        assert entry.get('betrag') == -221.98, \
+            f"Es wurde der falsche Eintrag zurückgegeben: {entry.get('betrag')}"
 
 def test_select_regex(test_app):
     """Testet das Auslesen von Datensätzen mit Textfiltern (regex)"""
@@ -175,6 +210,15 @@ def test_select_multi(test_app):
         for entry in result_filtered:
             check_entry(entry)
 
+
+def test_list_ibans(test_app):
+    """Testet das Auslesen aller IBANs"""
+    with test_app.app_context():
+        ibans = test_app.host.db_handler.list_ibans()
+        assert isinstance(ibans, list), "Die IBANs wurden nicht als Liste zurückgegeben"
+        assert len(ibans) >= 2, "Es wurden nicht alle IBANs zurückgegeben"
+        assert test_app.config['IBAN'] in ibans, "Die Test-IBAN wurde nicht zurückgegeben"
+        assert 'DE89370400440532011111' in ibans, "Die zweite Test-IBAN wurde nicht zurückgegeben"
 
 def test_update(test_app):
     """Testet das Aktualisieren von Datensätzen"""

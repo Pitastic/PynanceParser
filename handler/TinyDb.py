@@ -293,11 +293,17 @@ class TinyDbHandler(BaseDb):
         condition_method = condition.get('compare', '==')
         condition_key = condition.get('key')
         condition_val = condition.get('value')
-        try:
-            # Transfer to a number for comparison
-            condition_val = float(condition_val)
-        except (TypeError, ValueError):
-            pass
+
+        if isinstance(condition_val, list):
+            # All types in query have to be hashable in TinyDB
+            condition_val = tuple(condition_val)
+
+        else:
+            try:
+                # Transfer to a number for comparison
+                condition_val = float(condition_val)
+            except (TypeError, ValueError):
+                pass
 
         # Nested or Plain Key
         if isinstance(condition_key, dict):
