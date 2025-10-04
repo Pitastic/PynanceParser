@@ -1,11 +1,73 @@
 "use strict";
 
+let rowCheckboxes = null;
+
 document.addEventListener('DOMContentLoaded', function () {
 
-    // Upload Button Listener
-    //document.getElementById('uploadButton').addEventListener('click', uploadFile);
+    // PopUps
+    document.getElementById('settings-button').addEventListener('click', function () {
+        openPopup('settings-popup');
+    });
+
+    // Additional JavaScript for enabling/disabling the edit button based on checkbox selection
+    const selectAllCheckbox = document.getElementById('select-all');
+    rowCheckboxes = document.querySelectorAll('.row-checkbox');
+
+    selectAllCheckbox.addEventListener('change', function () {
+        rowCheckboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+        });
+        updateEditButtonState();
+    });
+
+    rowCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function () {
+        if (!this.checked) {
+            selectAllCheckbox.checked = false;
+        } else if (Array.from(rowCheckboxes).every(cb => cb.checked)) {
+            selectAllCheckbox.checked = true;
+        }
+        updateEditButtonState();
+        });
+    });
 
 });
+
+// ----------------------------------------------------------------------------
+// -- DOM Functions -----------------------------------------------------------
+// ----------------------------------------------------------------------------
+
+/**
+ * Opens a popup to display details for a specific element and optionally fetches transaction details.
+ *
+ * @param {string} id - The ID of the HTML element to display as a popup.
+ * @param {string|null} [tx_hash=null] - Optional transaction hash to fetch additional details for.
+ */
+function openDetailsPopup(id, tx_hash = null) {
+	if (tx_hash) {
+		// Use AJAX to fetch and populate details for the transaction with the given ID
+		console.log(`Fetching details for transaction hash: ${tx_hash}`);
+        const currentURI = window.location.pathname;
+        const iban = currentURI.split('/').pop();
+        resetDetails();
+        getInfo(iban, tx_hash, fillTxDetails);
+        openPopup(id);
+
+	} else {
+        openPopup(id);
+		
+	}
+}
+
+
+/**
+ * Clears information from a result Box
+*
+*/
+function resetDetails() {
+    const box = document.getElementById('result-text');
+    box.innerHTML = "";
+}
 
 
 /**
@@ -13,9 +75,28 @@ document.addEventListener('DOMContentLoaded', function () {
  *
  * @param {string} result - The text to be shwon.
  */
-function printResult(result){
+function fillTxDetails(result){
     const box = document.getElementById('result-text');
     box.innerHTML = result;
+}
+
+/**
+ * Updates the state of the "Edit Selected" button based on the checkbox selections.
+ * 
+ * This function checks if any row checkboxes are selected and enables or disables
+ * the "Edit Selected" button accordingly. It also updates the button's title to
+ * reflect the number of selected checkboxes.
+ * 
+ * Assumes that `rowCheckboxes` is a collection of checkbox elements and that
+ * there is a button with the ID `edit-selected` in the DOM.
+ */
+function updateEditButtonState() {
+	const anyChecked = Array.from(rowCheckboxes).some(cb => cb.checked);
+	const editButton = document.getElementById('edit-selected');
+	editButton.disabled = !anyChecked;
+	editButton.title = anyChecked
+	? `Edit selected (${Array.from(rowCheckboxes).filter(cb => cb.checked).length} selected)`
+	: 'Edit selected (0 selected)';
 }
 
 
@@ -188,21 +269,19 @@ function manualTagEntries() {
 
 
 /**
- * Fetches information based on the provided UUID and IBAN input value.
+ * Fetches information based on the provided IBAN and UUID, and processes the response.
  *
- * @param {string} uuid - The unique identifier used to fetch specific information.
- * 
- * This function retrieves the info for a given uuid from the server.
+ * @param {string} iban - The International Bank Account Number (IBAN) to identify the account.
+ * @param {string} uuid - The unique identifier associated with the request.
+ * @param {Function} [callback=alert] - A callback function to handle the response text. Defaults to `alert`.
  */
-function getInfo(uuid) {
-    const iban = document.getElementById('input_iban').value;
-
+function getInfo(iban, uuid, callback = alert) {
     apiGet('/'+iban+'/'+uuid, {}, function (responseText, error) {
         if (error) {
             printResult('getTx failed: ' + '(' + error + ')' + responseText);
 
         } else {
-            alert(responseText);
+            callback(responseText);
 
         }
     });

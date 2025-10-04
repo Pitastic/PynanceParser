@@ -1,112 +1,87 @@
+
 {% extends 'layout.html' %}
 
 {% block content %}
 
-<div class="container">
+<header>
+    <nav>
+        <ul style="display: flex; justify-content: space-between; list-style: none; padding: 0;">
+            <li>
+                <button id="edit-selected" onclick="openDetailsPopup('massedit-popup')" disabled title="Edit selected (0 selected)">
+                    ✏️
+                </button>
+            </li>
+            <li>
+                <input type="text" id="daterange-picker" placeholder="Select date range">
+                <input type="text" id="filter-text" placeholder="Filter transactions">
+                <button id="apply-filter">Apply</button>
+            </li>
+            <li>
+                <button id="settings-button" title="Settings">⚙️</button>
+                <a href="/logout" title="Logout">🚪</a>
+            </li>
+        </ul>
+    </nav>
+</header>
 
+<main>
     <table class="transactions">
-        <thead><tr>
-            <th>&nbsp;</th>
-            {% for entry in table_header %}
-            <th>{{ entry }}</th>
-            {% endfor %}
-            <th>&nbsp;</th>
-        </tr></thead>
-
+        <thead>
+            <tr>
+                <th><input type="checkbox" id="select-all"></th>
+                <th>Date</th>
+                <th>Text</th>
+                <th>Category</th>
+                <th>Tags</th>
+                <th>Betrag</th>
+                <th>&nbsp;</th>
+            </tr>
+        </thead>
         <tbody>
-            {% for row in table_data %}
-            <tr id="tr-{{ row.get('uuid') }}">
-                <td><input type="checkbox" name="entry-select[]" value="{{ row.get('uuid') }}"></td>
-                {% for key in table_header %}
-                {% if key != 'parsed' %}
-                <td class="td-{{ key }}">{{ row.get(key) or '' }}</td>
-                {% endif %}
-                {% endfor %}
-                <td class="td-parsed">
-                    {% for info in row.get('parsed') %}
-                    <p>{{ info }}</p>
-                    {% endfor %}
+            {% for transaction in transactions %}
+            <tr id="tr-{{ transaction.uuid }}">
+                <td><input type="checkbox" class="row-checkbox" name="check_{{ transaction.uuid }}"></td>
+                <td class="td-date_tx">{{ transaction.date_tx }}</td>
+                <td class="td-text_tx">{{ transaction.text_tx }}</td>
+                <td>
+                    <span title="{{ transaction.category }}" style="cursor: help;">🔖</span>
                 </td>
                 <td>
-                    <a class="my-buttons" href="javascript:getInfo('{{ row.get('uuid') }}');">(i)</a>
+                    {% for tag in transaction.tags %}
+                    <span style="background-color: #ddd; padding: 0.2em; border-radius: 0.2em; margin-right: 0.2em;">
+                        {{ tag }}
+                    </span>
+                    {% endfor %}
+                </td>
+                <td class="td-betrag">{{ transaction.currency }} {{ transaction.betrag }}</td>
+                <td>
+                    <button class="details-button" title="Show details" onclick="openDetailsPopup('details-popup', '{{ transaction.uuid }}')" style="cursor: pointer;">ℹ️</button>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+</main>
 
+<!-- Popups -->
+<div id="massedit-popup" style="display: none;" class="popup">
+    <h2>Mass Edit</h2>
+    <p>Dummy content for settings.</p>
+    <button onclick="closePopup('massedit-popup')">Close</button>
 </div>
 
-
-
-<div class="container">
-    
-    <h2>Actions for <input type="text" value="{{iban}}" id="input_iban" placeholder="IBAN"></h2>
-    <style>
-        .tile-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-        .tile {
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            padding: 1rem;
-            width: 200px;
-            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
-        }
-        .tile h3 {
-            margin-top: 0;
-            font-size: 1.2rem;
-        }
-        .tile input, .tile button {
-            display: block;
-            margin: 0.5rem 0;
-            width: 100%;
-        }
-    </style>
-
-    <div class="tile-container">
-        <div class="tile">
-            <h3>Datenbank</h3>
-            <input type="file" name="input_file" id="input_file">
-            <button onclick="uploadFile()">Upload</button>
-            <button onclick="truncateDB()">DB leeren</button>
-        </div>
-        <div class="tile">
-            <h3>Tagging</h3>
-            <select name="tagging_name" id="tagging_name">
-                <option value=""></option>
-                {% for rule in rule_list %}
-                <option>{{ rule }}</option>
-                {% endfor %}
-            </select>
-            <button onclick="tagEntries()">Auto Tag</button>
-            <input type="text" value="" id="input_manual_category" placeholder="Manual Category">
-            <input type="text" value="" id="input_manual_tags" placeholder="Manual Tag">
-            <button onclick="manualTagEntries()">Manuelles Taggen</button>
-            <button onclick="removeTags()">Tags entfernen</button>
-        </div>
-        <div class="tile">
-            <h3>Metadata</h3>
-            <input type="file" name="input-json" id="input-json">
-            <select id="select_meta">
-                <option value="rule">Rule</option>
-                <option value="parser">Parser</option>
-                <option value="config">Config</option>
-            </select>
-            <button onclick="saveMeta()">Speichern</button>
-        </div>
-    </div>
-
+<div id="settings-popup" style="display: none;" class="popup">
+    <h2>Settings</h2>
+    <p>Dummy content for settings.</p>
+    <button onclick="closePopup('settings-popup')">Close</button>
 </div>
 
-
-<div class="container">
-
-    <h2>Message Box</h2>
-    <pre id="result-text">&nbsp;</pre>
-
+<div id="details-popup" style="display: none;" class="popup">
+    <h2>Transaction Details</h2>
+    <code id="result-text">
+        ...
+    </code>
+    <button onclick="closePopup('details-popup')">Close</button>
 </div>
 
 <script src="{{ url_for('static', filename='js/index.js') }}"></script>

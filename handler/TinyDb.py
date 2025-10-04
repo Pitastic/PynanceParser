@@ -40,11 +40,22 @@ class TinyDbHandler(BaseDb):
         Erstellt einen Table je Konto und legt Indexes/Constraints fest.
         Außerdem wird der Table für Metadaten erstellt, falls er noch nicht existiert.
         """
-        # Touch Table für Transaktionen (je Konto)
-        self.connection.table(current_app.config['IBAN'])
-
         # Table für Metadaten
         self.connection.table('metadata')
+
+    def _add_iban(self, iban):
+        """
+        Fügt eine neue IBAN-Collection in die Datenbank ein.
+
+        Args:
+            iban (str): Die hinzuzufügende IBAN.
+        Returns:
+            dict:
+                - added, int: Zahl der neu eingefügten IDs
+        """
+        # Touch Table für Transaktionen
+        self.connection.table(iban)
+        return {'added': 1}
 
     def _select(self, collection: list, condition=None, multi='AND'):
         """
@@ -128,14 +139,13 @@ class TinyDbHandler(BaseDb):
         result = self.connection.table(collection).insert(data)
         return {'inserted': (1 if result else 0)}
 
-    def update(self, data, collection=None, condition=None, multi='AND'):
+    def update(self, data, collection, condition=None, multi='AND'):
         """
         Aktualisiert Datensätze in der Datenbank, die die angegebene Bedingung erfüllen.
 
         Args:
             data (dict): Aktualisierte Daten für die passenden Datensätze
-            collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
-                                   Default: IBAN aus der Config.
+            collection (str):   Name der Collection, in die Werte eingefügt werden sollen.
             condition (dict | list(dict)): Bedingung als Dictionary
                 - 'key', str    : Spalten- oder Schlüsselname,
                 - 'value', any  : Wert der bei 'key' verglichen werden soll
@@ -149,9 +159,6 @@ class TinyDbHandler(BaseDb):
             dict:
                 - updated, int: Anzahl der aktualisierten Datensätze
         """
-        if collection is None:
-            collection = current_app.config['IBAN']
-
         # Form condition into a query and run
         if condition is None:
             query = Query().noop()
@@ -191,13 +198,12 @@ class TinyDbHandler(BaseDb):
 
         return { 'updated': len(update_result) }
 
-    def delete(self, collection=None, condition=None, multi='AND'):
+    def delete(self, collection, condition=None, multi='AND'):
         """
         Löscht Datensätze in der Datenbank, die die angegebene Bedingung erfüllen.
 
         Args:
-            collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
-                                   Default: IBAN aus der Config.
+            collection (str):   Name der Collection, in die Werte eingefügt werden sollen.
             condition (dict | list(dict)): Bedingung als Dictionary
                 - 'key', str    : Spalten- oder Schlüsselname,
                 - 'value', any  : Wert der bei 'key' verglichen werden soll
@@ -211,8 +217,6 @@ class TinyDbHandler(BaseDb):
             dict:
                 - deleted, int: Anzahl der gelöschten Datensätze
         """
-        if collection is None:
-            collection = current_app.config['IBAN']
         collection = self.connection.table(collection)
 
         # Form condition into a query
@@ -224,18 +228,15 @@ class TinyDbHandler(BaseDb):
         deleted_ids = collection.remove(query)
         return {'deleted': len(deleted_ids)}
 
-    def truncate(self, collection=None):
+    def truncate(self, collection):
         """Löscht alle Datensätze aus einer Tabelle/Collection
 
         Args:
-            collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
-                                   Default: IBAN aus der Config.
+            collection (str):   Name der Collection, in die Werte eingefügt werden sollen.
         Returns:
             dict:
                 - deleted, int: Anzahl der gelöschten Datensätze
         """
-        if collection is None:
-            collection = current_app.config['IBAN']
         table = self.connection.table(collection)
         r = table.remove(lambda x: True)
         return {'deleted': len(r)}
@@ -293,11 +294,17 @@ class TinyDbHandler(BaseDb):
         condition_method = condition.get('compare', '==')
         condition_key = condition.get('key')
         condition_val = condition.get('value')
-        try:
-            # Transfer to a number for comparison
-            condition_val = float(condition_val)
-        except (TypeError, ValueError):
-            pass
+
+        if isinstance(condition_val, list):
+            # All types in query have to be hashable in TinyDB
+            condition_val = tuple(condition_val)
+
+        else:
+            try:
+                # Transfer to a number for comparison
+                condition_val = float(condition_val)
+            except (TypeError, ValueError):
+                pass
 
         # Nested or Plain Key
         if isinstance(condition_key, dict):
@@ -417,3 +424,12 @@ class TinyDbHandler(BaseDb):
     def _none_of_test(self, value, forbidden_values):
         """Benutzerdefinierter Test: Keines der Elemente ist in einer Liste vorhanden"""
         return not any(item in forbidden_values for item in value)
+
+    def _get_collections(self):
+        """
+        Liste alle tables der Datenbank.
+
+        Returns:
+            list: A list of table names.
+        """
+        return self.connection.tables()

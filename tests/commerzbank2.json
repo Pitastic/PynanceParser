@@ -7,9 +7,7 @@
         "betrag": -71.35,
         "iban": "DE89370400440532011111",
         "currency": "EUR",
-        "parsed": {},
-        "category": null,
-        "tags": null
+        "parsed": {}
     },
     {
         "date_tx": 1672876800,
@@ -19,8 +17,6 @@
         "betrag": -221.98,
         "iban": "DE89370400440532011111",
         "currency": "EUR",
-        "parsed": {},
-        "category": null,
-        "tags": null
+        "parsed": {}
     }
 ]

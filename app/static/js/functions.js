@@ -1,6 +1,30 @@
 "use strict";
 
 // ----------------------------------------------------------------------------
+// -- DOM Functions ----------------------------------------------------------
+// ----------------------------------------------------------------------------
+
+
+/**
+ * Opens a popup to display details
+ *
+ * @param {string} id - The ID of the HTML element to display as a popup.
+ */
+function openPopup(id) {
+    document.getElementById(id).style.display = 'block';
+}
+
+/**
+ * Closes a popup by setting its display style to 'none'.
+ *
+ * @param {string} popupId - The ID of the popup element to be closed.
+ */
+function closePopup(popupId) {
+	document.getElementById(popupId).style.display = 'none';
+}
+
+
+// ----------------------------------------------------------------------------
 // -- AJAX Functions ----------------------------------------------------------
 // ----------------------------------------------------------------------------
 

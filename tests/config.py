@@ -14,6 +14,5 @@ DATABASE_URI = '/tmp/pynance-test' # For tiny (/path/to/)
 
 # For tiny: Filename ('testdata.json')
 # For mongo: Collection name ('testdata')
+#DATABASE_NAME = 'testdata'
 DATABASE_NAME = 'testdata.json'
-
-IBAN = 'DE89370400440532013000'
