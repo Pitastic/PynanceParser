@@ -19,12 +19,27 @@ EXAMPLE_CSV = os.path.join(
 )
 
 
+def test_add_iban(test_app):
+    """
+    Testet das Hinzufügen einer IBAN in der Instanz.
+    """
+    with test_app.app_context():
+
+        with test_app.test_client() as client:
+            result = client.put("/api/add/DE89370400440532013000")
+            assert result.status_code == 201, 'Die IBAN wurde nicht hinzugefügt.'
+
+            # No Doublettes
+            result = client.put("/api/add/DE89370400440532013000")
+            assert result.status_code == 400, 'Die IBAN wurde doppelt hinzugefügt.'
+
+
 def test_truncate(test_app):
     """Leert die Datenbank und dient als Hilfsfunktion für folgende Tests"""
     with test_app.app_context():
 
         with test_app.test_client() as client:
-            result = client.delete(f"/api/truncateDatabase/{test_app.config['IBAN']}")
+            result = client.delete("/api/truncateDatabase/DE89370400440532013000")
             assert result.status_code == 200, "Fehler beim Leeren der Datenbank"
 
 
@@ -40,7 +55,7 @@ def test_upload_csv_commerzbank(test_app):
 
         with test_app.test_client() as client:
             # Cleared DB ?
-            result = client.get(f"/{test_app.config['IBAN']}")
+            result = client.get("/DE89370400440532013000")
             assert "<td class=" not in result.text, \
                 "Die Datenbank war zum Start des Tests nicht leer"
 
@@ -55,7 +70,7 @@ def test_upload_csv_commerzbank(test_app):
             files = {'input_file': (io.BytesIO(content), 'commerzbank.csv')}
             # Post File
             result = client.post(
-                f"/api/upload/{test_app.config['IBAN']}",
+                "/api/upload/DE89370400440532013000",
                 data=files, content_type='multipart/form-data'
             )
 
@@ -66,7 +81,7 @@ def test_upload_csv_commerzbank(test_app):
                 "Angaben zum Upload wurden nicht gefunden"
 
             # Aufruf der Transaktionen
-            response2 = client.get(f"/{test_app.config['IBAN']}")
+            response2 = client.get("/DE89370400440532013000")
             assert response2.status_code == 200, \
                 "Die Ergebnisseite mit den Transaktionen ist nicht (richtig) erreichbar"
 
@@ -112,7 +127,7 @@ def test_reachable_endpoints(test_app):
             result = client.get('/')
             assert result.status_code == 200, "Der Statuscode der Startseite war falsch"
 
-            result = client.get(f"/{test_app.config['IBAN']}")
+            result = client.get("/DE89370400440532013000")
             assert result.status_code == 200, "Der Statuscode der IBAN war falsch"
 
 
@@ -124,7 +139,7 @@ def test_double_upload(test_app):
 
         with test_app.test_client() as client:
             # Cleared DB ?
-            result = client.get(f"/{test_app.config['IBAN']}")
+            result = client.get("/DE89370400440532013000")
             assert "<td class=" not in result.text, \
                 "Die Datenbank war zum Start des Tests nicht leer"
 
@@ -133,7 +148,7 @@ def test_double_upload(test_app):
             files = {'input_file': (io.BytesIO(content), 'commerzbank.csv')}
             # Post File 1
             result = client.post(
-                f"/api/upload/{test_app.config['IBAN']}",
+                "/api/upload/DE89370400440532013000",
                 data=files, content_type='multipart/form-data'
             )
 
@@ -146,7 +161,7 @@ def test_double_upload(test_app):
             # Post File 2
             files = {'input_file': (io.BytesIO(content), 'commerzbank.csv')}
             result = client.post(
-                f"/api/upload/{test_app.config['IBAN']}",
+                "/api/upload/DE89370400440532013000",
                 data=files, content_type='multipart/form-data'
             )
 
@@ -156,7 +171,7 @@ def test_double_upload(test_app):
                 f"dürfen keine neuen Datensätze angelegt werden: {result.text}")
 
             # Double-Check: Anzahl der Einträge
-            result = client.get(f"/{test_app.config['IBAN']}")
+            result = client.get("/DE89370400440532013000")
 
             soup = BeautifulSoup(result.text, features="html.parser")
             rows = soup.css.select('table .td-date_tx')
@@ -244,7 +259,7 @@ def test_get_tx(test_app):
         with test_app.test_client() as client:
             # Get Transaction
             result = client.get(
-                f"/api/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd"
+                "/api/DE89370400440532013000/6884802db5e07ee68a68e2c64f9c0cdd"
             )
             assert result.status_code == 200, \
                 "Der Statuscode der Transaktion war falsch"
@@ -269,7 +284,7 @@ def test_tag_stored_rules(test_app):
                 'rule_name': 'Supermarkets',
                 'dry_run': True
             }
-            result = client.put(f"/api/tag/{test_app.config['IBAN']}", json=parameters)
+            result = client.put("/api/tag/DE89370400440532013000", json=parameters)
             result = result.json
 
             assert result.get('tagged') == 0, \
@@ -284,7 +299,7 @@ def test_tag_stored_rules(test_app):
                 'rule_name': 'City Tax',
                 'prio': 2
             }
-            result = client.put(f"/api/tag/{test_app.config['IBAN']}", json=parameters)
+            result = client.put("/api/tag/DE89370400440532013000", json=parameters)
             result = result.json
 
             assert result.get('tagged') == 1, \
@@ -309,7 +324,7 @@ def test_categorize_stored_rules(test_app):
                 'rule_name': 'Abgaben',
                 'dry_run': True
             }
-            result = client.put(f"/api/cat/{test_app.config['IBAN']}", json=parameters)
+            result = client.put("/api/cat/DE89370400440532013000", json=parameters)
             result = result.json
 
             assert result.get('categorized') == 0, \
@@ -326,7 +341,7 @@ def test_categorize_stored_rules(test_app):
                 'rule_name': 'Abgaben',
                 'prio': 2
             }
-            result = client.put(f"/api/cat/{test_app.config['IBAN']}", json=parameters)
+            result = client.put("/api/cat/DE89370400440532013000", json=parameters)
             result = result.json
 
             assert result.get('categorized') == 1, \
@@ -339,7 +354,7 @@ def test_categorize_stored_rules(test_app):
             # Test 'prio' set correctly
             query = {'key': 'prio', 'compare': '>', 'value': 0}
             result_filtered = test_app.host.db_handler.select(
-                test_app.config['IBAN'],
+                "DE89370400440532013000",
                 condition=query
             )
             assert len(result_filtered) == 1, \
@@ -362,7 +377,7 @@ def test_tag_custom_rules(test_app):
                     {'key':'text_tx', 'value': r'EDEKA', 'compare': 'regex'}
                 ],
             }
-            result = client.put(f"/api/tag-and-cat/{test_app.config['IBAN']}", json=parameters)
+            result = client.put("/api/tag-and-cat/DE89370400440532013000", json=parameters)
             result = result.json
 
             # Es sollte eine Transaktion zutreffen,
@@ -388,7 +403,7 @@ def test_categorize_custom_rules(test_app):
                 'category': "Overwriting Cat",
                 'tags': ['Stadt']
             }
-            result = client.put(f"/api/tag-and-cat/{test_app.config['IBAN']}", json=parameters)
+            result = client.put("/api/tag-and-cat/DE89370400440532013000", json=parameters)
             result = result.json
 
             # Es sollte eine Transaktion zutreffen,
@@ -407,7 +422,7 @@ def test_categorize_custom_rules(test_app):
                 'prio': 9,
                 'prio_set': 3,
             }
-            result = client.put(f"/api/tag-and-cat/{test_app.config['IBAN']}", json=parameters)
+            result = client.put("/api/tag-and-cat/DE89370400440532013000", json=parameters)
             result = result.json
 
             assert result.get('categorized') == 1, \
@@ -427,7 +442,7 @@ def test_tag_manual(test_app):
                 'tags': ['Test_TAG']
             }
             r = client.put(
-                f"/api/setManualTag/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd",
+                "/api/setManualTag/DE89370400440532013000/6884802db5e07ee68a68e2c64f9c0cdd",
                 json=new_tag
             )
             r = r.json
@@ -435,7 +450,7 @@ def test_tag_manual(test_app):
 
             # Check if new values correct stored
             r = client.get(
-                f"/api/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd"
+                "/api/DE89370400440532013000/6884802db5e07ee68a68e2c64f9c0cdd"
             )
             r = r.json
             assert isinstance(r.get('tags'), list), "Tags wurde nicht als Liste gespeichert"
@@ -447,7 +462,7 @@ def test_tag_manual(test_app):
                 'tags': ['Test_Another_SECONDARY']
             }
             r = client.put(
-                f"/api/setManualTag/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd",
+                "/api/setManualTag/DE89370400440532013000/6884802db5e07ee68a68e2c64f9c0cdd",
                 json=new_tag
             )
             r = r.json
@@ -455,7 +470,7 @@ def test_tag_manual(test_app):
 
             # Check if new values correct stored
             r = client.get(
-                f'/api/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd'
+                '/api/DE89370400440532013000/6884802db5e07ee68a68e2c64f9c0cdd'
             )
             r = r.json
             assert isinstance(r.get('tags'), list), "Tags wurde nicht als Liste gespeichert"
@@ -474,7 +489,7 @@ def test_categorize_manual(test_app):
                 'category': 'Test_CAT'
             }
             r = client.put(
-                f"/api/setManualCat/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd",
+                "/api/setManualCat/DE89370400440532013000/6884802db5e07ee68a68e2c64f9c0cdd",
                 json=new_cat
             )
             r = r.json
@@ -482,7 +497,7 @@ def test_categorize_manual(test_app):
 
             # Check if new values correct stored
             r = client.get(
-                f"/api/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd"
+                "/api/DE89370400440532013000/6884802db5e07ee68a68e2c64f9c0cdd"
             )
             r = r.json
             assert 'Test_CAT' == r.get('category'), \
@@ -502,7 +517,7 @@ def test_tag_manual_multi(test_app):
                           "fdd4649484137572ac642e2c0f34f9af"]
             }
             r = client.put(
-                f"/api/setManualTags/{test_app.config['IBAN']}",
+                "/api/setManualTags/DE89370400440532013000",
                 json=new_tag
             )
             r = r.json
@@ -510,11 +525,11 @@ def test_tag_manual_multi(test_app):
 
             # Check if new values correct stored
             r = client.get(
-                f"/api/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd"
+                "/api/DE89370400440532013000/6884802db5e07ee68a68e2c64f9c0cdd"
             )
             r1 = r.json
             r = client.get(
-                f"/api/{test_app.config['IBAN']}/fdd4649484137572ac642e2c0f34f9af"
+                "/api/DE89370400440532013000/fdd4649484137572ac642e2c0f34f9af"
             )
             r2 = r.json
             assert "Test_SECONDARY_2" in r1.get('tags', []) and \
@@ -536,7 +551,7 @@ def test_categorize_manual_multi(test_app):
                           "fdd4649484137572ac642e2c0f34f9af"]
             }
             r = client.put(
-                f"/api/setManualCats/{test_app.config['IBAN']}",
+                "/api/setManualCats/DE89370400440532013000",
                 json=new_cat
             )
             r = r.json
@@ -544,7 +559,7 @@ def test_categorize_manual_multi(test_app):
 
             # Check if new values correct stored
             r = client.get(
-                f"/api/{test_app.config['IBAN']}/fdd4649484137572ac642e2c0f34f9af"
+                "/api/DE89370400440532013000/fdd4649484137572ac642e2c0f34f9af"
             )
             r = r.json
             assert 'Multi-Category' == r.get('category'), \
@@ -561,7 +576,7 @@ def test_remove_category(test_app):
         with test_app.test_client() as client:
             # Remove Cat
             result = client.put(
-                f"/api/removeCat/{test_app.config['IBAN']}/fdd4649484137572ac642e2c0f34f9af"
+                "/api/removeCat/DE89370400440532013000/fdd4649484137572ac642e2c0f34f9af"
             )
             result = result.json
             assert result.get('updated') == 1, \
@@ -569,7 +584,7 @@ def test_remove_category(test_app):
 
             # Check if new values correct stored
             result = client.get(
-                f"/api/{test_app.config['IBAN']}/fdd4649484137572ac642e2c0f34f9af"
+                "/api/DE89370400440532013000/fdd4649484137572ac642e2c0f34f9af"
             )
             result = result.json
             assert result.get('category') is None, \
@@ -588,7 +603,7 @@ def test_remove_tag(test_app):
         with test_app.test_client() as client:
             # Remove Tag
             result = client.put(
-                f"/api/removeTag/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd"
+                "/api/removeTag/DE89370400440532013000/6884802db5e07ee68a68e2c64f9c0cdd"
             )
             result = result.json
             assert result.get('updated') == 1, \
@@ -596,7 +611,7 @@ def test_remove_tag(test_app):
 
             # Check if new values correct stored
             result = client.get(
-                f"/api/{test_app.config['IBAN']}/6884802db5e07ee68a68e2c64f9c0cdd"
+                "/api/DE89370400440532013000/6884802db5e07ee68a68e2c64f9c0cdd"
             )
             result = result.json
             assert result.get('category') is not None, \
@@ -615,7 +630,7 @@ def test_remove_tag_multi(test_app):
         with test_app.test_client() as client:
             # Remove Tag
             result = client.put(
-                f"/api/removeTags/{test_app.config['IBAN']}",
+                "/api/removeTags/DE89370400440532013000",
                 json={
                     't_ids': ["786e1d4e16832aa321a0176c854fe087",
                               "fdd4649484137572ac642e2c0f34f9af"]
@@ -627,7 +642,7 @@ def test_remove_tag_multi(test_app):
 
             # Check if new values correct stored
             result = client.get(
-                f"/api/{test_app.config['IBAN']}/786e1d4e16832aa321a0176c854fe087"
+                "/api/DE89370400440532013000/786e1d4e16832aa321a0176c854fe087"
             )
             result = result.json
             assert result.get('category') is not None, \

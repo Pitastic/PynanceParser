@@ -30,20 +30,34 @@ class MongoDbHandler(BaseDb):
         Erstellt eine Collection je Konto und legt Indexes/Constraints fest.
         Außerdem wird die Collection für Metadaten erstellt, falls sie noch nicht existiert.
         """
-        # Collection für Transaktionen (je Konto)
-        iban = current_app.config['IBAN']
-        if iban not in self.connection.list_collection_names():
-            self.connection.create_collection(iban)
-            self.connection[iban].create_index(
-                [("uuid", pymongo.TEXT)], unique=True
-        )
-
         # Collection für Metadaten
         if 'metadata' not in self.connection.list_collection_names():
             self.connection.create_collection('metadata')
             self.connection['metadata'].create_index(
                 [("uuid", pymongo.TEXT)], unique=True
             )
+
+    def _add_iban(self, iban):
+        """
+        Fügt eine neue IBAN-Collection in die Datenbank ein.
+
+        Args:
+            iban (str): Die hinzuzufügende IBAN.
+        Returns:
+            dict:
+                - added, int: Zahl der neu eingefügten IDs
+        """
+        try:
+            self.connection.create_collection(iban)
+            self.connection[iban].create_index(
+                [("uuid", pymongo.TEXT)], unique=True
+            )
+
+        except pymongo.errors.PyMongoError as ex:
+            logging.error(f'Fehler beim Anlegen der Collection für IBAN {iban}: {ex}')
+            return {'added': 0, 'error': str(ex)}
+
+        return {'added': 1}
 
     def _select(self, collection: list, condition=None, multi='AND'):
         """
@@ -113,14 +127,13 @@ class MongoDbHandler(BaseDb):
         except pymongo.errors.BulkWriteError:
             return {'inserted': 0}
 
-    def update(self, data, collection=None, condition=None, multi='AND'):
+    def update(self, data, collection, condition=None, multi='AND'):
         """
         Aktualisiert Datensätze in der Datenbank, die die angegebene Bedingung erfüllen.
 
         Args:
             data (dict): Aktualisierte Daten für die passenden Datensätze
-            collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
-                                   Default: IBAN aus der Config.
+            collection (str):   Name der Collection, in die Werte eingefügt werden sollen.
             condition (dict | list(dict)): Bedingung als Dictionary
                 - 'key', str    : Spalten- oder Schlüsselname,
                 - 'value', any  : Wert der bei 'key' verglichen werden soll
@@ -134,8 +147,6 @@ class MongoDbHandler(BaseDb):
             dict:
                 - updated, int: Anzahl der aktualisierten Datensätze
         """
-        if collection is None:
-            collection = current_app.config['IBAN']
         collection = self.connection[collection]
 
         # Form condition into a query
@@ -163,13 +174,12 @@ class MongoDbHandler(BaseDb):
         update_result = collection.update_many(query, update_op)
         return {'updated': update_result.modified_count}
 
-    def delete(self, collection=None, condition=None, multi='AND'):
+    def delete(self, collection, condition=None, multi='AND'):
         """
         Löscht Datensätze in der Datenbank, die die angegebene Bedingung erfüllen.
 
         Args:
-            collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
-                                   Default: IBAN aus der Config.
+            collection (str): Name der Collection, in die Werte eingefügt werden sollen.
             condition (dict | list of dicts): Bedingung als Dictionary
                 - 'key', str    : Spalten- oder Schlüsselname,
                 - 'value', any  : Wert der bei 'key' verglichen werden soll
@@ -183,8 +193,6 @@ class MongoDbHandler(BaseDb):
             dict:
                 - deleted, int: Anzahl der gelöschten Datensätze
         """
-        if collection is None:
-            collection = current_app.config['IBAN']
         collection = self.connection[collection]
 
         # Form condition into a query
@@ -193,13 +201,12 @@ class MongoDbHandler(BaseDb):
         delete_result = collection.delete_many(query)
         return {'deleted': delete_result.deleted_count}
 
-    def truncate(self, collection=None):
+    def truncate(self, collection):
         """
         Löscht alle Datensätze aus einer Tabelle/Collection
 
         Args:
-            collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
-                                   Default: None -> Default der delete Methode
+            collection (str):   Name der Collection, in die Werte eingefügt werden sollen.
         Returns:
             dict:
                 - deleted, int: Anzahl der gelöschten Datensätze

@@ -150,6 +150,41 @@ class UserInterface():
             # - API Endpoints - - - - - - - - - - - - - - - - - - - -
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+            @current_app.route('/api/add/<iban>', methods=['PUT'])
+            def addIban(iban):
+                """
+                Fügt eine neue IBAN als Collection in der Datenbank hinzu.
+                Args (uri):
+                    iban, str: IBAN
+                Returns:
+                    json: Informationen zur neu angelegten IBAN
+                """
+                r = self.db_handler.add_iban(iban)
+                if not r.get('added'):
+                    return {'error': 'No IBAN added', 'reason': r.get('error')}, 400
+
+                return r, 201
+
+            @current_app.route('/api/addgroup/<groupname>', methods=['PUT'])
+            def addGroup(groupname):
+                """
+                Erstellt eine Gruppe mit zugeordneten IBANs.
+                Args (uri / json):
+                    groupname, str: Name der Gruppe
+                    ibans, list[str]: Liste mit IBANs, die der Gruppe zugeordnet werden sollen
+                Returns:
+                    json: Informationen zur neu angelegten Gruppe
+                """
+                #TODO: User muss Rechte an allen IBANs der neuen Gruppe haben (related #7)
+                data = request.json
+                ibans = data.get('ibans')
+                assert ibans is not None, 'No IBANs provided'
+                r = self.db_handler.add_iban_group(groupname, ibans)
+                if not r.get('added'):
+                    return {'error': 'No Group added', 'reason': r.get('error')}, 400
+
+                return r, 201
+
             @current_app.route('/api/<iban>/<t_id>', methods=['GET'])
             def getTx(iban, t_id):
                 """

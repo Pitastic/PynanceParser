@@ -21,15 +21,75 @@ class BaseDb():
         """Erstellen des Datenbankspeichers"""
         raise NotImplementedError()
 
+    def add_iban(self, iban: str):
+        """
+        Fügt eine neue IBAN-Collection in die Datenbank ein.
+
+        Args:
+            iban (str): Die hinzuzufügende IBAN.
+        Returns:
+            dict:
+                - added, int: Zahl der neu eingefügten IDs
+        """
+        try:
+            if self.check_collection_is_iban(iban) is False:
+                raise ValueError(f"IBAN '{iban}' ist ungültig !")
+
+            if iban in self.list_ibans():
+                raise ValueError(f"IBAN '{iban}' existiert bereits !")
+
+            return self._add_iban(iban)
+
+        except Exception as ex: # pylint: disable=broad-except
+            # Catch all errors also from the different implementations of _add_iban
+            logging.error(f'Fehler beim Anlegen der Collection für IBAN {iban}: {ex}')
+            return {'added': 0, 'error': str(ex)}
+
+    def _add_iban(self, iban: str):
+        """
+        Private Methode zum Anlegen einer neuen IBAN-Collection in der Datenbank.
+        Siehe 'add_iban' Methode.
+
+        Returns:
+            dict:
+                - added, int: Zahl der neu eingefügten IDs
+        """
+        raise NotImplementedError()
+
+    def add_iban_group(self, groupname: str, ibans: list):
+        """
+        Fügt eine neue Gruppe mit IBANs in die Datenbank ein oder
+        ändert eine bestehende Gruppe mit der Zuordnung, die übergeben wurde.
+
+        Args:
+            groupname (str): Name der Gruppe.
+            ibans (list): Liste der IBANs, die zur Gruppe hinzugefügt werden sollen.
+        Returns:
+            list: Liste aller IBANs dieser Gruppe.
+        """
+        for iban in ibans:
+            if self.check_collection_is_iban(iban) is False:
+                raise ValueError(f"IBAN '{iban}' ist ungültig !")
+
+        new_group = {
+            'metatype': 'config',
+            'name': 'group',
+            'uuid': groupname,
+            'groupname': groupname,
+            'ibans': ibans,
+            'members': []
+        }
+        return self.set_metadata(new_group, overwrite=True)
+
     def select(self, collection:str, condition: dict|list[dict]=None, multi: str='AND'):
         """
         Handler für das Vorbereiten der '_select' Methode, welche Datensätze aus der Datenbank
         selektiert, die die angegebene Bedingung erfüllen.
 
         Args:
-            collection (str, optional): Name der Collection oder Gruppe, aus der selektiert werden
-                                        soll. Es erfolgt automatisch eine Unterscheidung, ob es
-                                        sich um eine IBAN oder einen Gruppenname handelt.
+            collection (str):   Name der Collection oder Gruppe, aus der selektiert werden
+                                soll. Es erfolgt automatisch eine Unterscheidung, ob es
+                                sich um eine IBAN oder einen Gruppenname handelt.
             condition (dict | list(dict)): Bedingung als Dictionary
                 - 'key', str    : Spalten- oder Schlüsselname,
                 - 'value', any  : Wert der bei 'key' verglichen werden soll
@@ -177,8 +237,7 @@ class BaseDb():
         """Löscht alle Datensätze aus einer Tabelle/Collection
 
         Args:
-            collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
-                                   Default: IBAN aus der Config.
+            collection (str):   Name der Collection, in die Werte eingefügt werden sollen.
         Returns:
             dict:
                 - deleted, int: Anzahl der gelöschten Datensätze
@@ -245,7 +304,7 @@ class BaseDb():
                 'key': 'name',
                 'value': 'group'
             },{
-                'key': 'groupname',
+                'key': 'uuid',
                 'value': group
             }
         ], multi='AND')
