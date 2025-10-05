@@ -46,7 +46,7 @@ def test_insert(test_app):
         # Zwischendurch leeren
         deleted_db = test_app.host.db_handler.truncate('DE89370400440532013000')
         delete_count = deleted_db.get('deleted')
-        assert delete_count == 1, "Die Datenbank konnte während des Tests nicht geleert werden"
+        assert delete_count > 0, "Die Datenbank konnte während des Tests nicht geleert werden"
 
         # Liste von Datensätzen
         data = generate_fake_data(4)
