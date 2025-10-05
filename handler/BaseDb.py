@@ -21,41 +21,6 @@ class BaseDb():
         """Erstellen des Datenbankspeichers"""
         raise NotImplementedError()
 
-    def add_iban(self, iban: str):
-        """
-        Fügt eine neue IBAN-Collection in die Datenbank ein.
-
-        Args:
-            iban (str): Die hinzuzufügende IBAN.
-        Returns:
-            dict:
-                - added, int: Zahl der neu eingefügten IDs
-        """
-        try:
-            if self.check_collection_is_iban(iban) is False:
-                raise ValueError(f"IBAN '{iban}' ist ungültig !")
-
-            if iban in self.list_ibans():
-                raise ValueError(f"IBAN '{iban}' existiert bereits !")
-
-            return self._add_iban(iban)
-
-        except Exception as ex: # pylint: disable=broad-except
-            # Catch all errors also from the different implementations of _add_iban
-            logging.error(f'Fehler beim Anlegen der Collection für IBAN {iban}: {ex}')
-            return {'added': 0, 'error': str(ex)}
-
-    def _add_iban(self, iban: str):
-        """
-        Private Methode zum Anlegen einer neuen IBAN-Collection in der Datenbank.
-        Siehe 'add_iban' Methode.
-
-        Returns:
-            dict:
-                - added, int: Zahl der neu eingefügten IDs
-        """
-        raise NotImplementedError()
-
     def add_iban_group(self, groupname: str, ibans: list):
         """
         Fügt eine neue Gruppe mit IBANs in die Datenbank ein oder
@@ -65,7 +30,7 @@ class BaseDb():
             groupname (str): Name der Gruppe.
             ibans (list): Liste der IBANs, die zur Gruppe hinzugefügt werden sollen.
         Returns:
-            list: Liste aller IBANs dieser Gruppe.
+            dict: Informationen über den Speichervorgang.
         """
         for iban in ibans:
             if self.check_collection_is_iban(iban) is False:
@@ -217,7 +182,6 @@ class BaseDb():
 
         Args:
             collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
-                                   Default: IBAN aus der Config.
             condition (dict | list(dict)): Bedingung als Dictionary
                 - 'key', str    : Spalten- oder Schlüsselname,
                 - 'value', any  : Wert der bei 'key' verglichen werden soll
@@ -420,13 +384,6 @@ class BaseDb():
                 # Add metadata type and format as list
                 if not isinstance(parsed_data, list):
                     parsed_data = [parsed_data]
-
-                    #for i, _ in enumerate(parsed_data):
-                    #    parsed_data[i]['metatype'] = metatype
-
-                #else:
-                #    parsed_data['metatype'] = metatype
-                #    parsed_data = [parsed_data]
 
                 # Store in DB (do not overwrite)
                 inserted = 0

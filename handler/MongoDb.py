@@ -37,28 +37,6 @@ class MongoDbHandler(BaseDb):
                 [("uuid", pymongo.TEXT)], unique=True
             )
 
-    def _add_iban(self, iban):
-        """
-        Fügt eine neue IBAN-Collection in die Datenbank ein.
-
-        Args:
-            iban (str): Die hinzuzufügende IBAN.
-        Returns:
-            dict:
-                - added, int: Zahl der neu eingefügten IDs
-        """
-        try:
-            self.connection.create_collection(iban)
-            self.connection[iban].create_index(
-                [("uuid", pymongo.TEXT)], unique=True
-            )
-
-        except pymongo.errors.PyMongoError as ex:
-            logging.error(f'Fehler beim Anlegen der Collection für IBAN {iban}: {ex}')
-            return {'added': 0, 'error': str(ex)}
-
-        return {'added': 1}
-
     def _select(self, collection: list, condition=None, multi='AND'):
         """
         Selektiert Datensätze aus der Datenbank, die die angegebene Bedingung erfüllen.
@@ -108,6 +86,13 @@ class MongoDbHandler(BaseDb):
             dict:
                 - inserted, int: Zahl der neu eingefügten IDs
         """
+        # Da eine collection mit dem ersten Insert erstellt wird,
+        # muss ggf. direkt der Index zunächst gesetzt werden.
+        if collection not in self._get_collections():
+            self.connection[collection].create_index(
+                [("uuid", pymongo.TEXT)], unique=True
+            )
+
         if isinstance(data, list):
             # Insert Many (INSERT IGNORE)
             try:

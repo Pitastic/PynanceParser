@@ -10,37 +10,27 @@ sys.path.append(parent_dir)
 
 from helper import generate_fake_data, check_entry
 
-def test_add_iban(test_app):
-    """
-    Testet das Hinzufügen einer IBAN in der Instanz.
-    """
-    with test_app.app_context():
 
-        result = test_app.add_iban("DE89370400440532013000")
-        assert result.get('added') == 1, 'Die IBAN wurde nicht hinzugefügt.'
-
-        # No Doublettes
-        result = test_app.add_iban("DE89370400440532013000")
-        assert result.get('added') == 0, 'Die IBAN wurde nicht hinzugefügt.'
-
-        # Add second IBAN
-        result = test_app.add_iban("DE89370400440532011111")
-        assert result.get('added') == 1, 'Die zweite IBAN wurde nicht hinzugefügt.'
-
-def test_add_group(test_app):
+def test_add_and_get_group(test_app):
     """
     Testet das Hinzufügen einer Gruppe in der Instanz.
     """
     with test_app.app_context():
 
-        result = test_app.add_group("testgroup", ["DE89370400440532013000"])
-        assert result == ["DE89370400440532013000"], 'Die Gruppe wurde nicht hinzugefügt.'
+        result = test_app.host.db_handler.add_iban_group("testgroup", ["DE89370400440532013000"])
+        assert result == {'inserted': 1}, 'Die Gruppe wurde nicht hinzugefügt.'
 
         # No Doublettes
-        result = test_app.add_group("testgroup",
+        result = test_app.host.db_handler.add_iban_group("testgroup",
                                     ["DE89370400440532013000", "DE89370400440532011111"])
-        assert result == ["DE89370400440532013000", "DE89370400440532011111"], \
+        assert result == {'inserted': 1}, \
             'Die Gruppe wurde nicht geupdated.'
+
+        result = test_app.host.db_handler.get_group_ibans("testgroup")
+        assert isinstance(result, list), 'Die IBANs wurden nicht als Liste zurückgegeben.'
+        assert len(result) == 2, 'Die Gruppe enthält nicht die erwartete Anzahl an IBANs.'
+        assert "DE89370400440532013000" in result, 'Die erste IBAN wurde nicht zurückgegeben.'
+        assert 'DE89370400440532011111' in result, 'Die zweite IBAN wurde nicht zurückgegeben.'
 
 def test_insert(test_app):
     """Testet das Einfügen von Datensätzen"""
@@ -260,7 +250,8 @@ def test_update(test_app):
             {'key': 'uuid', 'value': '13d505688ab3b940dbed47117ffddf95'},
             {'key': 'text_tx', 'value': 'Wucherpfennig', 'compare': 'like'}
         ]
-        updated_db = test_app.host.db_handler.update(data, condition=query, multi='OR')
+        updated_db = test_app.host.db_handler.update(data, 'DE89370400440532013000',
+                                                     query, multi='OR')
         update_two = updated_db.get('updated')
         assert update_two == 2, \
             f'Es wurde nicht die richtige Anzahl geupdated (update_two): {update_two}'
@@ -271,7 +262,7 @@ def test_update(test_app):
 
         # Update all with one field
         data = {'art': 'Überweisung'}
-        updated_db = test_app.host.db_handler.update(data)
+        updated_db = test_app.host.db_handler.update(data, 'DE89370400440532013000')
         update_all = updated_db.get('updated')
         assert update_all == 5, \
             f'Es wurde nicht die richtige Anzahl geupdated (update_all): {update_all}'
@@ -283,7 +274,7 @@ def test_update(test_app):
         # Update one set nested field
         data = {'parsed': {'Mandatsreferenz': 'M1111111'}}
         query = {'key': 'uuid', 'value': 'ba9e5795e4029213ae67ac052d378d84'}
-        updated_db = test_app.host.db_handler.update(data, condition=query)
+        updated_db = test_app.host.db_handler.update(data, 'DE89370400440532013000', query)
         update_nested = updated_db.get('updated')
         assert update_nested == 1, \
             f'Es wurde nicht die richtige Anzahl geupdated (update_nested): {update_nested}'
@@ -394,7 +385,7 @@ def test_delete(test_app):
     with test_app.app_context():
         # Einzelnen Datensatz löschen
         query = {'key': 'uuid', 'value': '13d505688ab3b940dbed47117ffddf95'}
-        deleted_db = test_app.host.db_handler.delete(condition=query)
+        deleted_db = test_app.host.db_handler.delete('DE89370400440532013000', query)
         delete_one = deleted_db.get('deleted')
         assert delete_one == 1, \
             f'Es wurde nicht die richtige Anzahl an Datensätzen gelöscht: {delete_one}'
@@ -404,7 +395,7 @@ def test_delete(test_app):
             {'key': 'currency', 'value': 'EUR'},
             {'key': 'currency', 'value': 'USD'}
         ]
-        deleted_db = test_app.host.db_handler.delete(condition=query, multi='OR')
+        deleted_db = test_app.host.db_handler.delete('DE89370400440532013000', query, multi='OR')
         delete_many = deleted_db.get('deleted')
         assert delete_many == 4, \
             f'Es wurde nicht die richtige Anzahl an Datensätzen gelöscht: {delete_many}'

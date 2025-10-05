@@ -5,21 +5,6 @@ import os
 import pytest
 
 
-def test_add_iban(test_app):
-    """
-    Testet das Hinzufügen einer IBAN in der Instanz.
-    """
-    with test_app.app_context():
-
-        with test_app.test_client() as client:
-            result = client.put("/api/add/DE89370400440532013000")
-            assert result.status_code == 201, 'Die IBAN wurde nicht hinzugefügt.'
-
-            # No Doublettes
-            result = client.put("/api/add/DE89370400440532013000")
-            assert result.status_code == 400, 'Die IBAN wurde doppelt hinzugefügt.'
-
-
 def test_read_input_csv(test_app):
     """
     Testet den Handler für das Einlesen übermittelter Daten im CSV Format.

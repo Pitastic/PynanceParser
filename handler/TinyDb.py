@@ -43,20 +43,6 @@ class TinyDbHandler(BaseDb):
         # Table für Metadaten
         self.connection.table('metadata')
 
-    def _add_iban(self, iban):
-        """
-        Fügt eine neue IBAN-Collection in die Datenbank ein.
-
-        Args:
-            iban (str): Die hinzuzufügende IBAN.
-        Returns:
-            dict:
-                - added, int: Zahl der neu eingefügten IDs
-        """
-        # Touch Table für Transaktionen
-        self.connection.table(iban)
-        return {'added': 1}
-
     def _select(self, collection: list, condition=None, multi='AND'):
         """
         Selektiert Datensätze aus der Datenbank, die die angegebene Bedingung erfüllen.
