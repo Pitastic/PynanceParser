@@ -1,87 +1,93 @@
-
 {% extends 'layout.html' %}
 
 {% block content %}
 
-<header>
-    <nav>
-        <ul style="display: flex; justify-content: space-between; list-style: none; padding: 0;">
-            <li>
-                <button id="edit-selected" onclick="openDetailsPopup('massedit-popup')" disabled title="Edit selected (0 selected)">
-                    ✏️
-                </button>
-            </li>
-            <li>
-                <input type="text" id="daterange-picker" placeholder="Select date range">
-                <input type="text" id="filter-text" placeholder="Filter transactions">
-                <button id="apply-filter">Apply</button>
-            </li>
-            <li>
-                <button id="settings-button" title="Settings">⚙️</button>
-                <a href="/logout" title="Logout">🚪</a>
-            </li>
-        </ul>
-    </nav>
-</header>
-
 <main>
-    <table class="transactions">
-        <thead>
-            <tr>
-                <th><input type="checkbox" id="select-all"></th>
-                <th>Date</th>
-                <th>Text</th>
-                <th>Category</th>
-                <th>Tags</th>
-                <th>Betrag</th>
-                <th>&nbsp;</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for transaction in transactions %}
-            <tr id="tr-{{ transaction.uuid }}">
-                <td><input type="checkbox" class="row-checkbox" name="check_{{ transaction.uuid }}"></td>
-                <td class="td-date_tx">{{ transaction.date_tx }}</td>
-                <td class="td-text_tx">{{ transaction.text_tx }}</td>
-                <td>
-                    <span title="{{ transaction.category }}" style="cursor: help;">🔖</span>
-                </td>
-                <td>
-                    {% for tag in transaction.tags %}
-                    <span style="background-color: #ddd; padding: 0.2em; border-radius: 0.2em; margin-right: 0.2em;">
-                        {{ tag }}
-                    </span>
-                    {% endfor %}
-                </td>
-                <td class="td-betrag">{{ transaction.currency }} {{ transaction.betrag }}</td>
-                <td>
-                    <button class="details-button" title="Show details" onclick="openDetailsPopup('details-popup', '{{ transaction.uuid }}')" style="cursor: pointer;">ℹ️</button>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    {% if groups or ibans %}
+    Wähle
+    {% endif %}
+    {% if groups %}
+    eine Gruppe:
+    <ul>
+        {% for group in groups %}
+        <li><a href="/{{group}}">{{group}}</a></li>
+        {% endfor %}
+    </ul>
+        {% if ibans %}
+        oder
+        {% endif %}
+    {% endif %}
+    {% if ibans %}
+    ein Konto:
+    <ul>
+    {% for iban in ibans %}
+    <li><a href="/{{iban}}">{{iban}}</a></li>
+    {% endfor %}
+    </ul>
+    {% else %}
+    Es sind noch keine Konten vorhanden. Starte mit deinem ersten Import...
+    {% endif %}
+
+    <p>
+        <button id="add-iban-btn">
+        Umsätze importieren
+        </button>
+        <button id="add-group-btn">
+        Gruppen verwalten
+        </button>
+    </p>
 </main>
 
-<!-- Popups -->
-<div id="massedit-popup" style="display: none;" class="popup">
-    <h2>Mass Edit</h2>
-    <p>Dummy content for settings.</p>
-    <button onclick="closePopup('massedit-popup')">Close</button>
+<!-- PopUps -->
+<div id="add-iban" style="display: none;" class="popup">
+    <h2>Neue Transactionen</h2>
+    <p>Importiere Kontoumsätze in folgendem Konto:</p>
+    <p>
+        <input type="text" name="iban-input" id="iban-input" placeholder="DE XXXXXXXXXXXXX" list="iban-list">
+        <datalist id="iban-list">
+            {% for iban in ibans %}
+            <option value="{{iban}}"></option>
+            {% endfor %}
+        </datalist>
+    </p>
+    <p>
+        <div id="file-drop-area" style="border: 2px dashed #ccc; padding: 20px; text-align: center; cursor: pointer; position: relative;">
+            <span id="file-label">Datei hier ablegen oder auswählen (PDF / CSV / HTML)</span>
+            <input type="file" id="file-input" name="file-input" accept=".csv,.pdf,.html" style="display: none;">
+        </div>
+    </p>
+    <p>
+        <button onclick="uploadFile()">Import</button>
+    </p>
+    <button onclick="closePopup('add-iban')">Close</button>
 </div>
 
-<div id="settings-popup" style="display: none;" class="popup">
-    <h2>Settings</h2>
-    <p>Dummy content for settings.</p>
-    <button onclick="closePopup('settings-popup')">Close</button>
-</div>
 
-<div id="details-popup" style="display: none;" class="popup">
-    <h2>Transaction Details</h2>
-    <code id="result-text">
-        ...
-    </code>
-    <button onclick="closePopup('details-popup')">Close</button>
+<div id="add-group" style="display: none;" class="popup">
+    <h2>Gruppen anlegen</h2>
+    <p>Wähle Konten aus, die zu einer Gruppe hinzugefügt werden sollen:</p>
+    <ul>
+        {% for iban in ibans %}
+        <li>
+            <label>
+                <input type="checkbox" name="iban-checkbox" value="{{iban}}">
+                {{iban}}
+            </label>
+        </li>
+        {% endfor %}
+    </ul>
+    <p>
+        <input type="text" name="groupname-input" id="groupname-input" placeholder="" list="group-list">
+        <datalist id="group-list">
+            {% for group in groups %}
+            <option value="{{group}}"></option>
+            {% endfor %}
+        </datalist>
+    </p>
+    <p>
+        <button onclick="saveGroup()">Speichern</button>
+    </p>
+    <button onclick="closePopup('add-group')">Close</button>
 </div>
 
 <script src="{{ url_for('static', filename='js/index.js') }}"></script>

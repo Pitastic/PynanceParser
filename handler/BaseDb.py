@@ -290,6 +290,28 @@ class BaseDb():
         ibans = [col for col in all_collections if self.check_collection_is_iban(col)]
         return ibans
 
+    def list_groups(self):
+        """Listet alle in der Datenbank vorhandenen Gruppen auf.
+        
+        Returns:
+            list: Liste der Gruppen.
+        """
+        groups = []
+        meta_results = self.filter_metadata([
+            {
+                'key': 'metatype',
+                'value': 'config'
+            },{
+                'key': 'name',
+                'value': 'group'
+            }
+        ], multi='AND')
+
+        for group in meta_results:
+            groups.append(group.get('groupname'))
+
+        return groups
+
     def _get_collections(self):
         """
         Ruft alle Collections in der Datenbank ab.

@@ -56,4 +56,4 @@ if __name__ == '__main__':
         'config.py'
     )
     application = create_app(config)
-    application.run(host='0.0.0.0', port=8110)
+    application.run(host='0.0.0.0', port=8110, debug=True)

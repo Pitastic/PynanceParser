@@ -68,7 +68,7 @@ class UserInterface():
 
             @current_app.route('/', defaults={'iban':None}, methods=['GET'])
             @current_app.route('/<iban>', methods=['GET'])
-            def index(iban) -> str:
+            def iban(iban) -> str:
                 """
                 Startseite mit Navigation und Uploadformular.
 
@@ -83,10 +83,11 @@ class UserInterface():
                 if iban is None:
                     # No IBAN selected, show Welcome page with IBANs
                     ibans = self.db_handler.list_ibans()
-                    return render_template('welcome.html', ibans=ibans)
+                    groups = self.db_handler.list_groups()
+                    return render_template('index.html', ibans=ibans, groups=groups)
 
-                if not self.db_handler.check_collection_is_iban(iban):
-                    # Do not treat URI as IBAN
+                if not self.db_handler.get_group_ibans(iban, True):
+                    # It's not an IBAN or valid Groupname
                     return "", 404
 
                 # Check filter args
@@ -124,7 +125,7 @@ class UserInterface():
                 rows = self.db_handler.select(iban, condition)
                 ibans = self.db_handler.get_group_ibans(iban, check_before=True)
 
-                return render_template('index.html', transactions=rows)
+                return render_template('iban.html', transactions=rows)
 
             @current_app.route('/logout', methods=['GET'])
             def logout():
@@ -150,21 +151,6 @@ class UserInterface():
             # - API Endpoints - - - - - - - - - - - - - - - - - - - -
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-            @current_app.route('/api/add/<iban>', methods=['PUT'])
-            def addIban(iban):
-                """
-                Fügt eine neue IBAN als Collection in der Datenbank hinzu.
-                Args (uri):
-                    iban, str: IBAN
-                Returns:
-                    json: Informationen zur neu angelegten IBAN
-                """
-                r = self.db_handler.add_iban(iban)
-                if not r.get('added'):
-                    return {'error': 'No IBAN added', 'reason': r.get('error')}, 400
-
-                return r, 201
-
             @current_app.route('/api/addgroup/<groupname>', methods=['PUT'])
             def addGroup(groupname):
                 """
@@ -180,7 +166,7 @@ class UserInterface():
                 ibans = data.get('ibans')
                 assert ibans is not None, 'No IBANs provided'
                 r = self.db_handler.add_iban_group(groupname, ibans)
-                if not r.get('added'):
+                if not r.get('inserted'):
                     return {'error': 'No Group added', 'reason': r.get('error')}, 400
 
                 return r, 201
@@ -265,11 +251,11 @@ class UserInterface():
                 Im Anschluss wird automatisch die Untersuchung der Inhalte angestoßen.
 
                 Args (multipart/form-data):
-                    input_file (binary): Dateiupload aus Formular-Submit
+                    file-input (binary): Dateiupload aus Formular-Submit
                 Returns:
                     json: Informationen zur Datei und Ergebnis der Untersuchung.
                 """
-                input_file = request.files.get('input_file')
+                input_file = request.files.get('file-input')
                 if not input_file:
                     return {'error': 'No file provided'}, 400
 

@@ -1,0 +1,89 @@
+
+{% extends 'layout.html' %}
+
+{% block content %}
+
+<header>
+    <nav>
+        <ul style="display: flex; justify-content: space-between; list-style: none; padding: 0;">
+            <li>
+                <button id="edit-selected" onclick="openDetailsPopup('massedit-popup')" disabled title="Edit selected (0 selected)">
+                    ✏️
+                </button>
+            </li>
+            <li>
+                <input type="text" id="daterange-picker" placeholder="Select date range">
+                <input type="text" id="filter-text" placeholder="Filter transactions">
+                <button id="apply-filter">Apply</button>
+            </li>
+            <li>
+                <button id="settings-button" title="Settings">⚙️</button>
+                <a href="/logout" title="Logout">🚪</a>
+            </li>
+        </ul>
+    </nav>
+</header>
+
+<main>
+    <table class="transactions">
+        <thead>
+            <tr>
+                <th><input type="checkbox" id="select-all"></th>
+                <th>Date</th>
+                <th>Text</th>
+                <th>Category</th>
+                <th>Tags</th>
+                <th>Betrag</th>
+                <th>&nbsp;</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for transaction in transactions %}
+            <tr id="tr-{{ transaction.uuid }}">
+                <td><input type="checkbox" class="row-checkbox" name="check_{{ transaction.uuid }}"></td>
+                <td class="td-date_tx">{{ transaction.date_tx }}</td>
+                <td class="td-text_tx">{{ transaction.text_tx }}</td>
+                <td>
+                    <span title="{{ transaction.category }}" style="cursor: help;">🔖</span>
+                </td>
+                <td>
+                    {% for tag in transaction.tags %}
+                    <span style="background-color: #ddd; padding: 0.2em; border-radius: 0.2em; margin-right: 0.2em;">
+                        {{ tag }}
+                    </span>
+                    {% endfor %}
+                </td>
+                <td class="td-betrag">{{ transaction.currency }} {{ transaction.betrag }}</td>
+                <td>
+                    <button class="details-button" title="Show details" onclick="openDetailsPopup('details-popup', '{{ transaction.uuid }}')" style="cursor: pointer;">ℹ️</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</main>
+
+<!-- Popups -->
+<div id="massedit-popup" style="display: none;" class="popup">
+    <h2>Mass Edit</h2>
+    <p>Dummy content for settings.</p>
+    <button onclick="closePopup('massedit-popup')">Close</button>
+</div>
+
+<div id="settings-popup" style="display: none;" class="popup">
+    <h2>Settings</h2>
+    <p>Dummy content for settings.</p>
+    <button onclick="closePopup('settings-popup')">Close</button>
+</div>
+
+<div id="details-popup" style="display: none;" class="popup">
+    <h2>Transaction Details</h2>
+    <code id="result-text">
+        ...
+    </code>
+    <button onclick="closePopup('details-popup')">Close</button>
+</div>
+
+<script src="{{ url_for('static', filename='js/iban.js') }}"></script>
+
+{% endblock %}
