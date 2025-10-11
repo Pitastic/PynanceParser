@@ -29,16 +29,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     fileDropArea.addEventListener('dragover', (e) => {
         e.preventDefault();
-        fileDropArea.style.borderColor = '#000';
-    });
-
-    fileDropArea.addEventListener('dragleave', () => {
-        fileDropArea.style.borderColor = '#ccc';
     });
 
     fileDropArea.addEventListener('drop', (e) => {
         e.preventDefault();
-        fileDropArea.style.borderColor = '#ccc';
         const files = e.dataTransfer.files;
         if (files.length > 0) {
             fileInput.files = files;
@@ -64,6 +58,11 @@ document.addEventListener('DOMContentLoaded', function () {
  */
 function uploadFile() {
     const iban = document.getElementById('iban-input').value;
+    if (!iban) {
+        alert("Keine IBAN angegeben!");
+        return;
+    }
+
     const fileInput = document.getElementById('file-input');
     if (fileInput.files.length === 0) {
         alert('Please select a file to upload.');
@@ -92,6 +91,11 @@ function uploadFile() {
  */
 function saveGroup() {
     const groupname = document.getElementById("groupname-input").value;
+    if (!groupname) {
+        alert("Keine Gruppe angegeben!");
+        return;
+    }
+
     const checkboxes = document.querySelectorAll('input[name="iban-checkbox"]:checked');
     const selectedIbans = Array.from(checkboxes).map(checkbox => checkbox.value);
     const params = {'ibans': selectedIbans}
@@ -108,4 +112,28 @@ function saveGroup() {
     }, false);
 
     return selectedIbans;
+}
+
+/**
+ * Truncates the database.
+ * An optional IBAN to truncate is selected by input with ID 'iban-input'.
+ */
+function truncateDB() {
+    const iban = document.getElementById('iban-input').value;
+    if (!iban) {
+        alert("Keine IBAN angegeben!");
+        return;
+    }
+
+    apiGet('truncateDatabase/'+iban, {}, function (responseText, error) {
+        if (error) {
+            printResult('Truncate failed: ' + '(' + error + ')' + responseText);
+
+        } else {
+            alert('Database truncated successfully!' + responseText);
+            window.location.reload();
+
+        }
+    }, 'DELETE');
+    
 }

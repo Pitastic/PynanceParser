@@ -1,6 +1,7 @@
 "use strict";
 
 let rowCheckboxes = null;
+let IBAN = window.location.pathname.split('/').pop();
 
 document.addEventListener('DOMContentLoaded', function () {
 
@@ -9,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function () {
         openPopup('settings-popup');
     });
 
-    // Additional JavaScript for enabling/disabling the edit button based on checkbox selection
+    // enabling/disabling the edit button based on checkbox selection
     const selectAllCheckbox = document.getElementById('select-all');
     rowCheckboxes = document.querySelectorAll('.row-checkbox');
 
@@ -18,6 +19,7 @@ document.addEventListener('DOMContentLoaded', function () {
         checkbox.checked = selectAllCheckbox.checked;
         });
         updateEditButtonState();
+        listTxElements();
     });
 
     rowCheckboxes.forEach(checkbox => {
@@ -28,6 +30,7 @@ document.addEventListener('DOMContentLoaded', function () {
             selectAllCheckbox.checked = true;
         }
         updateEditButtonState();
+        listTxElements();
         });
     });
 
@@ -47,10 +50,8 @@ function openDetailsPopup(id, tx_hash = null) {
 	if (tx_hash) {
 		// Use AJAX to fetch and populate details for the transaction with the given ID
 		console.log(`Fetching details for transaction hash: ${tx_hash}`);
-        const currentURI = window.location.pathname;
-        const iban = currentURI.split('/').pop();
         resetDetails();
-        getInfo(iban, tx_hash, fillTxDetails);
+        getInfo(tx_hash, fillTxDetails);
         openPopup(id);
 
 	} else {
@@ -92,34 +93,24 @@ function fillTxDetails(result){
  */
 function updateEditButtonState() {
 	const anyChecked = Array.from(rowCheckboxes).some(cb => cb.checked);
-	const editButton = document.getElementById('edit-selected');
-	editButton.disabled = !anyChecked;
+    const editButton = document.getElementById('edit-selected');
+    editButton.disabled = !anyChecked;
 	editButton.title = anyChecked
-	? `Edit selected (${Array.from(rowCheckboxes).filter(cb => cb.checked).length} selected)`
-	: 'Edit selected (0 selected)';
+	? `Edit (${Array.from(rowCheckboxes).filter(cb => cb.checked).length} selected)`
+	: 'Edit (nichts ausgewählt)';
 }
 
-
-/**
- * Truncates the database.
- * An optional IBAN to truncate is selected by input with ID 'iban'.
- */
-function truncateDB() {
-    const iban = document.getElementById('input_iban').value;
-
-    apiGet('truncateDatabase/'+iban, {}, function (responseText, error) {
-        if (error) {
-            printResult('Truncate failed: ' + '(' + error + ')' + responseText);
-
-        } else {
-            alert('Database truncated successfully!' + responseText);
-            window.location.reload();
-
+function listTxElements() {
+    const result_list = document.getElementById('tx-select-list');
+    result_list.innerHTML = ''; // Clear the list before adding new items
+    rowCheckboxes.forEach(checkbox => {
+        if (checkbox.checked) {
+            const li = document.createElement('li');
+            li.textContent = checkbox.dataset.tx;
+            result_list.appendChild(li);
         }
-    }, 'DELETE');
-    
+    });
 }
-
 
 /**
  * Tags the entries in the database.
@@ -127,14 +118,13 @@ function truncateDB() {
  * 'input_tagging_name' (more in the Future)
  */
 function tagEntries() {
-    const iban = document.getElementById('input_iban').value;
-    const rule_name = document.getElementById('tagging_name').value;
+    const rule_name = document.getElementById('tag-select').value;
     let rules = {}
     if (rule_name) {
         rules['rule_name'] = rule_name
     }
 
-    apiSubmit('tag/'+iban, rules, function (responseText, error) {
+    apiSubmit('tag/'+IBAN, rules, function (responseText, error) {
         if (error) {
             printResult('Tagging failed: ' + '(' + error + ')' + responseText);
 
@@ -146,41 +136,52 @@ function tagEntries() {
     }, false);
 }
 
+/**
+ * Categorize the entries in the database.
+ * Optional Categorization commands are read from the input with ID
+ */
+function catEntries() {
+    const rule_name = document.getElementById('cat-select').value;
+    let rules = {}
+    if (rule_name) {
+        rules['rule_name'] = rule_name
+    }
 
-function removeTags() {
-    const iban = document.getElementById('input_iban').value;
-    const checkboxes = document.querySelectorAll('input[name="entry-select[]"]');
-    const t_ids = [];    
-    checkboxes.forEach((checkbox) => {
-        if (checkbox.checked) {
-            t_ids.push(checkbox.value);
+    apiSubmit('cat/'+IBAN, rules, function (responseText, error) {
+        if (error) {
+            printResult('Categorization failed: ' + '(' + error + ')' + responseText);
+
+        } else {
+            alert('Entries categorized successfully!' + responseText);
+            window.location.reload();
+
         }
-    });
+    }, false);
+}
 
-    if (!iban) {
-        alert('Please provide an IBAN.');
-        return;
-    }
-    if (!t_ids) {
-        alert('Please provide a Transaction ID (checkbox).');
-        return;
-    }
+/**
+ * Clear Tags from selected transactions
+ */
+function removeTags() {
+    const t_ids = Array.from(rowCheckboxes)
+        .filter(cb => cb.checked)
+        .map(cb => cb.getAttribute('name'));
 
     let api_function;
     let tags = {};
     if (t_ids.length == 1) {
-        api_function = 'removeTag/'+iban+'/'+t_ids[0];
+        api_function = 'removeTag/'+IBAN+'/'+t_ids[0];
     } else {
-        api_function = 'removeTags/'+iban;
+        api_function = 'removeTags/'+IBAN;
         tags['t_ids'] = t_ids;
     };
 
     apiSubmit(api_function, tags, function (responseText, error) {
         if (error) {
-            printResult('Tagging failed: ' + '(' + error + ')' + responseText);
+            alert('Tag removal failed: ' + '(' + error + ')' + responseText);
 
         } else {
-            alert('Entries tagged successfully!' + responseText);
+            alert('Entries tags deleted successfully!' + responseText);
             window.location.reload();
 
         }
@@ -189,43 +190,52 @@ function removeTags() {
 
 
 /**
- * Tags the entries in the database in a direct manner (assign Categories, no rules)
- * Optional Tagging commands are read from the inputs with IDs
- * 'input_manual_category' , 'input_manual_tags' , 'input_iban' and 'input_tid'.
- * While the IBAN and Transaction_ID are mandatory, the other inputs are optional.
+ * Clear Category from selected transactions
+ */
+function removeCats() {
+    const t_ids = Array.from(rowCheckboxes)
+        .filter(cb => cb.checked)
+        .map(cb => cb.getAttribute('name'));
+
+    let api_function;
+    let payload = {};
+    if (t_ids.length == 1) {
+        api_function = 'removeCat/'+IBAN+'/'+t_ids[0];
+    } else {
+        api_function = 'removeCats/'+IBAN;
+        payload['t_ids'] = t_ids;
+    };
+
+    apiSubmit(api_function, payload, function (responseText, error) {
+        if (error) {
+            alert('Cat removal failed: ' + '(' + error + ')' + responseText);
+
+        } else {
+            alert('Entries category deleted successfully!' + responseText);
+            window.location.reload();
+
+        }
+    }, false);
+}
+
+
+/**
+ * Tags the entries in the database in a direct manner
+ * A single or multiple transactions to tag must be selected wit checkboxes.
  */
 function manualTagEntries() {
-    const category = document.getElementById('input_manual_category').value;
-    let tags = document.getElementById('input_manual_tags').value;
-    const iban = document.getElementById('input_iban').value;
-
-    const checkboxes = document.querySelectorAll('input[name="entry-select[]"]');
-    const t_ids = [];    
-    checkboxes.forEach((checkbox) => {
-        if (checkbox.checked) {
-            t_ids.push(checkbox.value);
-        }
-    });
-
-    if (!iban) {
-        alert('Please provide an IBAN.');
-        return;
-    }
-    if (!t_ids) {
-        alert('Please provide a Transaction ID (checkbox).');
-        return;
-    }
-
+    let tags = document.getElementById('manual-tag-input').value;
     let tagging = {
-        'category': category,
         'tags': tags
     }
-    
+
+    const t_ids = Array.from(rowCheckboxes).filter(cb => cb.checked)
+
     let api_function;
     if (t_ids.length == 1) {
-        api_function = 'setManualTag/'+iban+'/'+t_ids[0];
+        api_function = 'setManualTag/'+ IBAN + '/' + t_ids[0];
     } else {
-        api_function = 'setManualTags/'+iban;
+        api_function = 'setManualTags/' + IBAN;
         tagging['t_ids'] = t_ids;
     };
 
@@ -245,12 +255,11 @@ function manualTagEntries() {
 /**
  * Fetches information based on the provided IBAN and UUID, and processes the response.
  *
- * @param {string} iban - The International Bank Account Number (IBAN) to identify the account.
  * @param {string} uuid - The unique identifier associated with the request.
  * @param {Function} [callback=alert] - A callback function to handle the response text. Defaults to `alert`.
  */
-function getInfo(iban, uuid, callback = alert) {
-    apiGet('/'+iban+'/'+uuid, {}, function (responseText, error) {
+function getInfo(uuid, callback = alert) {
+    apiGet('/' + IBAN + '/' + uuid, {}, function (responseText, error) {
         if (error) {
             printResult('getTx failed: ' + '(' + error + ')' + responseText);
 

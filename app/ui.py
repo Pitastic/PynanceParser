@@ -536,18 +536,7 @@ class UserInterface():
                 Returns:
                     dict: updated, int: Anzahl der gespeicherten Datensätzen
                 """
-                new_data = {
-                    'prio': 0,
-                    'category': None,
-                }
-                condition = [{
-                    'key': 'uuid',
-                    'value': t_id,
-                    'compare': '=='
-                }]
-
-                updated_entries = self.db_handler.update(new_data, iban, condition)
-                return updated_entries
+                return self._remove_cat(iban, t_id)
 
             @current_app.route('/api/removeTags/<iban>', methods=['PUT'])
             def removeTags(iban):
@@ -573,6 +562,29 @@ class UserInterface():
 
                 return updated_entries
 
+            @current_app.route('/api/removeCats/<iban>', methods=['PUT'])
+            def removeCats(iban):
+                """
+                Entfernt gesetzte Tags für einen Eintrag-
+
+                Args (uri/json):
+                    iban, str: IBAN
+                    t_ids, list[str]: Datenbank IDs der Transaktionen,
+                                      die bereinigt werden sollen.
+                Returns:
+                    dict: updated, int: Anzahl der gespeicherten Datensätzen
+                """
+                data = request.json
+                t_ids = data.get('t_ids')
+                assert t_ids, 'No transactions provided'
+
+                updated_entries = {'updated': 0}
+                for t_id in t_ids:
+
+                    updated = self._remove_cat(iban, t_id)
+                    updated_entries['updated'] += updated.get('updated')
+
+                return updated_entries
 
     def _set_manual_tag_and_cat(self, iban, t_id,
                                 tags: list=None, category: str=None) -> dict:

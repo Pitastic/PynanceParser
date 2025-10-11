@@ -7,8 +7,14 @@
     <nav>
         <ul style="display: flex; justify-content: space-between; list-style: none; padding: 0;">
             <li>
-                <button id="edit-selected" onclick="openDetailsPopup('massedit-popup')" disabled title="Edit selected (0 selected)">
+                <button id="edit-selected" onclick="openDetailsPopup('massedit-popup')" disabled title="Edit (nichts ausgewählt)">
                     ✏️
+                </button>
+                <button onclick="openDetailsPopup('tagging-popup')">
+                    Tagging
+                </button>
+                <button onclick="openDetailsPopup('cat-popup')">
+                    Kategorisieren
                 </button>
             </li>
             <li>
@@ -40,7 +46,8 @@
         <tbody>
             {% for transaction in transactions %}
             <tr id="tr-{{ transaction.uuid }}">
-                <td><input type="checkbox" class="row-checkbox" name="check_{{ transaction.uuid }}"></td>
+                <td><input type="checkbox" class="row-checkbox" name="{{ transaction.uuid }}"
+                    data-tx="{{transaction.date_tx}} - ({{transaction.uuid}})"></td>
                 <td class="td-date_tx">{{ transaction.date_tx }}</td>
                 <td class="td-text_tx">{{ transaction.text_tx }}</td>
                 <td>
@@ -48,7 +55,7 @@
                 </td>
                 <td>
                     {% for tag in transaction.tags %}
-                    <span style="background-color: #ddd; padding: 0.2em; border-radius: 0.2em; margin-right: 0.2em;">
+                    <span class="tag-chip">
                         {{ tag }}
                     </span>
                     {% endfor %}
@@ -66,8 +73,36 @@
 <!-- Popups -->
 <div id="massedit-popup" style="display: none;" class="popup">
     <h2>Mass Edit</h2>
-    <p>Dummy content for settings.</p>
+    <p>Aktion auf die ausgewählten Transaktionen anwenden:</p>
+    <ul id="tx-select-list">
+    </ul>
+    <button onclick="removeTags()">Tags entfernen</button>
+    <button onclick="removeCats()">Kategorie entfernen</button>
     <button onclick="closePopup('massedit-popup')">Close</button>
+</div>
+
+<div id="tagging-popup" style="display: none;" class="popup">
+    <h2>Tag</h2>
+    <p>Es können standardmäßig alle oder nur eine ausgewählte Regel auf alle Transaktionen zum Tagging genutzt werden.</p>
+    <p>
+        <select id="tag-select">
+            <option value="">Alle Regeln</option>
+        </select>
+    </p>
+    <button onclick="tagEntries()">Tag</button>
+    <button onclick="closePopup('tagging-popup')">Close</button>
+</div>
+
+<div id="cat-popup" style="display: none;" class="popup">
+    <h2>Kategorie</h2>
+    <p>Es können standardmäßig alle oder nur eine ausgewählte Regel auf alle Transaktionen zum Kategorisieren genutzt werden.</p>
+    <p>
+        <select id="cat-select">
+            <option value="">Alle Regeln</option>
+        </select>
+    </p>
+    <button onclick="catEntries()">Kategorisieren</button>
+    <button onclick="closePopup('cat-popup')">Close</button>
 </div>
 
 <div id="settings-popup" style="display: none;" class="popup">

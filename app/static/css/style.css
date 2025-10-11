@@ -16,6 +16,14 @@ html, body {
     display: inline-block;
 }
 
+#file-drop-area {
+    border: 2px dashed #ccc;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    position: relative;
+}
+
 #result-text {
     display: block;
     background-color: green;
@@ -41,3 +49,11 @@ table.transactions {
     table.transactions tr:hover {
         background-color: #374d3a;
     }
+
+.tag-chip {
+    margin-right: 0.2em;
+    padding: 0.2em;
+    background-color: #4ab477;
+    color: black;
+    border-radius: 0.2em;
+}

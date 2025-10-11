@@ -30,7 +30,7 @@
 
     <p>
         <button id="add-iban-btn">
-        Umsätze importieren
+        Konten verwalten
         </button>
         <button id="add-group-btn">
         Gruppen verwalten
@@ -51,13 +51,14 @@
         </datalist>
     </p>
     <p>
-        <div id="file-drop-area" style="border: 2px dashed #ccc; padding: 20px; text-align: center; cursor: pointer; position: relative;">
+        <div id="file-drop-area">
             <span id="file-label">Datei hier ablegen oder auswählen (PDF / CSV / HTML)</span>
             <input type="file" id="file-input" name="file-input" accept=".csv,.pdf,.html" style="display: none;">
         </div>
     </p>
     <p>
         <button onclick="uploadFile()">Import</button>
+        <button onclick="truncateDB()">Löschen</button>
     </p>
     <button onclick="closePopup('add-iban')">Close</button>
 </div>
