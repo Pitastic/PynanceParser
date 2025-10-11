@@ -6,7 +6,8 @@ import os
 import json
 import logging
 from datetime import datetime
-from flask import request, current_app, render_template, redirect, make_response, send_from_directory
+from flask import request, current_app, render_template, redirect, \
+                  make_response, send_from_directory
 
 # Add Parent for importing Classes
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -199,7 +200,7 @@ class UserInterface():
                     rule_type, str: Typ der Regel (rule | parser)
                     rule, dict: Regel-Objekt
                 """
-                input_file = request.files.get('input_file')
+                input_file = request.files.get('file-input')
                 if not input_file and not request.json:
                     return {'error': 'No file or json provided'}, 400
 

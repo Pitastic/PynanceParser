@@ -55,7 +55,7 @@ class TinyDbHandler(BaseDb):
                 - 'value', str|int|list:    Wert der bei 'key' verglichen werden soll
                 - 'compare', str:           (optional, default '==')
                     - '[==, !=, <, >, <=, >=, in, notin, all]':
-                                            Wert asu DB [compare] value (Operatoren, siehe Models.md)
+                                            Wert asu DB [compare] value (Operatoren, s. Models.md)
                     - 'like':               Wert aus DB == *value* (case insensitive)
                     - 'regex':              value wird als RegEx behandelt
             multi, str ['AND' | 'OR']:      Wenn 'condition' eine Liste mit conditions ist,
