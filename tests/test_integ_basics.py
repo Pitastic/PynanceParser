@@ -24,7 +24,7 @@ def test_truncate(test_app):
     with test_app.app_context():
 
         with test_app.test_client() as client:
-            result = client.delete("/api/truncateDatabase/DE89370400440532013000")
+            result = client.delete("/api/deleteDatabase/DE89370400440532013000")
             assert result.status_code == 200, "Fehler beim Leeren der Datenbank"
 
 

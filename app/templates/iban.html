@@ -51,7 +51,11 @@
                 <td class="td-date_tx">{{ transaction.date_tx }}</td>
                 <td class="td-text_tx">{{ transaction.text_tx }}</td>
                 <td>
+                    {% if transaction.category %}
                     <span title="{{ transaction.category }}" style="cursor: help;">🔖</span>
+                    {% else %}
+                    &nbsp;
+                    {% endif %}
                 </td>
                 <td>
                     {% for tag in transaction.tags %}

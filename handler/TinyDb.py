@@ -214,8 +214,8 @@ class TinyDbHandler(BaseDb):
         deleted_ids = collection.remove(query)
         return {'deleted': len(deleted_ids)}
 
-    def truncate(self, collection):
-        """Löscht alle Datensätze aus einer Tabelle/Collection
+    def _truncate(self, collection):
+        """Löscht eine Tabelle/Collection
 
         Args:
             collection (str):   Name der Collection, in die Werte eingefügt werden sollen.
@@ -223,9 +223,8 @@ class TinyDbHandler(BaseDb):
             dict:
                 - deleted, int: Anzahl der gelöschten Datensätze
         """
-        table = self.connection.table(collection)
-        r = table.remove(lambda x: True)
-        return {'deleted': len(r)}
+        r = self.connection.drop_table(collection)
+        return {'deleted': 1}
 
     def get_metadata(self, uuid):
         collection = self.connection.table('metadata')

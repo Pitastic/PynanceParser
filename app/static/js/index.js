@@ -115,22 +115,27 @@ function saveGroup() {
 }
 
 /**
- * Truncates the database.
- * An optional IBAN to truncate is selected by input with ID 'iban-input'.
+ * Deletes the database for the given IBAN or the Config for a Groupname
  */
-function truncateDB() {
-    const iban = document.getElementById('iban-input').value;
-    if (!iban) {
-        alert("Keine IBAN angegeben!");
+function deleteDB(delete_group) {
+    let collection;
+    if (delete_group) {
+        collection = document.getElementById('groupname-input').value;
+    } else {
+        collection = document.getElementById('iban-input').value;
+    }
+    
+    if (!collection) {
+        alert("Keine IBAN/Gruppe angegeben!");
         return;
     }
 
-    apiGet('truncateDatabase/'+iban, {}, function (responseText, error) {
+    apiGet('deleteDatabase/'+ collection, {}, function (responseText, error) {
         if (error) {
-            printResult('Truncate failed: ' + '(' + error + ')' + responseText);
+            printResult('Delete failed: ' + '(' + error + ')' + responseText);
 
         } else {
-            alert('Database truncated successfully!' + responseText);
+            alert('DB deleted successfully!' + responseText);
             window.location.reload();
 
         }

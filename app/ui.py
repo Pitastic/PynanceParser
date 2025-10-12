@@ -311,8 +311,8 @@ class UserInterface():
                 _ = self._mv_fileupload(input_file, path)
                 return self._read_settings(path, metatype=metadata)
 
-            @current_app.route('/api/truncateDatabase/<iban>', methods=['DELETE'])
-            def truncateDatabase(iban):
+            @current_app.route('/api/deleteDatabase/<iban>', methods=['DELETE'])
+            def deleteDatabase(iban):
                 """
                 Leert die Datenbank zu einer IBAN
                 Args (uri):

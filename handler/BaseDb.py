@@ -198,10 +198,36 @@ class BaseDb():
         raise NotImplementedError()
 
     def truncate(self, collection: str):
-        """Löscht alle Datensätze aus einer Tabelle/Collection
+        """Löscht eine Tabelle/Collection
 
         Args:
             collection (str):   Name der Collection, in die Werte eingefügt werden sollen.
+        Returns:
+            dict:
+                - deleted, int: Anzahl der gelöschten Datensätze
+        """
+        if not self.check_collection_is_iban(collection):
+            # Delete group config from metadata
+            return self.delete('metadata', [
+                {
+                    'key': 'metatype',
+                    'value': 'config'
+                },{
+                    'key': 'name',
+                    'value': 'group'
+                },{
+                    'key': 'uuid',
+                    'value': collection
+                }
+            ])
+
+        return self._truncate(collection)
+
+    def _truncate(self, collection):
+        """
+        Private Methode zum Löschen einer Tabelle/Collection.
+        Siehe 'truncate' Methode.
+
         Returns:
             dict:
                 - deleted, int: Anzahl der gelöschten Datensätze

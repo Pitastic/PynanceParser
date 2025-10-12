@@ -186,9 +186,9 @@ class MongoDbHandler(BaseDb):
         delete_result = collection.delete_many(query)
         return {'deleted': delete_result.deleted_count}
 
-    def truncate(self, collection):
+    def _truncate(self, collection):
         """
-        Löscht alle Datensätze aus einer Tabelle/Collection
+        Löscht eine Tabelle/Collection
 
         Args:
             collection (str):   Name der Collection, in die Werte eingefügt werden sollen.
