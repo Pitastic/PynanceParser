@@ -298,11 +298,11 @@ class UserInterface():
 
                 Args (uri, multipart/form-data):
                     metadata (str): [regex|parser|config] Type of Metadata to save
-                    input_file (binary): Dateiupload aus Formular-Submit
+                    file-input (binary): Dateiupload aus Formular-Submit
                 Returns:
                     json: Informationen zur Datei und Ergebnis der Untersuchung.
                 """
-                input_file = request.files.get('input_file')
+                input_file = request.files.get('file-input')
                 if not input_file:
                     return {'error': 'No file provided'}, 400
 

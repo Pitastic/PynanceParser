@@ -118,13 +118,17 @@ function listTxElements() {
  * 'input_tagging_name' (more in the Future)
  */
 function tagEntries() {
+    let payload = {};
     const rule_name = document.getElementById('tag-select').value;
-    let rules = {}
     if (rule_name) {
-        rules['rule_name'] = rule_name
+        payload['rule_name'] = rule_name;
+    }
+    const dry_run = document.getElementById('tag-dry').checked;
+    if (dry_run) {
+        payload['dry_run'] = dry_run;
     }
 
-    apiSubmit('tag/'+IBAN, rules, function (responseText, error) {
+    apiSubmit('tag/'+IBAN, payload, function (responseText, error) {
         if (error) {
             printResult('Tagging failed: ' + '(' + error + ')' + responseText);
 
@@ -141,13 +145,17 @@ function tagEntries() {
  * Optional Categorization commands are read from the input with ID
  */
 function catEntries() {
+    let payload = {};
     const rule_name = document.getElementById('cat-select').value;
-    let rules = {}
     if (rule_name) {
-        rules['rule_name'] = rule_name
+        payload['rule_name'] = rule_name
+    }
+    const dry_run = document.getElementById('cat-dry').checked;
+    if (dry_run) {
+        payload['dry_run'] = dry_run;
     }
 
-    apiSubmit('cat/'+IBAN, rules, function (responseText, error) {
+    apiSubmit('cat/'+IBAN, payload, function (responseText, error) {
         if (error) {
             printResult('Categorization failed: ' + '(' + error + ')' + responseText);
 
