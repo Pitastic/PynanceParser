@@ -85,7 +85,8 @@ class UserInterface():
                     # No IBAN selected, show Welcome page with IBANs
                     ibans = self.db_handler.list_ibans()
                     groups = self.db_handler.list_groups()
-                    return render_template('index.html', ibans=ibans, groups=groups)
+                    meta = self.db_handler.filter_metadata(condition=None)
+                    return render_template('index.html', ibans=ibans, groups=groups, meta=meta)
 
                 if not self.db_handler.get_group_ibans(iban, True):
                     # It's not an IBAN or valid Groupname
@@ -192,28 +193,20 @@ class UserInterface():
                 return tx_details[0], 200
 
             @current_app.route('/api/saveMeta/', defaults={'rule_type':'rule'}, methods=['POST'])
-            @current_app.route('/api/saveMeta/<rule_type>', methods=['POST'])
+            @current_app.route('/api/saveMeta/<rule_type>', methods=['PUT'])
             def saveMeta(rule_type):
                 """
                 Einfügen oder updaten von Metadaten in der Datenbank.
                 Args (json / file):
-                    rule_type, str: Typ der Regel (rule | parser)
+                    rule_type, str: Typ der Regel (rule | parser | config)
                     rule, dict: Regel-Objekt
                 """
-                input_file = request.files.get('file-input')
-                if not input_file and not request.json:
+                if not request.json:
                     return {'error': 'No file or json provided'}, 400
 
-                if input_file:
-                    # Store Upload file to tmp
-                    path = '/tmp/metadata.tmp'
-                    _ = self._mv_fileupload(input_file, path)
-                    r = self.db_handler.import_metadata(path=path, metatype=rule_type)
-
-                else:
-                    entry = request.json
-                    entry['metatype'] = rule_type
-                    r = self.db_handler.set_metadata(entry, overwrite=True)
+                entry = request.json
+                entry['metatype'] = rule_type
+                r = self.db_handler.set_metadata(entry, overwrite=True)
 
                 if not r.get('inserted'):
                     return {'error': 'No data inserted', 'reason': r.get('error')}, 400
@@ -309,7 +302,11 @@ class UserInterface():
                 # Store Upload file to tmp
                 path = f'/tmp/{metadata}.tmp'
                 _ = self._mv_fileupload(input_file, path)
-                return self._read_settings(path, metatype=metadata)
+                
+                # Import and cleanup
+                result = self.db_handler.import_metadata(path, metatype=metadata)
+                os.remove(path)
+                return result, 201 if result.get('inserted') else 200
 
             @current_app.route('/api/deleteDatabase/<iban>', methods=['DELETE'])
             def deleteDatabase(iban):
@@ -728,46 +725,3 @@ class UserInterface():
             return []
 
         return self.tagger.parse(data)
-
-    def _read_settings(self, uri, metatype):
-        """
-        Liest eine Datei mit Metadaten ein, die entweder Konfigurationen,
-        Regeln für das Tagging oder Regeln für das Parsing enthalten kann.
-
-        Args:
-            uri (str): Pfad zur JSON mit den Eingabedaten.
-            metatype (str): [rule|parser|config] Art der Metadaten.
-                            Sie dürfen nicht gemischt vorliegen.
-        Returns:
-            list(dict): Geparste Objekte für das Einfügen in die Datenbank.
-        """
-        with open(uri, 'r', encoding='utf-8') as infile:
-            try:
-                parsed_data = json.load(infile)
-
-            except json.JSONDecodeError as e:
-                logging.warning(f"Failed to parse JSON file: {e}")
-                return {'error': 'Invalid file format (not json)'}, 400
-
-        if isinstance(parsed_data, list):
-
-            for i, _ in enumerate(parsed_data):
-                parsed_data[i]['metatype'] = metatype
-
-        else:
-            parsed_data['metatype'] = metatype
-            parsed_data = [parsed_data]
-
-        # Verarbeitete Metadataen in die DB speichern
-        # und vom Objekt und Dateisystem löschen
-        inserted = 0
-        for data in parsed_data:
-            inserted += self.db_handler.set_metadata(data).get('inserted')
-
-        os.remove(uri)
-
-        return_code = 201 if inserted else 200
-        return {
-            'metatype': metatype,
-            'inserted': inserted,
-        }, return_code

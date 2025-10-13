@@ -176,7 +176,7 @@ def test_save_meta(test_app):
                 'name': 'Test Parsing 4 Digits',
                 'regex': '[0-9]]{4}'
             }
-            result = client.post("/api/saveMeta/parser", json=parameters)
+            result = client.put("/api/saveMeta/parser", json=parameters)
             assert result.status_code == 201, \
                 "Der Statuscode war nicht wie erwartet"
 
@@ -192,7 +192,7 @@ def test_save_meta(test_app):
             parameters = json.dumps(parameters).encode('utf-8')
             files = {'file-input': (io.BytesIO(parameters), 'commerzbank.csv')}
             result = client.post(
-                "/api/saveMeta/",
+                "/api/upload/metadata/parser",
                 data=files, content_type='multipart/form-data'
             )
             assert result.status_code == 201, \

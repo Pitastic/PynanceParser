@@ -5,11 +5,6 @@ let IBAN = window.location.pathname.split('/').pop();
 
 document.addEventListener('DOMContentLoaded', function () {
 
-    // PopUps
-    document.getElementById('settings-button').addEventListener('click', function () {
-        openPopup('settings-popup');
-    });
-
     // enabling/disabling the edit button based on checkbox selection
     const selectAllCheckbox = document.getElementById('select-all');
     rowCheckboxes = document.querySelectorAll('.row-checkbox');

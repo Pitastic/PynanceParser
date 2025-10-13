@@ -36,6 +36,9 @@
         Gruppen verwalten
         </button>
     </p>
+    <p>
+        <button id="settings-button" title="Settings">⚙️</button>
+    </p>
 </main>
 
 <!-- PopUps -->
@@ -90,6 +93,42 @@
         <button onclick="deleteDB(true)">Löschen</button>
     </p>
     <button onclick="closePopup('add-group')">Close</button>
+</div>
+
+
+<div id="settings-popup" style="display: none;" class="popup">
+    <h2>Settings</h2>
+    <p>Einstellungen können in die Datenbank importiert werden, ohne sie explizit im Backend ablegen zu müssen:</p>
+    <p>
+        <select id="settings-type">
+            <option value="rule">Regel</option>
+            <option value="parser">Parsing-Anweisung</option>
+            <option value="config">Einstellungen</option>
+        </select>
+    </p>
+    <p>
+        <div id="settings-drop-area">
+            <span id="file-label">Datei hier ablegen oder auswählen (PDF / CSV / HTML)</span>
+            <input type="file" id="settings-input" name="settings-input" accept=".csv,.pdf,.html" style="display: none;">
+        </div>
+        <button onclick="importSettings()">Importieren</button>
+    </p>
+
+    <p>
+        Alternativ können auch Werte für einzelne Einträge abgefragt und direkt geändert werden:
+    </p>
+    <p>
+        <select id="read-setting">
+            {% for m in meta %}
+            <option value="{{m.uuid}}">{{m.metatype}} "{{m.name}}" ({{m.uuid}})</option>
+            {% endfor %}
+        </select>
+        <textarea id="set-setting" placeholder="Setting Wert" rows="10" cols="15"></textarea>
+        <button onclick="loadSetting()">Laden</button>
+        <button onclick="saveSetting()">Speichern</button>
+    </p>
+    
+    <button onclick="closePopup('settings-popup')">Close</button>
 </div>
 
 <script src="{{ url_for('static', filename='js/index.js') }}"></script>
