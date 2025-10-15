@@ -67,26 +67,33 @@ class UserInterface():
         # Define Routes
         with current_app.app_context():
 
-            @current_app.route('/', defaults={'iban':None}, methods=['GET'])
+            @current_app.route('/', methods=['GET'])
+            def welcome() -> str:
+                """
+                Startseite mit Navigation und Uploadformular.
+                Returns:
+                    html: Startseite mit Navigation und Uploadformular
+                """
+                ibans = self.db_handler.list_ibans()
+                groups = self.db_handler.list_groups()
+                meta = self.db_handler.filter_metadata(condition=None)
+                return render_template('index.html', ibans=ibans, groups=groups, meta=meta)
+
             @current_app.route('/<iban>', methods=['GET'])
             def iban(iban) -> str:
                 """
-                Startseite mit Navigation und Uploadformular.
+                Startseite in einem Konto.
 
                 Args (uri):
-                    iban, str:  (optional) IBAN zu der die Einträge angezeigt werden sollen.
-                                (Default: Primäre IBAN aus der Config)
+                    iban, str:  IBAN zu der die Einträge angezeigt werden sollen.
                     startDate, str (query): Startdatum (Y-m-d) für die Anzeige der Einträge
                     endDate, str (query):   Enddatum (Y-m-d) für die Anzeige der Einträge
                 Returns:
                     html: Startseite mit Navigation
                 """
                 if iban is None:
-                    # No IBAN selected, show Welcome page with IBANs
-                    ibans = self.db_handler.list_ibans()
-                    groups = self.db_handler.list_groups()
-                    meta = self.db_handler.filter_metadata(condition=None)
-                    return render_template('index.html', ibans=ibans, groups=groups, meta=meta)
+                    # No IBAN provided, redirect to welcome
+                    redirect('/')
 
                 if not self.db_handler.get_group_ibans(iban, True):
                     # It's not an IBAN or valid Groupname
@@ -125,9 +132,30 @@ class UserInterface():
 
                 # Table with Transactions
                 rows = self.db_handler.select(iban, condition)
-                ibans = self.db_handler.get_group_ibans(iban, check_before=True)
 
-                return render_template('iban.html', transactions=rows)
+                return render_template('iban.html', transactions=rows, iban=iban)
+
+            @current_app.route('/<iban>/<t_id>', methods=['GET'])
+            def showTx(iban, t_id):
+                """
+                Ansicht einer einzelnen Transaktion.
+                Args (uri):
+                    iban, str: IBAN
+                    t_id, int: Datenbank ID der Transaktion
+                Returns:
+                    json: Details zu einer bestimmten Transaktion
+                """
+                tx_details = self.db_handler.select(
+                    iban, {
+                        'key': 'uuid',
+                        'value': t_id,
+                        'compare': '=='
+                    }
+                )
+                if not tx_details:
+                    return {'error': 'No transaction found'}, 404
+
+                return render_template('tx.html', tx=tx_details[0])
 
             @current_app.route('/logout', methods=['GET'])
             def logout():
@@ -190,6 +218,9 @@ class UserInterface():
                         'compare': '=='
                     }
                 )
+                if not tx_details:
+                    return {'error': 'No transaction found'}, 404
+
                 return tx_details[0], 200
 
             @current_app.route('/api/saveMeta/', defaults={'rule_type':'rule'}, methods=['POST'])

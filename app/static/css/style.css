@@ -3,6 +3,11 @@ html, body {
     color: white;
 }
 
+hr {
+    margin-top: 3em;
+    margin-bottom: 3em;
+}
+
 .my-buttons {
     display: inline-block;
     cursor: pointer;
@@ -57,3 +62,7 @@ table.transactions {
     color: black;
     border-radius: 0.2em;
 }
+    .tag-chip.parsed {
+        display: inline-block;
+        background-color: blueviolet;
+    }

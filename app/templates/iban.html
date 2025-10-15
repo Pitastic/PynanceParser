@@ -3,6 +3,9 @@
 
 {% block content %}
 
+<h1>Kontoübersicht</h1>
+
+
 <header>
     <nav>
         <ul style="display: flex; justify-content: space-between; list-style: none; padding: 0;">
@@ -30,6 +33,7 @@
 </header>
 
 <main>
+
     <table class="transactions">
         <thead>
             <tr>
@@ -66,6 +70,7 @@
                 <td class="td-betrag">{{ transaction.currency }} {{ transaction.betrag }}</td>
                 <td>
                     <button class="details-button" title="Show details" onclick="openDetailsPopup('details-popup', '{{ transaction.uuid }}')" style="cursor: pointer;">ℹ️</button>
+                    <a href="/{{iban}}/{{transaction.uuid}}" target="_blank">🔎</a>
                 </td>
             </tr>
             {% endfor %}

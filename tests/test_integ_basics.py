@@ -115,6 +115,8 @@ def test_reachable_endpoints(test_app):
             result = client.get("/DE89370400440532013000")
             assert result.status_code == 200, "Der Statuscode der IBAN war falsch"
 
+            result = client.get("/DE89370400440532013000/786e1d4e16832aa321a0176c854fe087")
+            assert result.status_code == 200, "Der Statuscode der Transaktion war falsch"
 
 def test_double_upload(test_app):
     """Lädt zwei Dateien hoch und prüft die unterschiedlichen HTTP Stati"""
