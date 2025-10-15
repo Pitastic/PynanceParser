@@ -4,6 +4,19 @@
 
 <h1>Transaktionsdetails</h1>
 
+<header>
+    <nav>
+        <ul>
+            <li>
+                <button onclick="removeTags('{{tx.uuid}}')">Tags entfernen</button>
+            </li>
+            <li>
+                <button onclick="removeCats('{{tx.uuid}}')">Kategorie entfernen</button>
+            </li>
+        </ul>
+    </nav>
+</header>
+
 <main>
 
     <table class="transactions">
@@ -70,4 +83,7 @@
     </table>
 
 </main>
+
+<script src="{{ url_for('static', filename='js/tx.js') }}"></script>
+
 {% endblock %}

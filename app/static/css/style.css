@@ -8,6 +8,13 @@ hr {
     margin-bottom: 3em;
 }
 
+nav ul {
+    display: flex;
+    padding: 0;
+    justify-content: space-between;
+    list-style: none;
+}
+
 .my-buttons {
     display: inline-block;
     cursor: pointer;

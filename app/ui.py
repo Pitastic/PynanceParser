@@ -130,10 +130,14 @@ class UserInterface():
                     except (ValueError, TypeError) as e:
                         logging.warning(f"Invalid endDate format '{e}' will be ignored")
 
-                # Table with Transactions
+                # Table with Transactions and other Meta Data
                 rows = self.db_handler.select(iban, condition)
-
-                return render_template('iban.html', transactions=rows, iban=iban)
+                rulenames = self.db_handler.filter_metadata({'key':'metatype', 'value': 'rule'})
+                rulenames = [r.get('name') for r in rulenames if r.get('name')]
+                cats = self.db_handler.filter_metadata({'key':'metatype', 'value': 'category'})
+                cats = [r.get('category') for r in cats if r.get('category')]
+                return render_template('iban.html', transactions=rows, iban=iban,
+                                       rules=rulenames, categories=cats)
 
             @current_app.route('/<iban>/<t_id>', methods=['GET'])
             def showTx(iban, t_id):

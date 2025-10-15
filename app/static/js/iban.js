@@ -1,7 +1,6 @@
 "use strict";
 
 let rowCheckboxes = null;
-let IBAN = window.location.pathname.split('/').pop();
 
 document.addEventListener('DOMContentLoaded', function () {
 
@@ -129,7 +128,19 @@ function tagEntries() {
 
         } else {
             alert('Entries tagged successfully!' + responseText);
-            window.location.reload();
+            if (dry_run) {
+                // List UUIDs which would have been tagged
+                const r = JSON.parse(responseText)
+                let txt_list = ""
+                r.entries.forEach(element => {
+                    txt_list += "\n- " + element
+                });
+                alert("Folgende UUIDs würden getaggt werden:\n" + txt_list);
+
+            } else {
+                // Tagged -> Reload
+                window.location.reload();
+            }
 
         }
     }, false);
@@ -156,7 +167,19 @@ function catEntries() {
 
         } else {
             alert('Entries categorized successfully!' + responseText);
-            window.location.reload();
+            if (dry_run) {
+                // List UUIDs which would have been cat
+                const r = JSON.parse(responseText)
+                let txt_list = ""
+                r.entries.forEach(element => {
+                    txt_list += "\n- " + element
+                });
+                alert("Folgende UUIDs würden kategorisiert werden:\n" + txt_list);
+
+            } else {
+                // Cat -> Reload
+                window.location.reload();
+            }
 
         }
     }, false);

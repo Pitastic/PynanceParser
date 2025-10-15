@@ -8,7 +8,7 @@
 
 <header>
     <nav>
-        <ul style="display: flex; justify-content: space-between; list-style: none; padding: 0;">
+        <ul>
             <li>
                 <button id="edit-selected" onclick="openDetailsPopup('massedit-popup')" disabled title="Edit (nichts ausgewählt)">
                     ✏️
@@ -84,6 +84,8 @@
     <p>Aktion auf die ausgewählten Transaktionen anwenden:</p>
     <ul id="tx-select-list">
     </ul>
+    <input
+    <hr />
     <button onclick="removeTags()">Tags entfernen</button>
     <button onclick="removeCats()">Kategorie entfernen</button>
     <button onclick="closePopup('massedit-popup')">Close</button>
@@ -95,6 +97,9 @@
     <p>
         <select id="tag-select">
             <option value="">Alle Regeln</option>
+            {% for r in rules %}
+            <option>{{r}}</option>
+            {% endfor %}
         </select>
     </p>
     <p>
@@ -113,6 +118,9 @@
     <p>
         <select id="cat-select">
             <option value="">Alle Regeln</option>
+            {% for c in categories %}
+            <option>{{c}}</option>
+            {% endfor %}
         </select>
     </p>
     <p>
