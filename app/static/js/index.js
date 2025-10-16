@@ -227,7 +227,7 @@ function deleteDB(delete_group) {
 
     apiGet('deleteDatabase/'+ collection, {}, function (responseText, error) {
         if (error) {
-            printResult('Delete failed: ' + '(' + error + ')' + responseText);
+            alert('Delete failed: ' + '(' + error + ')' + responseText);
 
         } else {
             alert('DB deleted successfully!' + responseText);

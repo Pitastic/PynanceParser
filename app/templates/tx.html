@@ -62,14 +62,28 @@
         <tbody>
             <tr>
                 <td>
-                    {{tx.category}}
+                    <input type="text" id="cat-input" list="cat-list" placeholder="Kategorie" value="{{tx.category|string}}">
+                    <datalist id="cat-list">
+                        {% for c in cats %}
+                        <option>{{ c }}</option>
+                        {% endfor %}
+                    </datalist>
+                    <button onclick="manualCatTx('{{tx.uuid}}')">Speichern</button>
                 </td>
-                <td>
+                <td id="tag-container">
                     {% for tag in tx.tags %}
                     <span class="tag-chip">
                         {{ tag }}
+                        <a href="javascript:void(0)" onclick="removeTagBullet(this.parentNode)" class="remove">&times;</a>
                     </span>
                     {% endfor %}
+                    <input type="text" id="tag-input" list="tag-list" placeholder="Neues Tag" value="">
+                    <datalist id="tag-list">
+                        {% for t in tags %}
+                        <option>{{ t }}</option>
+                        {% endfor %}
+                    </datalist>
+                    <button onclick="manualTagTx('{{tx.uuid}}')">Speichern</button>
                 </td>
                 <td>
                     {% for key, value in tx.parsed.items() %}

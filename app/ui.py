@@ -3,7 +3,6 @@
 
 import sys
 import os
-import json
 import logging
 from datetime import datetime
 from flask import request, current_app, render_template, redirect, \
@@ -159,7 +158,15 @@ class UserInterface():
                 if not tx_details:
                     return {'error': 'No transaction found'}, 404
 
-                return render_template('tx.html', tx=tx_details[0])
+                tags = []
+                for rule in self.db_handler.filter_metadata({'key':'metatype', 'value': 'rule'}):
+                    for t in rule.get('tags', []):
+                        if t not in tags:
+                            tags.append(t)
+
+                cats = self.db_handler.filter_metadata({'key':'metatype', 'value': 'category'})
+                cats = [r.get('category') for r in cats if r.get('category')]
+                return render_template('tx.html', tx=tx_details[0], cats=cats, tags=tags)
 
             @current_app.route('/logout', methods=['GET'])
             def logout():

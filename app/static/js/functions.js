@@ -1,6 +1,7 @@
 "use strict";
 
 let IBAN = window.location.pathname.split('/')[1];
+let TAGS = [];
 
 // ----------------------------------------------------------------------------
 // -- DOM Functions ----------------------------------------------------------
@@ -25,6 +26,45 @@ function closePopup(popupId) {
 	document.getElementById(popupId).style.display = 'none';
 }
 
+/**
+ * Dynamic Bullet list
+ * Takes text-input to create new Tag-Bullets
+ * 
+ * @param {DOMElement} inputField for tag content input
+ * 
+ * @param {string} tagContainerId Id to select the container with tag-chips
+ * 
+ */
+function addTagBullet(inputField, tagContainerId) {
+	const tagConatiner = document.getElementById(tagContainerId);
+	const value = inputField.value.trim();
+	if (value && !TAGS.includes(value)) {
+		TAGS.push(value);
+
+		const tagEl = document.createElement("span");
+		tagEl.className = "tag-chip";
+		tagEl.textContent = value;
+
+		const removeBtn = document.createElement("a");
+		removeBtn.className = "remove";
+		removeBtn.innerHTML = "&times;";
+		removeBtn.href = "javascript:void(0)";
+		removeBtn.addEventListener("click", () => removeTagBullet(tagEl));
+		tagEl.appendChild(removeBtn);
+		tagConatiner.appendChild(tagEl);
+
+		inputField.value = "";
+	}
+}
+
+/**
+ * Dynamic Bullet list
+ * Deletes a dynamic Tag-Bullet
+ */
+function removeTagBullet(element) {
+    TAGS = TAGS.filter(t => t !== element.firstChild.textContent);
+    element.remove();
+}
 
 // ----------------------------------------------------------------------------
 // -- AJAX Functions ----------------------------------------------------------
@@ -142,4 +182,100 @@ function apiSubmit(sub, params, callback, isFile = false) {
 		ajax.setRequestHeader("Content-type", "application/json");
 	}
 	ajax.send(request_uri);
+}
+
+/**
+ * Tags the entries in the database in a direct manner
+ * A single or multiple transactions to tag could be provided
+ *
+ * @param {list} t_ids Liste von Transaktions IDs.
+ * 					Wenn leer werden alle Transaktionen der IBAN berücksichtigt.
+ * @param {list} tags	Liste mit zu setzenden Tags.
+ * 						Wenn leer, werden alle Tags der Transaktion entfernt.
+ */
+function manualTag(t_ids, tags) {
+	if (typeof (t_ids) != "object" || typeof (tags) != "object") {
+		alert("Falscher Typ von Transaktionsliste oder Tag-Liste !");
+		return;
+	}
+
+    let tagging = {
+        'tags': tags
+    }
+
+    let api_function;
+    if (t_ids.length == 1) {
+        api_function = 'setManualTag/'+ IBAN + '/' + t_ids[0];
+    } else {
+        api_function = 'setManualTags/' + IBAN;
+        tagging['t_ids'] = t_ids;
+    };
+
+    apiSubmit(api_function, tagging, function (responseText, error) {
+        if (error) {
+            alert('Tagging failed: ' + '(' + error + ')' + responseText);
+
+        } else {
+            alert('Entries tagged successfully!' + responseText);
+            window.location.reload();
+
+        }
+    }, false);
+}
+
+/**
+ * Tags the entries in the database in a direct manner
+ * A single or multiple transactions to tag could be provided
+ *
+ * @param {list} t_ids Liste von Transaktions IDs.
+ * 					Wenn leer werden alle Transaktionen der IBAN berücksichtigt.
+ * @param {string} cat	Name der zu setzenden Kategorie.
+ * 						Wenn leer, wird die Kategorie entfernt.
+ */
+function manualCat(t_ids, cat) {
+	if (typeof (t_ids) != "object" || typeof (cat) != "string") {
+		alert("Falscher Typ von Transaktionsliste oder Tag-Liste !");
+		return;
+	}
+
+    let payload = {
+        'category': cat
+    }
+
+    let api_function;
+
+	if (!cat) {
+		// Delete Category		
+		if (t_ids.length == 1) {
+			api_function = 'removeCat/' + IBAN + '/' + t_ids[0];
+
+		} else {
+			api_function = 'removeCats/' + IBAN;
+			payload['t_ids'] = t_ids;
+
+		};
+
+	} else {
+		// Set Category		
+		if (t_ids.length == 1) {
+			api_function = 'setManualCat/' + IBAN + '/' + t_ids[0];
+
+		} else {
+			api_function = 'setManualCats/' + IBAN;
+			payload['t_ids'] = t_ids;
+
+		};
+
+	}
+
+    apiSubmit(api_function, payload, function (responseText, error) {
+        if (error) {
+            alert('Tagging failed: ' + '(' + error + ')' + responseText);
+
+        } else {
+            alert('Entries tagged successfully!' + responseText);
+            window.location.reload();
+
+        }
+    }, false);
 }

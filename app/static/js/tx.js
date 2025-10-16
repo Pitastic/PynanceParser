@@ -1,5 +1,22 @@
 "use strict";
 
+document.addEventListener('DOMContentLoaded', function () {
+
+    const inputField = document.getElementById("tag-input");
+
+    inputField.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            addTagBullet(inputField, "tag-container");
+        }
+    });
+
+    inputField.addEventListener("blur", () => {
+        addTagBullet(inputField, "tag-container");
+    });
+
+});
+
 /**
  * Clear Tags from selected transactions
  * @param {string} uuid - The unique identifier associated with the request.
@@ -35,4 +52,20 @@ function removeCats(uuid) {
 
         }
     }, false);
+}
+
+/**
+ * Tags this one entrie in the database in a direct manner
+ * @param {string} uuid - The unique identifier associated with the request.
+ */
+function manualTagTx(uuid) {
+    return manualTag([uuid], TAGS);
+}
+
+/**
+* Categorize this one entrie in the database in a direct manner
+ * @param {string} uuid - The unique identifier associated with the request.
+ */
+function manualCatTx(uuid) {
+    return manualCat([uuid], document.getElementById('cat-input').value);
 }

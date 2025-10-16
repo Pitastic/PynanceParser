@@ -124,7 +124,7 @@ function tagEntries() {
 
     apiSubmit('tag/'+IBAN, payload, function (responseText, error) {
         if (error) {
-            printResult('Tagging failed: ' + '(' + error + ')' + responseText);
+            alert('Tagging failed: ' + '(' + error + ')' + responseText);
 
         } else {
             alert('Entries tagged successfully!' + responseText);
@@ -163,7 +163,7 @@ function catEntries() {
 
     apiSubmit('cat/'+IBAN, payload, function (responseText, error) {
         if (error) {
-            printResult('Categorization failed: ' + '(' + error + ')' + responseText);
+            alert('Categorization failed: ' + '(' + error + ')' + responseText);
 
         } else {
             alert('Entries categorized successfully!' + responseText);
@@ -250,31 +250,9 @@ function removeCats() {
  * A single or multiple transactions to tag must be selected wit checkboxes.
  */
 function manualTagEntries() {
-    let tags = document.getElementById('manual-tag-input').value;
-    let tagging = {
-        'tags': tags
-    }
-
+    const tags = document.getElementById('manual-tag-input').value;
     const t_ids = Array.from(rowCheckboxes).filter(cb => cb.checked)
-
-    let api_function;
-    if (t_ids.length == 1) {
-        api_function = 'setManualTag/'+ IBAN + '/' + t_ids[0];
-    } else {
-        api_function = 'setManualTags/' + IBAN;
-        tagging['t_ids'] = t_ids;
-    };
-
-    apiSubmit(api_function, tagging, function (responseText, error) {
-        if (error) {
-            printResult('Tagging failed: ' + '(' + error + ')' + responseText);
-
-        } else {
-            alert('Entries tagged successfully!' + responseText);
-            window.location.reload();
-
-        }
-    }, false);
+    return manualTag(t_ids, tags);
 }
 
 
@@ -287,7 +265,7 @@ function manualTagEntries() {
 function getInfo(uuid, callback = alert) {
     apiGet('/' + IBAN + '/' + uuid, {}, function (responseText, error) {
         if (error) {
-            printResult('getTx failed: ' + '(' + error + ')' + responseText);
+            alert('getTx failed: ' + '(' + error + ')' + responseText);
 
         } else {
             callback(responseText);
@@ -308,7 +286,7 @@ function saveMeta() {
     const params = { file: 'input_file' }; // The key 'file' corresponds to the input element's ID
     apiSubmit('upload/metadata/'+meta_type, params, function (responseText, error) {
         if (error) {
-            printResult('Rule saving failed: ' + '(' + error + ')' + responseText);
+            alert('Rule saving failed: ' + '(' + error + ')' + responseText);
 
         } else {
             alert('Rule saved successfully!' + responseText);
