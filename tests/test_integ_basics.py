@@ -465,6 +465,28 @@ def test_tag_manual(test_app):
             assert 'Test_TAG' in tags and 'Test_Another_SECONDARY' in tags, \
                 "Es wurden falsche Tags gespeichert"
 
+            # Check Tag replacement
+            new_tag = {
+                'tags': ['Replaced_TAG'],
+                'overwrite': True
+            }
+            r = client.put(
+                "/api/setManualTag/DE89370400440532013000/6884802db5e07ee68a68e2c64f9c0cdd",
+                json=new_tag
+            )
+            r = r.json
+            assert r.get('updated') == 1, "Der Eintrag wurde nicht erneut aktualisiert"
+
+            # Check if new values correct stored
+            r = client.get(
+                '/api/DE89370400440532013000/6884802db5e07ee68a68e2c64f9c0cdd'
+            )
+            r = r.json
+            assert isinstance(r.get('tags'), list), "Tags wurde nicht als Liste gespeichert"
+            tags = r.get('tags')
+            assert tags == ['Replaced_TAG'], \
+                "Es wurden falsche Tags gespeichert"
+
 
 def test_categorize_manual(test_app):
     """Testet das Kategorisieren über den API Endpunkt:
@@ -522,7 +544,7 @@ def test_tag_manual_multi(test_app):
             assert "Test_SECONDARY_2" in r1.get('tags', []) and \
                 "Test_SECONDARY_2" in r2.get('tags', []), \
                 "Es wurden falsche Tags gespeichert"
-            assert "Test_TAG" in r1.get('tags', []), \
+            assert "Replaced_TAG" in r1.get('tags', []), \
                 "Das vorherige Tag wurde überschrieben und nicht ergänzt"
 
 

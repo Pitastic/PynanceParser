@@ -62,7 +62,7 @@
         <tbody>
             <tr>
                 <td>
-                    <input type="text" id="cat-input" list="cat-list" placeholder="Kategorie" value="{{tx.category|string}}">
+                    <input type="text" id="cat-input" list="cat-list" placeholder="Kategorie" value="{{tx.category if tx.category else ''}}">
                     <datalist id="cat-list">
                         {% for c in cats %}
                         <option>{{ c }}</option>
@@ -71,12 +71,6 @@
                     <button onclick="manualCatTx('{{tx.uuid}}')">Speichern</button>
                 </td>
                 <td id="tag-container">
-                    {% for tag in tx.tags %}
-                    <span class="tag-chip">
-                        {{ tag }}
-                        <a href="javascript:void(0)" onclick="removeTagBullet(this.parentNode)" class="remove">&times;</a>
-                    </span>
-                    {% endfor %}
                     <input type="text" id="tag-input" list="tag-list" placeholder="Neues Tag" value="">
                     <datalist id="tag-list">
                         {% for t in tags %}
@@ -99,5 +93,18 @@
 </main>
 
 <script src="{{ url_for('static', filename='js/tx.js') }}"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+    
+        // Create Tag Bullets
+        const inputField = document.getElementById("tag-input");
+    
+        {% for tag in tx.tags %}
+            addTagBullet(inputField, "tag-container", "{{tag}}");
+        {% endfor %}
+    
+    });
+</script>
 
 {% endblock %}

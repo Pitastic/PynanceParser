@@ -125,7 +125,7 @@ class TinyDbHandler(BaseDb):
         result = self.connection.table(collection).insert(data)
         return {'inserted': (1 if result else 0)}
 
-    def update(self, data, collection, condition=None, multi='AND'):
+    def update(self, data, collection, condition=None, multi='AND', merge=True):
         """
         Aktualisiert Datensätze in der Datenbank, die die angegebene Bedingung erfüllen.
 
@@ -141,6 +141,8 @@ class TinyDbHandler(BaseDb):
                     - 'regex'   : value wird als RegEx behandelt
             multi (str) : ['AND' | 'OR'] Wenn 'condition' eine Liste mit conditions ist,
                           werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
+            merge (bool): Wenn False, werden Listenfelder nicht gemerged, sondern
+                          komplett überschrieben. Default: True
         Returns:
             dict:
                 - updated, int: Anzahl der aktualisierten Datensätze
@@ -154,7 +156,7 @@ class TinyDbHandler(BaseDb):
 
         # run update
         new_tags = data.get('tags')
-        if new_tags:
+        if new_tags and merge:
 
             docs_to_update = self.select(collection, condition, multi)
             if not docs_to_update:

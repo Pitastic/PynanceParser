@@ -34,10 +34,12 @@ function closePopup(popupId) {
  * 
  * @param {string} tagContainerId Id to select the container with tag-chips
  * 
+ * @param {string} tagvalue (optional) Provide a Tag-Value insted of looking at text-input
+ * 
  */
-function addTagBullet(inputField, tagContainerId) {
+function addTagBullet(inputField, tagContainerId, tagvalue) {
 	const tagConatiner = document.getElementById(tagContainerId);
-	const value = inputField.value.trim();
+	const value = tagvalue || inputField.value.trim();
 	if (value && !TAGS.includes(value)) {
 		TAGS.push(value);
 
@@ -192,16 +194,21 @@ function apiSubmit(sub, params, callback, isFile = false) {
  * 					Wenn leer werden alle Transaktionen der IBAN berücksichtigt.
  * @param {list} tags	Liste mit zu setzenden Tags.
  * 						Wenn leer, werden alle Tags der Transaktion entfernt.
+ * @param {boolean} overwrite Switch für das hinzufügen von Tags (append statt replace)
  */
-function manualTag(t_ids, tags) {
+function manualTag(t_ids, tags, overwrite) {
 	if (typeof (t_ids) != "object" || typeof (tags) != "object") {
-		alert("Falscher Typ von Transaktionsliste oder Tag-Liste !");
+		alert("Falscher Typ von Transaktionsliste oder Tag-Liste !: " + typeof (t_ids) + " und " + typeof (tags));
 		return;
 	}
 
     let tagging = {
         'tags': tags
-    }
+	}
+
+	if (overwrite) {
+		tagging['overwrite'] = true;
+	}
 
     let api_function;
     if (t_ids.length == 1) {

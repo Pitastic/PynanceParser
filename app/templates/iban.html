@@ -14,10 +14,10 @@
                     ✏️
                 </button>
                 <button onclick="openDetailsPopup('tagging-popup')">
-                    Tagging
+                    Rule Tagging
                 </button>
                 <button onclick="openDetailsPopup('cat-popup')">
-                    Kategorisieren
+                    Rule Kategorisieren
                 </button>
             </li>
             <li>
@@ -50,7 +50,7 @@
             {% for transaction in transactions %}
             <tr id="tr-{{ transaction.uuid }}">
                 <td><input type="checkbox" class="row-checkbox" name="{{ transaction.uuid }}"
-                    data-tx="{{transaction.date_tx}} - ({{transaction.uuid}})"></td>
+                    data-txuuid="{{transaction.uuid}}" data-txdate="{{transaction.date_tx}}"></td>
                 <td class="td-date_tx">{{ transaction.date_tx }}</td>
                 <td class="td-text_tx">{{ transaction.text_tx }}</td>
                 <td>
@@ -84,6 +84,19 @@
     <p>Aktion auf die ausgewählten Transaktionen anwenden:</p>
     <ul id="tx-select-list">
     </ul>
+    <hr />
+    <div id="tag-container">
+        <input type="text" id="add-tag" placeholder="Tag hinzufügen" value="">
+        <button onclick="addTag()">Tag hinzufügen</button>
+    </div>
+    <hr />
+    <input type="text" id="add-cat" list="cat-list" placeholder="Kategorie" value="">
+    <datalist id="cat-list">
+        {% for c in categories %}
+        <option>{{ c }}</option>
+        {% endfor %}
+    </datalist>
+    <button onclick="addCat()">Kategorie setzen</button>
     <hr />
     <button onclick="removeTags()">Tags entfernen</button>
     <button onclick="removeCats()">Kategorie entfernen</button>

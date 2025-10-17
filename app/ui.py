@@ -472,13 +472,15 @@ class UserInterface():
                     t_id, str: Datenbank ID der Transaktion, die getaggt werden soll
                     data, dict: Daten für die Aktualisierung
                         - tags, list[str]: Bezeichnung der zu setzenden Tags
+                        - overwrite, bool: Wenn True, werden die bestehenden Tags überschrieben.
                 Returns:
                     dict: updated, int: Anzahl der gespeicherten Datensätzen
                 """
                 data = request.json
                 tags = data.get('tags')
                 assert tags is not None, 'No tags provided'
-                return self._set_manual_tag_and_cat(iban, t_id, tags=tags)
+                overwrite = data.get('overwrite', False)
+                return self._set_manual_tag_and_cat(iban, t_id, tags=tags, overwrite=overwrite)
 
             @current_app.route('/api/setManualCat/<iban>/<t_id>', methods=['PUT'])
             def setManualCat(iban, t_id):
@@ -535,6 +537,7 @@ class UserInterface():
                         - t_ids, list[str]: Liste mit Datenbank IDs der Transaktionen,
                                             die getaggt werden sollen
                         - tags, list[str]: Bezeichnung der zu setzenden Tags
+                        - overwrite, bool: Wenn True, werden die bestehenden Tags überschrieben.
                 Returns:
                     dict: updated, int: Anzahl der gespeicherten Datensätzen
                 """
@@ -543,9 +546,12 @@ class UserInterface():
                 tags = data.get('tags')
                 t_ids = data.get('t_ids')
                 assert tags and t_ids, 'No tags or transactions provided'
+                overwrite = data.get('overwrite', False)
                 for tx in t_ids:
 
-                    updated = self._set_manual_tag_and_cat(iban, tx, tags=tags)
+                    updated = self._set_manual_tag_and_cat(
+                        iban, tx, tags=tags, overwrite=overwrite
+                    )
                     updated_entries['updated'] += updated.get('updated')
 
                 return updated_entries
@@ -626,8 +632,8 @@ class UserInterface():
 
                 return updated_entries
 
-    def _set_manual_tag_and_cat(self, iban, t_id,
-                                tags: list=None, category: str=None) -> dict:
+    def _set_manual_tag_and_cat(self, iban, t_id, tags: list=None,
+                                category: str=None, overwrite: bool=False) -> dict:
         """
         Setzt manuell eine Kategorie und/oder Tags für einen bestimmten Eintrag.
 
@@ -636,10 +642,11 @@ class UserInterface():
             t_id, int: Datenbank ID der Transaktion, die getaggt werden soll
             tags, list[str]: Bezeichnung der zu setzenden Tags
             category, str: Bezeichnung der zu setzenden Kategorie
+            overwrite, bool: Wenn True, werden die bestehenden Tags überschrieben.
         Returns:
             dict: updated, int: Anzahl der gespeicherten Datensätzen
         """
-        assert tags or category, 'No tags or category provided'
+        assert tags is not None or category is not None, 'No tags or category provided'
         new_tag_data = {}
 
         if tags is not None:
@@ -658,7 +665,8 @@ class UserInterface():
             'compare': '=='
         }
 
-        updated_entries = self.db_handler.update(new_tag_data, iban, condition)
+        merge = False if overwrite else True
+        updated_entries = self.db_handler.update(new_tag_data, iban, condition, merge=merge)
         return updated_entries
 
     def _remove_tags(self, iban, t_id):

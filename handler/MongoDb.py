@@ -112,7 +112,7 @@ class MongoDbHandler(BaseDb):
         except pymongo.errors.BulkWriteError:
             return {'inserted': 0}
 
-    def update(self, data, collection, condition=None, multi='AND'):
+    def update(self, data, collection, condition=None, multi='AND', merge=True):
         """
         Aktualisiert Datensätze in der Datenbank, die die angegebene Bedingung erfüllen.
 
@@ -128,6 +128,8 @@ class MongoDbHandler(BaseDb):
                     - 'regex'   : value wird als RegEx behandelt
             multi (str) : ['AND' | 'OR'] Wenn 'condition' eine Liste mit conditions ist,
                           werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
+            merge (bool): Wenn False, werden Listenfelder nicht gemerged, sondern
+                          komplett überschrieben. Default: True
         Returns:
             dict:
                 - updated, int: Anzahl der aktualisierten Datensätze
@@ -139,7 +141,7 @@ class MongoDbHandler(BaseDb):
 
         # Handle Tag-Lists
         new_tags = data.get('tags')
-        if new_tags:
+        if new_tags and merge:
             # care about the right format
             if not isinstance(new_tags, list):
                 data['tags'] = [new_tags]

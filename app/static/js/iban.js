@@ -28,6 +28,20 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    // Tag Chip Bullets
+    const inputField = document.getElementById("add-tag");
+
+    inputField.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            addTagBullet(inputField, "tag-container");
+        }
+    });
+
+    inputField.addEventListener("blur", () => {
+        addTagBullet(inputField, "tag-container");
+    });
+
 });
 
 // ----------------------------------------------------------------------------
@@ -95,12 +109,27 @@ function updateEditButtonState() {
 }
 
 function listTxElements() {
+    // Reset TAGS / Cats
+    TAGS = [];
+    const tag_chips = document.querySelectorAll('#tag-container > .tag-chip')
+    for (let index = 0; index < tag_chips.length; index++) {
+        tag_chips[index].remove();
+    }
+    document.getElementById('add-tag').value = "";
+    document.getElementById('add-cat').value = "";
+
+    // Clean and rewrite TX List
     const result_list = document.getElementById('tx-select-list');
-    result_list.innerHTML = ''; // Clear the list before adding new items
+    result_list.innerHTML = '';
     rowCheckboxes.forEach(checkbox => {
         if (checkbox.checked) {
             const li = document.createElement('li');
-            li.textContent = checkbox.dataset.tx;
+            li.textContent = checkbox.dataset.txdate;
+            const a = document.createElement('a');
+            a.textContent = "(" + checkbox.dataset.txuuid + ")";
+            a.href = "/" + IBAN + "/" + checkbox.dataset.txuuid;
+            a.target = "_blank";
+            li.appendChild(a);
             result_list.appendChild(li);
         }
     });
@@ -246,15 +275,28 @@ function removeCats() {
 
 
 /**
- * Tags the entries in the database in a direct manner
- * A single or multiple transactions to tag must be selected wit checkboxes.
+ * Add one or more Tags to a Transaction withput overwriting existing ones.
+ * Tags will be loaded from the global TAGS variable. Transaktion will
+ * be taken from rowCheckboxes.
  */
-function manualTagEntries() {
-    const tags = document.getElementById('manual-tag-input').value;
-    const t_ids = Array.from(rowCheckboxes).filter(cb => cb.checked)
-    return manualTag(t_ids, tags);
+function addTag() {
+    const t_ids = Array.from(rowCheckboxes)
+        .filter(cb => cb.checked)
+        .map(cb => cb.getAttribute('name'));
+    return manualTag(t_ids, TAGS, false);
 }
 
+/**
+ * Set a categorie for a set of Transactions.
+ * Transaction will be taken from rowCheckboxes.
+ */
+function addCat() {
+    const t_ids = Array.from(rowCheckboxes)
+        .filter(cb => cb.checked)
+        .map(cb => cb.getAttribute('name'));
+    const cat = document.getElementById('add-cat').value;
+    return manualCat(t_ids, cat);
+}
 
 /**
  * Fetches information based on the provided IBAN and UUID, and processes the response.

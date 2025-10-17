@@ -59,7 +59,8 @@ function removeCats(uuid) {
  * @param {string} uuid - The unique identifier associated with the request.
  */
 function manualTagTx(uuid) {
-    return manualTag([uuid], TAGS);
+    // Replace Tag Liste
+    return manualTag([uuid], TAGS, true);
 }
 
 /**

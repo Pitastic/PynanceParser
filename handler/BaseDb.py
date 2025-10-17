@@ -153,7 +153,8 @@ class BaseDb():
         """
         raise NotImplementedError()
 
-    def update(self, data: dict, collection: str, condition: dict|list[dict], multi:str):
+    def update(self, data: dict, collection: str, condition: dict|list[dict],
+               multi:str, merge:bool=True):
         """
         Aktualisiert Datensätze in der Datenbank, die die angegebene Bedingung erfüllen.
 
@@ -170,6 +171,8 @@ class BaseDb():
                     - 'regex'   : value wird als RegEx behandelt
             multi (str) : ['AND' | 'OR'] Wenn 'condition' eine Liste mit conditions ist,
                           werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
+            merge (bool): Wenn False, werden Listenfelder nicht gemerged, sondern
+                          komplett überschrieben. Default: True
         Returns:
             dict:
                 - updated, int: Anzahl der aktualisierten Datensätze
