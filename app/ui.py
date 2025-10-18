@@ -371,7 +371,7 @@ class UserInterface():
                 # Store Upload file to tmp
                 path = f'/tmp/{metadata}.tmp'
                 _ = self._mv_fileupload(input_file, path)
-                
+
                 # Import and cleanup
                 result = self.db_handler.import_metadata(path, metatype=metadata)
                 os.remove(path)
@@ -450,7 +450,7 @@ class UserInterface():
                     category_name:  UUID der anzuwendenden Kategorisierungsregel.
                     category:       Name der zu setzenden Primärkategory.
                     tags:           Liste der zu setzenden Tags.
-                    filter:        Liste mit Regelsätzen (dict)
+                    filters:        Liste mit Regelsätzen (dict)
                     parsed_keys:    Liste mit Keys zur Prüfung in geparsten Daten.
                     parsed_vals:    Liste mit Values zur Prüfung in geparsten Daten.
                     multi:          Logische Verknüpfung der Kriterien (AND|OR).
@@ -471,7 +471,7 @@ class UserInterface():
                         iban,
                         category=custom_rule.get('category'),
                         tags=custom_rule.get('tags'),
-                        filter=custom_rule.get('filter'),
+                        filters=custom_rule.get('filters'),
                         parsed_keys=custom_rule.get('parsed_keys'),
                         parsed_vals=custom_rule.get('parsed_vals'),
                         multi=custom_rule.get('multi', 'AND'),
@@ -691,7 +691,7 @@ class UserInterface():
             'compare': '=='
         }
 
-        merge = False if overwrite else True
+        merge = not overwrite
         updated_entries = self.db_handler.update(new_tag_data, iban, condition, merge=merge)
         return updated_entries
 

@@ -225,7 +225,7 @@ class TinyDbHandler(BaseDb):
             dict:
                 - deleted, int: Anzahl der gelöschten Datensätze
         """
-        r = self.connection.drop_table(collection)
+        self.connection.drop_table(collection)
         return {'deleted': 1}
 
     def get_metadata(self, uuid):

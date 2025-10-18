@@ -359,10 +359,13 @@ def test_tag_custom_rules(test_app):
 
             # Eigene Regel taggen lassen (niedrige Prio)
             parameters = {
-                'tags': ['Supermarkt'],
-                'filters': [
-                    {'key':'text_tx', 'value': r'EDEKA', 'compare': 'regex'}
-                ],
+                'rule_name': 'ui_selected_custom',
+                'rule': {
+                    'tags': ['Supermarkt'],
+                    'filters': [
+                        {'key':'text_tx', 'value': r'EDEKA', 'compare': 'regex'}
+                    ]
+                }
             }
             result = client.put("/api/tag-and-cat/DE89370400440532013000", json=parameters)
             result = result.json
@@ -387,8 +390,11 @@ def test_categorize_custom_rules(test_app):
 
             # Eigene Regel kategorisieren lassen (niedrige Prio)
             parameters = {
-                'category': "Overwriting Cat",
-                'tags': ['Stadt']
+                'rule_name': 'ui_selected_custom',
+                'rule': {
+                    'category': "Overwriting Cat",
+                    'tags': ['Stadt']
+                }
             }
             result = client.put("/api/tag-and-cat/DE89370400440532013000", json=parameters)
             result = result.json
@@ -404,10 +410,13 @@ def test_categorize_custom_rules(test_app):
 
             # Eigene Regel kategorisieren lassen (hohe Prio)
             parameters = {
-                'category': 'Force Overwrite',
-                'tags': ['Stadt'],
-                'prio': 9,
-                'prio_set': 3,
+                'rule_name': 'ui_selected_custom',
+                'rule': {
+                    'category': 'Force Overwrite',
+                    'tags': ['Stadt'],
+                    'prio': 9,
+                    'prio_set': 3
+                }
             }
             result = client.put("/api/tag-and-cat/DE89370400440532013000", json=parameters)
             result = result.json

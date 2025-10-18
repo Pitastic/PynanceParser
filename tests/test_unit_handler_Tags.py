@@ -7,7 +7,7 @@ Testmodul für die Funktionen des Taggers.
 import os
 import sys
 import json
-import pytest
+
 
 # Add Parent for importing from Modules
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
