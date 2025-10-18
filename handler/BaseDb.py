@@ -455,8 +455,9 @@ class BaseDb():
         """
         # Check if path exists
         if not os.path.exists(path):
-            logging.error(f"Path {path} does not exist")
-            return
+            error_msg = f"Path {path} does not exist"
+            logging.error(error_msg)
+            return {'error': error_msg}
 
         # Parse JSON
         with open(path, 'r', encoding='utf-8') as j:
