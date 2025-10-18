@@ -129,14 +129,31 @@ class UserInterface():
                     except (ValueError, TypeError) as e:
                         logging.warning(f"Invalid endDate format '{e}' will be ignored")
 
-                # Table with Transactions and other Meta Data
+                # Table with Transactions
                 rows = self.db_handler.select(iban, condition)
                 rulenames = self.db_handler.filter_metadata({'key':'metatype', 'value': 'rule'})
                 rulenames = [r.get('name') for r in rulenames if r.get('name')]
-                cats = self.db_handler.filter_metadata({'key':'metatype', 'value': 'category'})
-                cats = [r.get('category') for r in cats if r.get('category')]
+
+                # All distinct Tags
+                # (must be filtered on our own because TinyDB doesn't support 'distinct' queries)
+                tags = []
+                tag_query = {'key': 'tags', 'value': [], 'compare': '!='}
+                for row in self.db_handler.select(iban, condition=tag_query):
+                    for t in row.get('tags', []):
+                        if t not in tags:
+                            tags.append(t)
+
+                # All distinct Categories
+                # (must be filtered on our own because TinyDB doesn't support 'distinct' queries)
+                cats = []
+                cat_query = {'key': 'category', 'value': None, 'compare': '!='}
+                for row in self.db_handler.select(iban, condition=cat_query):
+                    c = row.get('category')
+                    if c and c not in cats:
+                        cats.append(c)
+
                 return render_template('iban.html', transactions=rows, iban=iban,
-                                       rules=rulenames, categories=cats)
+                                       rules=rulenames, tags=tags, categories=cats)
 
             @current_app.route('/<iban>/<t_id>', methods=['GET'])
             def showTx(iban, t_id):
@@ -158,14 +175,24 @@ class UserInterface():
                 if not tx_details:
                     return {'error': 'No transaction found'}, 404
 
+                # All distinct Tags
+                # (must be filtered on our own because TinyDB doesn't support 'distinct' queries)
                 tags = []
-                for rule in self.db_handler.filter_metadata({'key':'metatype', 'value': 'rule'}):
-                    for t in rule.get('tags', []):
+                tag_query = {'key': 'tags', 'value': [], 'compare': '!='}
+                for row in self.db_handler.select(iban, condition=tag_query):
+                    for t in row.get('tags', []):
                         if t not in tags:
                             tags.append(t)
 
-                cats = self.db_handler.filter_metadata({'key':'metatype', 'value': 'category'})
-                cats = [r.get('category') for r in cats if r.get('category')]
+                # All distinct Categories
+                # (must be filtered on our own because TinyDB doesn't support 'distinct' queries)
+                cats = []
+                cat_query = {'key': 'category', 'value': None, 'compare': '!='}
+                for row in self.db_handler.select(iban, condition=cat_query):
+                    c = row.get('category')
+                    if c and c not in cats:
+                        cats.append(c)
+
                 return render_template('tx.html', tx=tx_details[0], cats=cats, tags=tags)
 
             @current_app.route('/logout', methods=['GET'])

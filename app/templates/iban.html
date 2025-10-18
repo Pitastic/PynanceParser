@@ -86,7 +86,12 @@
     </ul>
     <hr />
     <div id="tag-container">
-        <input type="text" id="add-tag" placeholder="Tag hinzufügen" value="">
+        <input type="text" id="add-tag" list="tag-list" placeholder="Tag hinzufügen" value="">
+        <datalist id="tag-list">
+            {% for t in tags %}
+            <option>{{ t }}</option>
+            {% endfor %}
+        </datalist>
         <button onclick="addTag()">Tag hinzufügen</button>
     </div>
     <hr />
