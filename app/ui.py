@@ -415,8 +415,7 @@ class UserInterface():
                  `Tagger.tag_and_cat()` mit presets
                  `Tagger.tag_and_cat()` mit angegebenen Regelnamen, wenn
                                         `rule_name` oder `category_name` gesetzt ist
-                `Tagger.tag_and_cat_custom()` wenn mindestens ein Kriterium gesetzt ist von
-                                        `category`, `tags`, `filters`, `parsed_keys`, `parsed_vals`
+                `Tagger.tag_and_cat_custom()` wenn Rulename == "ui_selected_custom" ist
             
                 Args (json):
                     rule_name:      UUID der anzuwendenden Taggingregel.
@@ -424,7 +423,7 @@ class UserInterface():
                     category_name:  UUID der anzuwendenden Kategorisierungsregel.
                     category:       Name der zu setzenden Primärkategory.
                     tags:           Liste der zu setzenden Tags.
-                    filters:        Liste mit Regelsätzen (dict)
+                    filter:        Liste mit Regelsätzen (dict)
                     parsed_keys:    Liste mit Keys zur Prüfung in geparsten Daten.
                     parsed_vals:    Liste mit Values zur Prüfung in geparsten Daten.
                     multi:          Logische Verknüpfung der Kriterien (AND|OR).
@@ -437,29 +436,29 @@ class UserInterface():
                 Returns:
                     json: Informationen zum Ergebnis des Taggings.
                 """
-                if any(k in request.json for k in (
-                    'category', 'tags', 'filters','parsed_keys', 'parsed_vals'
-                )):
+                data = request.json
+                if data.get('rule_name', "") == "ui_selected_custom":
                     # Custom Rule defined
+                    custom_rule = data.get('rule', {})
                     return self.tagger.tag_or_cat_custom(
                         iban,
-                        category=request.json.get('category'),
-                        tags=request.json.get('tags'),
-                        filters=request.json.get('filters'),
-                        parsed_keys=request.json.get('parsed_keys'),
-                        parsed_vals=request.json.get('parsed_vals'),
-                        multi=request.json.get('multi', 'AND'),
-                        prio=request.json.get('prio', 1),
-                        prio_set=request.json.get('prio_set'),
-                        dry_run=request.json.get('dry_run', False)
+                        category=custom_rule.get('category'),
+                        tags=custom_rule.get('tags'),
+                        filter=custom_rule.get('filter'),
+                        parsed_keys=custom_rule.get('parsed_keys'),
+                        parsed_vals=custom_rule.get('parsed_vals'),
+                        multi=custom_rule.get('multi', 'AND'),
+                        prio=custom_rule.get('prio', 1),
+                        prio_set=custom_rule.get('prio_set'),
+                        dry_run=data.get('dry_run', False)
                     )
 
                 # Preset Rule defined or Default (if all None)
                 return self.tagger.tag_and_cat(
                     iban,
-                    rule_name=request.json.get('rule_name'),
-                    category_name=request.json.get('category_name'),
-                    dry_run=request.json.get('dry_run', False)
+                    rule_name=data.get('rule_name'),
+                    category_name=data.get('category_name'),
+                    dry_run=data.get('dry_run', False)
                 )
 
             @current_app.route('/api/setManualTag/<iban>/<t_id>', methods=['PUT'])

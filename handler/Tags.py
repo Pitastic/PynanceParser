@@ -380,7 +380,7 @@ class Tagger():
         return result
 
     def tag_or_cat_custom(self, iban: str, category: str = None,
-                          tags: list[str] = None, filters: list = None,
+                          tags: list[str] = None, filter: list = None,
                           parsed_keys: list = None, parsed_vals: list = None, multi: str ='AND',
                           prio: int = 1, prio_set: int = None, dry_run: bool = False) -> dict:
         """Kategorisierung oder Tagging mit einer Custom Rule.
@@ -388,7 +388,7 @@ class Tagger():
             iban            Name der Collection
             category:       Name der zu setzenden Primärkategory.
             tags:           Liste der zu setzenden Tags.
-            filters:        Liste mit Regelsätzen (dict)
+            filter:        Liste mit Regelsätzen (dict)
             parsed_keys:    Liste mit Keys zur Prüfung in geparsten Daten.
             parsed_vals:    Liste mit Values zur Prüfung in geparsten Daten.
             multi:          Logische Verknüpfung der Kriterien (AND|OR).
@@ -435,8 +435,8 @@ class Tagger():
             query_args = self._form_tag_query(iban, 99)
 
         # Add all Filters
-        filters = [] if filters is None else filters
-        for f in filters:
+        filter = [] if filter is None else filter
+        for f in filter:
             f['compare'] = f.get('compare', '==')
             query_args['condition'].append(f)
 

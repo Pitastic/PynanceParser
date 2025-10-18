@@ -13,7 +13,7 @@
                 <button id="edit-selected" onclick="openDetailsPopup('massedit-popup')" disabled title="Edit (nichts ausgewählt)">
                     ✏️
                 </button>
-                <button onclick="openDetailsPopup('tagging-popup')">
+                <button onclick="openDetailsPopup('tag-popup')">
                     Rule Tagging
                 </button>
                 <button onclick="openDetailsPopup('cat-popup')">
@@ -103,15 +103,17 @@
     <button onclick="closePopup('massedit-popup')">Close</button>
 </div>
 
-<div id="tagging-popup" style="display: none;" class="popup">
+<div id="tag-popup" style="display: none;" class="popup">
     <h2>Tag</h2>
     <p>Es können standardmäßig alle oder nur eine ausgewählte Regel auf alle Transaktionen zum Tagging genutzt werden.</p>
+    <p>Die "Custom" Regel nutzt das Eingabefeld zur Entwicklung neuer Regeln.</p>
     <p>
         <select id="tag-select">
             <option value="">Alle Regeln</option>
             {% for r in rules %}
             <option>{{r}}</option>
             {% endfor %}
+            <option value="ui_selected_custom">Custom</option>
         </select>
     </p>
     <p>
@@ -120,19 +122,24 @@
         Dry Run
         </label>
     </p>
-    <button onclick="tagEntries()">Tag</button>
-    <button onclick="closePopup('tagging-popup')">Close</button>
+    <p>
+        <textarea type="text" id="custom-tag" placeholder="{&#10;  JSON&#10;}" rows="10"></textarea>
+    </p>
+    <button onclick="tagAndCat('tag')">Tag</button>
+    <button onclick="closePopup('tag-popup')">Close</button>
 </div>
 
 <div id="cat-popup" style="display: none;" class="popup">
     <h2>Kategorie</h2>
     <p>Es können standardmäßig alle oder nur eine ausgewählte Regel auf alle Transaktionen zum Kategorisieren genutzt werden.</p>
+    <p>Die "Custom" Regel nutzt das Eingabefeld zur Entwicklung neuer Regeln.</p>
     <p>
         <select id="cat-select">
             <option value="">Alle Regeln</option>
             {% for c in categories %}
             <option>{{c}}</option>
             {% endfor %}
+            <option value="ui_selected_custom">Custom</option>
         </select>
     </p>
     <p>
@@ -141,7 +148,10 @@
             Dry Run
         </label>
     </p>
-    <button onclick="catEntries()">Kategorisieren</button>
+    <p>
+        <textarea type="text" id="custom-cat" placeholder="{&#10;  JSON&#10;}" rows="10"></textarea>
+    </p>
+    <button onclick="tagAndCat('cat')">Kategorisieren</button>
     <button onclick="closePopup('cat-popup')">Close</button>
 </div>
 

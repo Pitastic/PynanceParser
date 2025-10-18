@@ -57,12 +57,16 @@ document.addEventListener('DOMContentLoaded', function () {
 function openDetailsPopup(id, tx_hash = null) {
 	if (tx_hash) {
 		// Use AJAX to fetch and populate details for the transaction with the given ID
-		console.log(`Fetching details for transaction hash: ${tx_hash}`);
+		console.log('Fetching details for transaction hash: ' + tx_hash);
         resetDetails();
         getInfo(tx_hash, fillTxDetails);
         openPopup(id);
 
-	} else {
+    } else {
+        if (['cat-popup', 'tag-popup'].includes(id)) {
+            document.getElementById('custom-tag').value = "";
+            document.getElementById('custom-cat').value = "";
+        }
         openPopup(id);
 		
 	}
@@ -136,77 +140,56 @@ function listTxElements() {
 }
 
 /**
- * Tags the entries in the database.
- * Optional Tagging commands are read from the input with ID
- * 'input_tagging_name' (more in the Future)
+ * Tag or Cat the entries in the database.
+ * Optional rule_name input and custom json rule are read
+ * from input elements with corresponding IDs
+ * 
+ * @param {string} operation    One of [tag, cat]. Switch for the type of operation
  */
-function tagEntries() {
+function tagAndCat(operation) {
     let payload = {};
-    const rule_name = document.getElementById('tag-select').value;
+    const rule_name = document.getElementById(operation + '-select').value;
+    let api_url = 'tag/';
+
     if (rule_name) {
+        // Named or Custom Rule
         payload['rule_name'] = rule_name;
     }
-    const dry_run = document.getElementById('tag-dry').checked;
-    if (dry_run) {
-        payload['dry_run'] = dry_run;
-    }
 
-    apiSubmit('tag/'+IBAN, payload, function (responseText, error) {
-        if (error) {
-            alert('Tagging failed: ' + '(' + error + ')' + responseText);
-
-        } else {
-            alert('Entries tagged successfully!' + responseText);
-            if (dry_run) {
-                // List UUIDs which would have been tagged
-                const r = JSON.parse(responseText)
-                let txt_list = ""
-                r.entries.forEach(element => {
-                    txt_list += "\n- " + element
-                });
-                alert("Folgende UUIDs würden getaggt werden:\n" + txt_list);
-
-            } else {
-                // Tagged -> Reload
-                window.location.reload();
-            }
-
+    if (rule_name == "ui_selected_custom") {
+        // Read Custom Rule from Textinput
+        let rule_json = document.getElementById('custom-' + operation).value;
+        payload['rule'] = JSON.parse(rule_json);
+        if (!payload.rule.name || !payload.rule.metatype) {
+            alert("Kein Namen oder kein Metatype bei der Custom-Regel angegeben");
+            return;
         }
-    }, false);
-}
 
-/**
- * Categorize the entries in the database.
- * Optional Categorization commands are read from the input with ID
- */
-function catEntries() {
-    let payload = {};
-    const rule_name = document.getElementById('cat-select').value;
-    if (rule_name) {
-        payload['rule_name'] = rule_name
+        api_url = 'tag-and-cat/';
     }
-    const dry_run = document.getElementById('cat-dry').checked;
+
+    const dry_run = document.getElementById(operation + '-dry').checked;
     if (dry_run) {
         payload['dry_run'] = dry_run;
     }
 
-    apiSubmit('cat/'+IBAN, payload, function (responseText, error) {
+    apiSubmit(api_url + IBAN, payload, function (responseText, error) {
         if (error) {
-            alert('Categorization failed: ' + '(' + error + ')' + responseText);
+            alert(operation + ' failed: ' + '(' + error + ')' + responseText);
 
         } else {
-            alert('Entries categorized successfully!' + responseText);
+            alert(operation + ' successful!' + responseText);
             if (dry_run) {
-                // List UUIDs which would have been cat
+                // List UUIDs which would have been tagged/cat
                 const r = JSON.parse(responseText)
                 let txt_list = ""
                 r.entries.forEach(element => {
                     txt_list += "\n- " + element
                 });
-                alert("Folgende UUIDs würden kategorisiert werden:\n" + txt_list);
+                alert("Folgende UUIDs würden geändert werden:\n" + txt_list);
 
             } else {
-                // Cat -> Reload
+                // Tagged/Cat -> Reload
                 window.location.reload();
             }
 
