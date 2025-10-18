@@ -66,6 +66,10 @@ class UserInterface():
         # Define Routes
         with current_app.app_context():
 
+            @current_app.template_filter('ctime')
+            def timectime(s):
+                return datetime.fromtimestamp(s).strftime('%d.%m.%Y')
+
             @current_app.route('/', methods=['GET'])
             def welcome() -> str:
                 """
@@ -105,7 +109,7 @@ class UserInterface():
                 if start_date is not None:
                     # Convert to valid date format
                     try:
-                        start_date = int(datetime.strptime(start_date, '%Y-%m-%d').timestamp())
+                        start_date = int(datetime.strptime(start_date, '%d.%m.%Y').timestamp())
                         condition.append({
                             'key': 'date_tx',
                             'value': start_date,
@@ -119,7 +123,8 @@ class UserInterface():
                 if end_date is not None:
                     # Convert to valid date format
                     try:
-                        end_date = int(datetime.strptime(end_date, '%Y-%m-%d').timestamp())
+                        end_date = int(datetime.strptime(end_date, '%d.%m.%Y').timestamp())
+                        end_date = end_date + 86399  # Add 23:59:59 to include whole day
                         condition.append({
                             'key': 'date_tx',
                             'value': end_date,
@@ -128,6 +133,8 @@ class UserInterface():
 
                     except (ValueError, TypeError) as e:
                         logging.warning(f"Invalid endDate format '{e}' will be ignored")
+
+                dates = [start_date, end_date]
 
                 # Table with Transactions
                 rows = self.db_handler.select(iban, condition)
@@ -153,7 +160,7 @@ class UserInterface():
                         cats.append(c)
 
                 return render_template('iban.html', transactions=rows, iban=iban,
-                                       rules=rulenames, tags=tags, categories=cats)
+                                       rules=rulenames, tags=tags, categories=cats, dates=dates)
 
             @current_app.route('/<iban>/<t_id>', methods=['GET'])
             def showTx(iban, t_id):

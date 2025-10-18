@@ -42,6 +42,13 @@ document.addEventListener('DOMContentLoaded', function () {
         addTagBullet(inputField, "tag-container");
     });
 
+    // Filter IBAN Button
+    document.getElementById('apply-filter').addEventListener('click', () => {
+        const startDate = document.getElementById('daterange-start').value;
+        const endDate = document.getElementById('daterange-end').value;
+        window.location.href = '/' + IBAN + '?startDate=' + startDate + '&endDate=' + endDate;
+    })
+
 });
 
 // ----------------------------------------------------------------------------
@@ -149,7 +156,7 @@ function listTxElements() {
 function tagAndCat(operation) {
     let payload = {};
     const rule_name = document.getElementById(operation + '-select').value;
-    let api_url = 'tag/';
+    let api_url = operation + '/';
 
     if (rule_name) {
         // Named or Custom Rule

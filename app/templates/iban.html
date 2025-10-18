@@ -21,8 +21,8 @@
                 </button>
             </li>
             <li>
-                <input type="text" id="daterange-picker" placeholder="Select date range">
-                <input type="text" id="filter-text" placeholder="Filter transactions">
+                <input type="text" id="daterange-start" placeholder="Start Date: d.m.Y" value="{{dates[0]|ctime if dates[0] else ''}}">
+                <input type="text" id="daterange-end" placeholder="End Date: d.m.Y" value="{{dates[1]|ctime if dates[1] else ''}}">
                 <button id="apply-filter">Apply</button>
             </li>
             <li>
@@ -51,7 +51,7 @@
             <tr id="tr-{{ transaction.uuid }}">
                 <td><input type="checkbox" class="row-checkbox" name="{{ transaction.uuid }}"
                     data-txuuid="{{transaction.uuid}}" data-txdate="{{transaction.date_tx}}"></td>
-                <td class="td-date_tx">{{ transaction.date_tx }}</td>
+                <td class="td-date_tx">{{ transaction.date_tx | ctime }}</td>
                 <td class="td-text_tx">{{ transaction.text_tx }}</td>
                 <td>
                     {% if transaction.category %}
