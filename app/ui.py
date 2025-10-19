@@ -104,7 +104,9 @@ class UserInterface():
 
                 # Check filter args
                 condition = []
+                frontend_filters = {}
 
+                # - Filter for Start Date
                 start_date = request.args.get('startDate')
                 if start_date is not None:
                     # Convert to valid date format
@@ -119,6 +121,9 @@ class UserInterface():
                     except (ValueError, TypeError) as e:
                         logging.warning(f"Invalid startDate format '{e}' will be ignored")
 
+                    frontend_filters['startDate'] = start_date
+
+                # - Filter for End Date
                 end_date = request.args.get('endDate')
                 if end_date is not None:
                     # Convert to valid date format
@@ -134,9 +139,51 @@ class UserInterface():
                     except (ValueError, TypeError) as e:
                         logging.warning(f"Invalid endDate format '{e}' will be ignored")
 
-                dates = [start_date, end_date]
+                    frontend_filters['endDate'] = end_date
+
+                # - Filter for Category
+                cat_filter = request.args.get('category')
+                if cat_filter is not None:
+                    condition.append({
+                        'key': 'category',
+                        'value': cat_filter,
+                        'compare': '=='
+                    })
+
+                    frontend_filters['category'] = cat_filter
+
+                # Filter for Tags
+                tag_filter = request.args.get('tags')
+                if tag_filter is not None:
+                    tag_filter = [t.strip() for t in tag_filter.split(',')]
+                    condition.append({
+                        'key': 'tags',
+                        'value': tag_filter,
+                        'compare': request.args.get('tag_mode', 'in')
+                    })
+
+                    frontend_filters['tags'] = " ,".join(tag_filter)
+                    frontend_filters['tag_mode'] = request.args.get('tag_mode', 'in')
+
+                # Filter for Betrag
+                betrag_filter = request.args.get('betrag')
+                if betrag_filter is not None:
+                    try:
+                        betrag_filter = float(betrag_filter)
+                        condition.append({
+                            'key': 'betrag',
+                            'value': betrag_filter,
+                            'compare': request.args.get('betrag_mode', '==')
+                        })
+
+                        frontend_filters['betrag'] = betrag_filter
+                        frontend_filters['betrag_mode'] = request.args.get('betrag_mode', '==')
+
+                    except (ValueError, TypeError) as e:
+                        logging.warning(f"Invalid betrag format '{e}' will be ignored")
 
                 # Table with Transactions
+                current_app.logger.debug(f"Using condition filter: {condition}")
                 rows = self.db_handler.select(iban, condition)
                 rulenames = self.db_handler.filter_metadata({'key':'metatype', 'value': 'rule'})
                 rulenames = [r.get('name') for r in rulenames if r.get('name')]
@@ -160,7 +207,7 @@ class UserInterface():
                         cats.append(c)
 
                 return render_template('iban.html', transactions=rows, iban=iban,
-                                       rules=rulenames, tags=tags, categories=cats, dates=dates)
+                                       rules=rulenames, tags=tags, categories=cats, filters=frontend_filters)
 
             @current_app.route('/<iban>/<t_id>', methods=['GET'])
             def showTx(iban, t_id):

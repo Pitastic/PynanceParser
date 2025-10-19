@@ -44,8 +44,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Filter IBAN Button
     document.getElementById('apply-filter').addEventListener('click', () => {
-        const startDate = document.getElementById('daterange-start').value;
-        const endDate = document.getElementById('daterange-end').value;
+        const startDate = document.getElementById('filter-range-start').value;
+        const endDate = document.getElementById('filter-range-end').value;
         window.location.href = '/' + IBAN + '?startDate=' + startDate + '&endDate=' + endDate;
     })
 

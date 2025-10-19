@@ -21,8 +21,23 @@
                 </button>
             </li>
             <li>
-                <input type="text" id="daterange-start" placeholder="Start Date: d.m.Y" value="{{dates[0]|ctime if dates[0] else ''}}">
-                <input type="text" id="daterange-end" placeholder="End Date: d.m.Y" value="{{dates[1]|ctime if dates[1] else ''}}">
+                <input type="text" id="filter-range-start" placeholder="Start Date: d.m.Y" value="{{filters.startDate|ctime if filters.startDate}}">
+                <input type="text" id="filter-range-end" placeholder="End Date: d.m.Y" value="{{filters.endDate|ctime if filters.endDate}}">
+                <input type="text" id="filter-cat" list="cat-list" placeholder="Kategorie" value="{{filters.category}}">
+                <input type="text" id="filter-tag" list="tag-list" placeholder="Tag (, getrennt)" value="{{filters.tags}}">
+                <select id="filter-tag-mode">
+                    <option value="in" {{"selected" if filters.tag_mode and filters.tag_mode == 'in'}}>eines davon</option>
+                    <option value="all" {{"selected" if filters.tag_mode and filters.tag_mode == 'all'}}>alle davon</option>
+                    <option value="notin" {{"selected" if filters.tag_mode and filters.tag_mode == 'notin'}}>keine davon</option>
+                </select>
+                <input type="text" id="filter-betrag" placeholder="Betrag" value="{{filters.betrag if filters.betrag}}">
+                <select id="filter-betrag-mode">
+                    <option value="==" {{"selected" if filters.betrag_mode and filters.betrag_mode == '=='}}>gleich</option>
+                    <option value="<=" {{"selected" if filters.betrag_mode and filters.betrag_mode == '<='}}>kleiner gleich</option>
+                    <option value="<" {{"selected" if filters.betrag_mode and filters.betrag_mode == '<'}}>kleiner als</option>
+                    <option value=">" {{"selected" if filters.betrag_mode and filters.betrag_mode == '>'}}>größer als</option>
+                    <option value=">=" {{"selected" if filters.betrag_mode and filters.betrag_mode == '>='}}>größer gleich</option>
+                </select>
                 <button id="apply-filter">Apply</button>
             </li>
             <li>
