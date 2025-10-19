@@ -108,7 +108,7 @@ def test_reachable_endpoints(test_app):
 
         with test_app.test_client() as client:
 
-            # /index
+            # /iban
             result = client.get('/')
             assert result.status_code == 200, "Der Statuscode der Startseite war falsch"
 
@@ -117,6 +117,66 @@ def test_reachable_endpoints(test_app):
 
             result = client.get("/DE89370400440532013000/786e1d4e16832aa321a0176c854fe087")
             assert result.status_code == 200, "Der Statuscode der Transaktion war falsch"
+
+
+def test_iban_filtering(test_app):
+    """Testet die Filtermöglichkeiten über die UI"""
+    with test_app.app_context():
+
+        with test_app.test_client() as client:
+
+            # /index with filtering
+            # Date Range Filter
+            result = client.get("/DE89370400440532013000?startDate=02.01.2023&endDate=03.01.2023")
+            soup = BeautifulSoup(result.text, features="html.parser")
+            rows = soup.css.select('table.transactions tr[id] td input.row-checkbox')
+            assert result.status_code == 200, \
+                "Die Ergebnisseite mit den Transaktionen ist nicht (richtig) erreichbar"
+            assert len(rows) == 2, \
+                f"Es wurden {len(rows)} Einträge gefunden, statt der erwarteten 2"
+
+            # Category Filter
+            result = client.get("/DE89370400440532013000?category=Öffentliche Ausgaben")
+            soup = BeautifulSoup(result.text, features="html.parser")
+            rows = soup.css.select('table.transactions tr[id] td input.row-checkbox')
+            assert result.status_code == 200, \
+                "Die Ergebnisseite mit den Transaktionen ist nicht (richtig) erreichbar"
+            assert len(rows) == 1, \
+                f"Es wurden {len(rows)} Einträge gefunden, statt der erwarteten 1"
+
+            # Tag Filter
+            result = client.get("/DE89370400440532013000?tags=[Lebensmittel, Stadt]&tag_mode=in")
+            soup = BeautifulSoup(result.text, features="html.parser")
+            rows = soup.css.select('table.transactions tr[id] td input.row-checkbox')
+            assert result.status_code == 200, \
+                "Die Ergebnisseite mit den Transaktionen ist nicht (richtig) erreichbar"
+            assert len(rows) == 3, \
+                f"Es wurden {len(rows)} Einträge gefunden, statt der erwarteten 3"
+
+            result = client.get("/DE89370400440532013000?tags=[Lebensmittel, Stadt]&tag_mode=notin")
+            soup = BeautifulSoup(result.text, features="html.parser")
+            rows = soup.css.select('table.transactions tr[id] td input.row-checkbox')
+            assert result.status_code == 200, \
+                "Die Ergebnisseite mit den Transaktionen ist nicht (richtig) erreichbar"
+            assert len(rows) == 2, \
+                f"Es wurden {len(rows)} Einträge gefunden, statt der erwarteten 2"
+
+            result = client.get("/DE89370400440532013000?tags=[Stadt]&tag_mode=all")
+            soup = BeautifulSoup(result.text, features="html.parser")
+            rows = soup.css.select('table.transactions tr[id] td input.row-checkbox')
+            assert result.status_code == 200, \
+                "Die Ergebnisseite mit den Transaktionen ist nicht (richtig) erreichbar"
+            assert len(rows) == 1, \
+                f"Es wurden {len(rows)} Einträge gefunden, statt der erwarteten 1"
+
+            # Betrag Filter
+            result = client.get("/DE89370400440532013000?betrag=200&betrag_mode=lt")
+            soup = BeautifulSoup(result.text, features="html.parser")
+            rows = soup.css.select('table.transactions tr[id] td input.row-checkbox')
+            assert result.status_code == 200, \
+                "Die Ergebnisseite mit den Transaktionen ist nicht (richtig) erreichbar"
+            assert len(rows) == 1, \
+                f"Es wurden {len(rows)} Einträge gefunden, statt der erwarteten 1"
 
 def test_double_upload(test_app):
     """Lädt zwei Dateien hoch und prüft die unterschiedlichen HTTP Stati"""
