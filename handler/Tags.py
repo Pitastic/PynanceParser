@@ -72,11 +72,12 @@ class Tagger():
             raise ValueError('Es existieren noch keine Cat-Regeln für den Benutzer')
 
         # Benutzer Regeln ignoriert alle automatischen Regeln,
+        # wenn 'prio' gesetzt nicht explizit gesetzt ist,
         # setzt aber wieder nur seine eigene Prio.
-        prio = prio_set = None
+        prio_set = None
         if rule_name is not None:
             prio_set = cat_rules[rule_name].get('prioriry')
-            prio = 99
+            prio = prio if prio is not None else 99
 
         for r_name, rule in cat_rules.items():
             logging.info(f"Kategorisierung mit Rule {r_name}...")
