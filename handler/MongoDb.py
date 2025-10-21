@@ -30,14 +30,6 @@ class MongoDbHandler(BaseDb):
         Erstellt eine Collection je Konto und legt Indexes/Constraints fest.
         Außerdem wird die Collection für Metadaten erstellt, falls sie noch nicht existiert.
         """
-        # Collection für Transaktionen (je Konto)
-        iban = current_app.config['IBAN']
-        if iban not in self.connection.list_collection_names():
-            self.connection.create_collection(iban)
-            self.connection[iban].create_index(
-                [("uuid", pymongo.TEXT)], unique=True
-        )
-
         # Collection für Metadaten
         if 'metadata' not in self.connection.list_collection_names():
             self.connection.create_collection('metadata')
@@ -58,7 +50,7 @@ class MongoDbHandler(BaseDb):
                 - 'value', str|int|list:    Wert der bei 'key' verglichen werden soll
                 - 'compare', str:           (optional, default '==')
                     - '[==, !=, <, >, <=, >=, in, notin, all]':
-                                            Wert aus DB [compare] value (Operatoren, siehe Models.md)
+                                            Wert aus DB [compare] value (Operatoren, s. Models.md)
                     - 'like':               Wert aus DB == *value* (case insensitive)
                     - 'regex':              value wird als RegEx behandelt
             multi, str ['AND' | 'OR']:      Wenn 'condition' eine Liste mit conditions ist,
@@ -94,6 +86,13 @@ class MongoDbHandler(BaseDb):
             dict:
                 - inserted, int: Zahl der neu eingefügten IDs
         """
+        # Da eine collection mit dem ersten Insert erstellt wird,
+        # muss ggf. direkt der Index zunächst gesetzt werden.
+        if collection not in self._get_collections():
+            self.connection[collection].create_index(
+                [("uuid", pymongo.TEXT)], unique=True
+            )
+
         if isinstance(data, list):
             # Insert Many (INSERT IGNORE)
             try:
@@ -113,14 +112,13 @@ class MongoDbHandler(BaseDb):
         except pymongo.errors.BulkWriteError:
             return {'inserted': 0}
 
-    def update(self, data, collection=None, condition=None, multi='AND'):
+    def update(self, data, collection, condition=None, multi='AND', merge=True):
         """
         Aktualisiert Datensätze in der Datenbank, die die angegebene Bedingung erfüllen.
 
         Args:
             data (dict): Aktualisierte Daten für die passenden Datensätze
-            collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
-                                   Default: IBAN aus der Config.
+            collection (str):   Name der Collection, in die Werte eingefügt werden sollen.
             condition (dict | list(dict)): Bedingung als Dictionary
                 - 'key', str    : Spalten- oder Schlüsselname,
                 - 'value', any  : Wert der bei 'key' verglichen werden soll
@@ -130,12 +128,12 @@ class MongoDbHandler(BaseDb):
                     - 'regex'   : value wird als RegEx behandelt
             multi (str) : ['AND' | 'OR'] Wenn 'condition' eine Liste mit conditions ist,
                           werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
+            merge (bool): Wenn False, werden Listenfelder nicht gemerged, sondern
+                          komplett überschrieben. Default: True
         Returns:
             dict:
                 - updated, int: Anzahl der aktualisierten Datensätze
         """
-        if collection is None:
-            collection = current_app.config['IBAN']
         collection = self.connection[collection]
 
         # Form condition into a query
@@ -143,7 +141,7 @@ class MongoDbHandler(BaseDb):
 
         # Handle Tag-Lists
         new_tags = data.get('tags')
-        if new_tags:
+        if new_tags and merge:
             # care about the right format
             if not isinstance(new_tags, list):
                 data['tags'] = [new_tags]
@@ -163,13 +161,12 @@ class MongoDbHandler(BaseDb):
         update_result = collection.update_many(query, update_op)
         return {'updated': update_result.modified_count}
 
-    def delete(self, collection=None, condition=None, multi='AND'):
+    def delete(self, collection, condition=None, multi='AND'):
         """
         Löscht Datensätze in der Datenbank, die die angegebene Bedingung erfüllen.
 
         Args:
-            collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
-                                   Default: IBAN aus der Config.
+            collection (str): Name der Collection, in die Werte eingefügt werden sollen.
             condition (dict | list of dicts): Bedingung als Dictionary
                 - 'key', str    : Spalten- oder Schlüsselname,
                 - 'value', any  : Wert der bei 'key' verglichen werden soll
@@ -183,8 +180,6 @@ class MongoDbHandler(BaseDb):
             dict:
                 - deleted, int: Anzahl der gelöschten Datensätze
         """
-        if collection is None:
-            collection = current_app.config['IBAN']
         collection = self.connection[collection]
 
         # Form condition into a query
@@ -193,13 +188,12 @@ class MongoDbHandler(BaseDb):
         delete_result = collection.delete_many(query)
         return {'deleted': delete_result.deleted_count}
 
-    def truncate(self, collection=None):
+    def _truncate(self, collection):
         """
-        Löscht alle Datensätze aus einer Tabelle/Collection
+        Löscht eine Tabelle/Collection
 
         Args:
-            collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
-                                   Default: None -> Default der delete Methode
+            collection (str):   Name der Collection, in die Werte eingefügt werden sollen.
         Returns:
             dict:
                 - deleted, int: Anzahl der gelöschten Datensätze
@@ -361,3 +355,12 @@ class MongoDbHandler(BaseDb):
             query = self._form_condition(condition)
 
         return query
+
+    def _get_collections(self):
+        """
+        Liste alle collections der Datenbank.
+
+        Returns:
+            list: A list of collection names.
+        """
+        return self.connection.list_collection_names()

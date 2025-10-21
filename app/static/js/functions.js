@@ -1,5 +1,126 @@
 "use strict";
 
+let IBAN = window.location.pathname.split('/')[1];
+let TAGS = [];
+
+// ----------------------------------------------------------------------------
+// -- DOM Functions ----------------------------------------------------------
+// ----------------------------------------------------------------------------
+
+
+/**
+ * Opens a popup to display details
+ *
+ * @param {string} id - The ID of the HTML element to display as a popup.
+ */
+function openPopup(id) {
+    document.getElementById(id).style.display = 'block';
+}
+
+/**
+ * Closes a popup by setting its display style to 'none'.
+ *
+ * @param {string} popupId - The ID of the popup element to be closed.
+ */
+function closePopup(popupId) {
+	document.getElementById(popupId).style.display = 'none';
+}
+
+/**
+ * Redirect to a GET URL using all defined Filters
+ * 
+ * @returns {string} - Returns one GET query args string for all filter inputs
+ */
+function getFilteredList() {
+    let query_args = '';
+    let arg_concat = '?';
+
+    const startDate = document.getElementById('filter-range-start').value;
+    if (startDate) {
+        query_args = query_args + arg_concat + 'startDate=' + startDate;
+        arg_concat = '&';
+    }
+
+    const endDate = document.getElementById('filter-range-end').value;
+    if (endDate) {
+        query_args = query_args + arg_concat + 'endDate=' + endDate;
+        arg_concat = '&';
+    }
+
+    const category = document.getElementById('filter-cat').value;
+    if (category) {
+        query_args = query_args + arg_concat + 'category=' + category;
+        arg_concat = '&';
+    }
+
+    const tags = document.getElementById('filter-tag').value;
+    if (tags) {
+        query_args = query_args + arg_concat + 'tags=' + tags;
+        arg_concat = '&';
+        const tag_mode = document.getElementById('filter-tag-mode').value;
+        if (tag_mode) {
+            query_args = query_args + arg_concat + 'tag_mode=' + tag_mode;
+            arg_concat = '&';
+        }
+    }
+
+    let betrag = document.getElementById('filter-betrag').value;
+    if (betrag) {
+        betrag = betrag.replace(',', '.');
+        query_args = query_args + arg_concat + 'betrag=' + betrag;
+        arg_concat = '&';
+        const betrag_mode = document.getElementById('filter-betrag-mode').value;
+        if (betrag_mode) {
+            query_args = query_args + arg_concat + 'betrag_mode=' + betrag_mode;
+            arg_concat = '&';
+        }
+    }
+
+	return query_args;
+}
+
+/**
+ * Dynamic Bullet list
+ * Takes text-input to create new Tag-Bullets
+ * 
+ * @param {DOMElement} inputField for tag content input
+ * 
+ * @param {string} tagContainerId Id to select the container with tag-chips
+ * 
+ * @param {string} tagvalue (optional) Provide a Tag-Value insted of looking at text-input
+ * 
+ */
+function addTagBullet(inputField, tagContainerId, tagvalue) {
+	const tagConatiner = document.getElementById(tagContainerId);
+	const value = tagvalue || inputField.value.trim();
+	if (value && !TAGS.includes(value)) {
+		TAGS.push(value);
+
+		const tagEl = document.createElement("span");
+		tagEl.className = "tag-chip";
+		tagEl.textContent = value;
+
+		const removeBtn = document.createElement("a");
+		removeBtn.className = "remove";
+		removeBtn.innerHTML = "&times;";
+		removeBtn.href = "javascript:void(0)";
+		removeBtn.addEventListener("click", () => removeTagBullet(tagEl));
+		tagEl.appendChild(removeBtn);
+		tagConatiner.appendChild(tagEl);
+
+		inputField.value = "";
+	}
+}
+
+/**
+ * Dynamic Bullet list
+ * Deletes a dynamic Tag-Bullet
+ */
+function removeTagBullet(element) {
+    TAGS = TAGS.filter(t => t !== element.firstChild.textContent);
+    element.remove();
+}
+
 // ----------------------------------------------------------------------------
 // -- AJAX Functions ----------------------------------------------------------
 // ----------------------------------------------------------------------------
@@ -116,4 +237,105 @@ function apiSubmit(sub, params, callback, isFile = false) {
 		ajax.setRequestHeader("Content-type", "application/json");
 	}
 	ajax.send(request_uri);
+}
+
+/**
+ * Tags the entries in the database in a direct manner
+ * A single or multiple transactions to tag could be provided
+ *
+ * @param {list} t_ids Liste von Transaktions IDs.
+ * 					Wenn leer werden alle Transaktionen der IBAN berücksichtigt.
+ * @param {list} tags	Liste mit zu setzenden Tags.
+ * 						Wenn leer, werden alle Tags der Transaktion entfernt.
+ * @param {boolean} overwrite Switch für das hinzufügen von Tags (append statt replace)
+ */
+function manualTag(t_ids, tags, overwrite) {
+	if (typeof (t_ids) != "object" || typeof (tags) != "object") {
+		alert("Falscher Typ von Transaktionsliste oder Tag-Liste !: " + typeof (t_ids) + " und " + typeof (tags));
+		return;
+	}
+
+    let tagging = {
+        'tags': tags
+	}
+
+	if (overwrite) {
+		tagging['overwrite'] = true;
+	}
+
+    let api_function;
+    if (t_ids.length == 1) {
+        api_function = 'setManualTag/'+ IBAN + '/' + t_ids[0];
+    } else {
+        api_function = 'setManualTags/' + IBAN;
+        tagging['t_ids'] = t_ids;
+    };
+
+    apiSubmit(api_function, tagging, function (responseText, error) {
+        if (error) {
+            alert('Tagging failed: ' + '(' + error + ')' + responseText);
+
+        } else {
+            alert('Entries tagged successfully!' + responseText);
+            window.location.reload();
+
+        }
+    }, false);
+}
+
+/**
+ * Tags the entries in the database in a direct manner
+ * A single or multiple transactions to tag could be provided
+ *
+ * @param {list} t_ids Liste von Transaktions IDs.
+ * 					Wenn leer werden alle Transaktionen der IBAN berücksichtigt.
+ * @param {string} cat	Name der zu setzenden Kategorie.
+ * 						Wenn leer, wird die Kategorie entfernt.
+ */
+function manualCat(t_ids, cat) {
+	if (typeof (t_ids) != "object" || typeof (cat) != "string") {
+		alert("Falscher Typ von Transaktionsliste oder Tag-Liste !");
+		return;
+	}
+
+    let payload = {
+        'category': cat
+    }
+
+    let api_function;
+
+	if (!cat) {
+		// Delete Category		
+		if (t_ids.length == 1) {
+			api_function = 'removeCat/' + IBAN + '/' + t_ids[0];
+
+		} else {
+			api_function = 'removeCats/' + IBAN;
+			payload['t_ids'] = t_ids;
+
+		};
+
+	} else {
+		// Set Category		
+		if (t_ids.length == 1) {
+			api_function = 'setManualCat/' + IBAN + '/' + t_ids[0];
+
+		} else {
+			api_function = 'setManualCats/' + IBAN;
+			payload['t_ids'] = t_ids;
+
+		};
+
+	}
+
+    apiSubmit(api_function, payload, function (responseText, error) {
+        if (error) {
+            alert('Tagging failed: ' + '(' + error + ')' + responseText);
+
+        } else {
+            alert('Entries tagged successfully!' + responseText);
+            window.location.reload();
+
+        }
+    }, false);
 }

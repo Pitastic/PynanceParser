@@ -1,0 +1,67 @@
+
+{% extends 'layout.html' %}
+
+{% block content %}
+
+<header>
+    <nav>
+        <ul>
+            <li>
+                <input type="text" id="filter-range-start" placeholder="Start Date: d.m.Y" value="{{filters.startDate|ctime if filters.startDate}}">
+                <input type="text" id="filter-range-end" placeholder="End Date: d.m.Y" value="{{filters.endDate|ctime if filters.endDate}}">
+                <input type="text" id="filter-cat" list="cat-list" placeholder="Kategorie" value="{{filters.category}}">
+                <input type="text" id="filter-tag" list="tag-list" placeholder="Tag (, getrennt)" value="{{filters.tags}}">
+                <select id="filter-tag-mode">
+                    <option value="in" {{"selected" if filters.tag_mode and filters.tag_mode == 'in'}}>eines davon</option>
+                    <option value="all" {{"selected" if filters.tag_mode and filters.tag_mode == 'all'}}>alle davon</option>
+                    <option value="notin" {{"selected" if filters.tag_mode and filters.tag_mode == 'notin'}}>keine davon</option>
+                </select>
+                <input type="text" id="filter-betrag" placeholder="Betrag" value="{{filters.betrag if filters.betrag}}">
+                <select id="filter-betrag-mode">
+                    <option value="==" {{"selected" if filters.betrag_mode and filters.betrag_mode == '=='}}>gleich</option>
+                    <option value="<=" {{"selected" if filters.betrag_mode and filters.betrag_mode == '<='}}>kleiner gleich</option>
+                    <option value="<" {{"selected" if filters.betrag_mode and filters.betrag_mode == '<'}}>kleiner als</option>
+                    <option value=">" {{"selected" if filters.betrag_mode and filters.betrag_mode == '>'}}>größer als</option>
+                    <option value=">=" {{"selected" if filters.betrag_mode and filters.betrag_mode == '>='}}>größer gleich</option>
+                </select>
+                <button id="apply-filter">Apply</button>
+                <button id="reset-filter">Reset</button>
+            </li>
+            <li><a href="/{{IBAN}}">zurück</a></li>
+        </ul>
+    </nav>
+</header>
+
+<main>
+
+    <h2>Top Kategorie (Betröge)</h2>
+    <table class="ranking">
+        <tbody>
+            {% for c, betrag in sums.categories.items() %}
+            <tr>
+                <td>{{c}}</td>
+                <td>{{betrag}}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Top Tags (Betröge)</h2>
+    <table class="ranking">
+        <tbody>
+            {% for t, betrag in sums.tags.items() %}
+            <tr>
+                <td>{{t}}</td>
+                <td>{{betrag}}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</main>
+
+
+
+<script src="{{ url_for('static', filename='js/stats.js') }}"></script>
+
+{% endblock %}

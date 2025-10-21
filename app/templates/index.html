@@ -2,111 +2,133 @@
 
 {% block content %}
 
-<div class="container">
+<main>
+    {% if groups or ibans %}
+    Wähle
+    {% endif %}
+    {% if groups %}
+    eine Gruppe:
+    <ul>
+        {% for group in groups %}
+        <li><a href="/{{group}}">{{group}}</a></li>
+        {% endfor %}
+    </ul>
+        {% if ibans %}
+        oder
+        {% endif %}
+    {% endif %}
+    {% if ibans %}
+    ein Konto:
+    <ul>
+    {% for iban in ibans %}
+    <li><a href="/{{iban}}">{{iban}}</a></li>
+    {% endfor %}
+    </ul>
+    {% else %}
+    Es sind noch keine Konten vorhanden. Starte mit deinem ersten Import...
+    {% endif %}
 
-    <table class="transactions">
-        <thead><tr>
-            <th>&nbsp;</th>
-            {% for entry in table_header %}
-            <th>{{ entry }}</th>
+    <p>
+        <button id="add-iban-btn">
+        Konten verwalten
+        </button>
+        <button id="add-group-btn">
+        Gruppen verwalten
+        </button>
+    </p>
+    <p>
+        <button id="settings-button" title="Settings">⚙️</button>
+    </p>
+</main>
+
+<!-- PopUps -->
+<div id="add-iban" style="display: none;" class="popup">
+    <h2>Neue Transactionen</h2>
+    <p>Importiere Kontoumsätze in folgendem Konto:</p>
+    <p>
+        <input type="text" name="iban-input" id="iban-input" placeholder="DE XXXXXXXXXXXXX" list="iban-list">
+        <datalist id="iban-list">
+            {% for iban in ibans %}
+            <option value="{{iban}}"></option>
             {% endfor %}
-            <th>&nbsp;</th>
-        </tr></thead>
-
-        <tbody>
-            {% for row in table_data %}
-            <tr id="tr-{{ row.get('uuid') }}">
-                <td><input type="checkbox" name="entry-select[]" value="{{ row.get('uuid') }}"></td>
-                {% for key in table_header %}
-                {% if key != 'parsed' %}
-                <td class="td-{{ key }}">{{ row.get(key) or '' }}</td>
-                {% endif %}
-                {% endfor %}
-                <td class="td-parsed">
-                    {% for info in row.get('parsed') %}
-                    <p>{{ info }}</p>
-                    {% endfor %}
-                </td>
-                <td>
-                    <a class="my-buttons" href="javascript:getInfo('{{ row.get('uuid') }}');">(i)</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
+        </datalist>
+    </p>
+    <p>
+        <div id="file-drop-area">
+            <span id="file-label">Datei hier ablegen oder auswählen (PDF / CSV / HTML)</span>
+            <input type="file" id="file-input" name="file-input" accept=".csv,.pdf,.html" style="display: none;">
+        </div>
+    </p>
+    <p>
+        <button onclick="uploadFile()">Import</button>
+        <button onclick="deleteDB()">Löschen</button>
+    </p>
+    <button onclick="closePopup('add-iban')">Close</button>
 </div>
 
 
+<div id="add-group" style="display: none;" class="popup">
+    <h2>Gruppen anlegen</h2>
+    <p>Wähle Konten aus, die zu einer Gruppe hinzugefügt werden sollen:</p>
+    <ul>
+        {% for iban in ibans %}
+        <li>
+            <label>
+                <input type="checkbox" name="iban-checkbox" value="{{iban}}">
+                {{iban}}
+            </label>
+        </li>
+        {% endfor %}
+    </ul>
+    <p>
+        <input type="text" name="groupname-input" id="groupname-input" placeholder="" list="group-list">
+        <datalist id="group-list">
+            {% for group in groups %}
+            <option value="{{group}}"></option>
+            {% endfor %}
+        </datalist>
+    </p>
+    <p>
+        <button onclick="saveGroup()">Speichern</button>
+        <button onclick="deleteDB(true)">Löschen</button>
+    </p>
+    <button onclick="closePopup('add-group')">Close</button>
+</div>
 
-<div class="container">
+
+<div id="settings-popup" style="display: none;" class="popup">
+    <h2>Settings</h2>
+    <p>Einstellungen können in die Datenbank importiert werden, ohne sie explizit im Backend ablegen zu müssen:</p>
+    <p>
+        <select id="settings-type">
+            <option value="rule">Regel</option>
+            <option value="parser">Parsing-Anweisung</option>
+            <option value="config">Einstellungen</option>
+        </select>
+    </p>
+    <p>
+        <div id="settings-drop-area">
+            <span id="file-label">Datei hier ablegen oder auswählen (PDF / CSV / HTML)</span>
+            <input type="file" id="settings-input" name="settings-input" accept=".csv,.pdf,.html" style="display: none;">
+        </div>
+        <button onclick="importSettings()">Importieren</button>
+    </p>
+
+    <p>
+        Alternativ können auch Werte für einzelne Einträge abgefragt und direkt geändert werden:
+    </p>
+    <p>
+        <select id="read-setting">
+            {% for m in meta %}
+            <option value="{{m.uuid}}">{{m.metatype}} "{{m.name}}" ({{m.uuid}})</option>
+            {% endfor %}
+        </select>
+        <textarea id="set-setting" placeholder="Setting Wert" rows="10" cols="15"></textarea>
+        <button onclick="loadSetting()">Laden</button>
+        <button onclick="saveSetting()">Speichern</button>
+    </p>
     
-    <h2>Actions for <input type="text" value="{{iban}}" id="input_iban" placeholder="IBAN"></h2>
-    <style>
-        .tile-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-        .tile {
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            padding: 1rem;
-            width: 200px;
-            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
-        }
-        .tile h3 {
-            margin-top: 0;
-            font-size: 1.2rem;
-        }
-        .tile input, .tile button {
-            display: block;
-            margin: 0.5rem 0;
-            width: 100%;
-        }
-    </style>
-
-    <div class="tile-container">
-        <div class="tile">
-            <h3>Datenbank</h3>
-            <input type="file" name="input_file" id="input_file">
-            <button onclick="uploadFile()">Upload</button>
-            <button onclick="truncateDB()">DB leeren</button>
-        </div>
-        <div class="tile">
-            <h3>Tagging</h3>
-            <select name="tagging_name" id="tagging_name">
-                <option value=""></option>
-                {% for rule in rule_list %}
-                <option>{{ rule }}</option>
-                {% endfor %}
-            </select>
-            <button onclick="tagEntries()">Auto Tag</button>
-            <input type="text" value="" id="input_manual_category" placeholder="Manual Category">
-            <input type="text" value="" id="input_manual_tags" placeholder="Manual Tag">
-            <button onclick="manualTagEntries()">Manuelles Taggen</button>
-            <button onclick="removeTags()">Tags entfernen</button>
-        </div>
-        <div class="tile">
-            <h3>Metadata</h3>
-            <input type="file" name="input-json" id="input-json">
-            <select id="select_meta">
-                <option value="rule">Rule</option>
-                <option value="parser">Parser</option>
-                <option value="config">Config</option>
-            </select>
-            <button onclick="saveMeta()">Speichern</button>
-        </div>
-    </div>
-
-</div>
-
-
-<div class="container">
-
-    <h2>Message Box</h2>
-    <pre id="result-text">&nbsp;</pre>
-
+    <button onclick="closePopup('settings-popup')">Close</button>
 </div>
 
 <script src="{{ url_for('static', filename='js/index.js') }}"></script>

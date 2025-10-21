@@ -7,8 +7,8 @@ import os
 import logging
 import glob
 import json
+from datetime import datetime
 from natsort import natsorted
-from flask import current_app
 
 
 class BaseDb():
@@ -21,16 +21,40 @@ class BaseDb():
         """Erstellen des Datenbankspeichers"""
         raise NotImplementedError()
 
-    def select(self, collection:str=None, condition: dict|list[dict]=None, multi: str='AND'):
+    def add_iban_group(self, groupname: str, ibans: list):
+        """
+        Fügt eine neue Gruppe mit IBANs in die Datenbank ein oder
+        ändert eine bestehende Gruppe mit der Zuordnung, die übergeben wurde.
+
+        Args:
+            groupname (str): Name der Gruppe.
+            ibans (list): Liste der IBANs, die zur Gruppe hinzugefügt werden sollen.
+        Returns:
+            dict: Informationen über den Speichervorgang.
+        """
+        for iban in ibans:
+            if self.check_collection_is_iban(iban) is False:
+                raise ValueError(f"IBAN '{iban}' ist ungültig !")
+
+        new_group = {
+            'metatype': 'config',
+            'name': 'group',
+            'uuid': groupname,
+            'groupname': groupname,
+            'ibans': ibans,
+            'members': []
+        }
+        return self.set_metadata(new_group, overwrite=True)
+
+    def select(self, collection:str, condition: dict|list[dict]=None, multi: str='AND'):
         """
         Handler für das Vorbereiten der '_select' Methode, welche Datensätze aus der Datenbank
         selektiert, die die angegebene Bedingung erfüllen.
 
         Args:
-            collection (str, optional): Name der Collection oder Gruppe, aus der selektiert werden
-                                        soll. Es erfolgt automatisch eine Unterscheidung, ob es
-                                        sich um eine IBAN oder einen Gruppenname handelt.
-                                        Default: IBAN aus der Config.
+            collection (str):   Name der Collection oder Gruppe, aus der selektiert werden
+                                soll. Es erfolgt automatisch eine Unterscheidung, ob es
+                                sich um eine IBAN oder einen Gruppenname handelt.
             condition (dict | list(dict)): Bedingung als Dictionary
                 - 'key', str    : Spalten- oder Schlüsselname,
                 - 'value', any  : Wert der bei 'key' verglichen werden soll
@@ -48,11 +72,7 @@ class BaseDb():
             # Catch empty lists
             condition = None
 
-        if collection is None:
-            # Default Collection
-            collection = current_app.config['IBAN']
-
-        if not self._check_collection_is_iban(collection):
+        if not self.check_collection_is_iban(collection):
             # collection is a group
             group_ibans = self.get_group_ibans(collection)
             if not group_ibans:
@@ -65,7 +85,16 @@ class BaseDb():
         if not isinstance(collection, list):
             collection = [collection]
 
-        return self._select(collection, condition, multi)
+        result_list = self._select(collection, condition, multi)
+        for r in result_list:
+            # Format Datestrings
+            if isinstance(r.get('date_tx'), int):
+                r['date_tx'] = datetime.fromtimestamp(r['date_tx']).strftime('%d.%m.%Y')
+
+            if isinstance(r.get('date_wert'), int):
+                r['date_wert'] = datetime.fromtimestamp(r['date_wert']).strftime('%d.%m.%Y')
+
+        return result_list
 
     def _select(self, collection: str, condition: dict|list[dict], multi: str):
         """
@@ -78,22 +107,18 @@ class BaseDb():
         """
         raise NotImplementedError()
 
-    def insert(self, data: dict|list[dict], collection: str=None):
+    def insert(self, data: dict|list[dict], collection: str):
         """
         Fügt einen oder mehrere Datensätze in die Datenbank ein.
 
         Args:
             data (dict or list): Einzelner Datensatz oder eine Liste von Datensätzen
             collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
-                                        Default: IBAN aus der Config.
         Returns:
             dict:
                 - inserted, int: Zahl der neu eingefügten IDs
         """
-        if collection is None:
-            collection = current_app.config['IBAN']
-
-        if not self._check_collection_is_iban(collection):
+        if not self.check_collection_is_iban(collection):
             raise ValueError(f"Collection {collection} is not a valid IBAN")
 
         # Always create a list of transactions for loop
@@ -111,7 +136,9 @@ class BaseDb():
             # - IBAN, Tagging priority, empty Tag list
             transaction['iban'] = collection
             transaction['prio'] = 0
-            transaction['tags'] = []
+            transaction['category'] = transaction.get('category')
+            if not transaction.get('tags'):
+                transaction['tags'] = []
 
         return self._insert(tx_list, collection)
 
@@ -126,7 +153,8 @@ class BaseDb():
         """
         raise NotImplementedError()
 
-    def update(self, data: dict, collection: str, condition: dict|list[dict], multi:str):
+    def update(self, data: dict, collection: str, condition: dict|list[dict],
+               multi:str, merge:bool=True):
         """
         Aktualisiert Datensätze in der Datenbank, die die angegebene Bedingung erfüllen.
 
@@ -143,6 +171,8 @@ class BaseDb():
                     - 'regex'   : value wird als RegEx behandelt
             multi (str) : ['AND' | 'OR'] Wenn 'condition' eine Liste mit conditions ist,
                           werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
+            merge (bool): Wenn False, werden Listenfelder nicht gemerged, sondern
+                          komplett überschrieben. Default: True
         Returns:
             dict:
                 - updated, int: Anzahl der aktualisierten Datensätze
@@ -155,7 +185,6 @@ class BaseDb():
 
         Args:
             collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
-                                   Default: IBAN aus der Config.
             condition (dict | list(dict)): Bedingung als Dictionary
                 - 'key', str    : Spalten- oder Schlüsselname,
                 - 'value', any  : Wert der bei 'key' verglichen werden soll
@@ -172,11 +201,36 @@ class BaseDb():
         raise NotImplementedError()
 
     def truncate(self, collection: str):
-        """Löscht alle Datensätze aus einer Tabelle/Collection
+        """Löscht eine Tabelle/Collection
 
         Args:
-            collection (str, optional): Name der Collection, in die Werte eingefügt werden sollen.
-                                   Default: IBAN aus der Config.
+            collection (str):   Name der Collection, in die Werte eingefügt werden sollen.
+        Returns:
+            dict:
+                - deleted, int: Anzahl der gelöschten Datensätze
+        """
+        if not self.check_collection_is_iban(collection):
+            # Delete group config from metadata
+            return self.delete('metadata', [
+                {
+                    'key': 'metatype',
+                    'value': 'config'
+                },{
+                    'key': 'name',
+                    'value': 'group'
+                },{
+                    'key': 'uuid',
+                    'value': collection
+                }
+            ])
+
+        return self._truncate(collection)
+
+    def _truncate(self, collection):
+        """
+        Private Methode zum Löschen einer Tabelle/Collection.
+        Siehe 'truncate' Methode.
+
         Returns:
             dict:
                 - deleted, int: Anzahl der gelöschten Datensätze
@@ -220,15 +274,21 @@ class BaseDb():
         """
         raise NotImplementedError()
 
-    def get_group_ibans(self, group: str):
+    def get_group_ibans(self, group: str, check_before: bool=False):
         """
         Ruft die Liste von IBANs einer Gruppe aus der Datenbank ab.
 
         Args:
             group (str): Name der Gruppe.
+            check_before (bool):    Wenn True, wird überprüft, ob es
+                                    sich um eine Gruppe oder IBAN handelt.
+                                    Default: False
         Returns:
             list: Die IBANs der abgerufene Gruppe.
         """
+        if check_before and self.check_collection_is_iban(group):
+            return [group]
+
         meta_results = self.filter_metadata([
             {
                 'key': 'metatype',
@@ -237,7 +297,7 @@ class BaseDb():
                 'key': 'name',
                 'value': 'group'
             },{
-                'key': 'groupname',
+                'key': 'uuid',
                 'value': group
             }
         ], multi='AND')
@@ -247,6 +307,48 @@ class BaseDb():
             ibans = meta_results[0].get('ibans', [])
 
         return ibans
+
+    def list_ibans(self):
+        """
+        Listet alle in der Datenbank vorhandenen IBAN-Collections auf.
+
+        Returns:
+            list: Liste der IBAN-Collections.
+        """
+        all_collections = self._get_collections()
+        ibans = [col for col in all_collections if self.check_collection_is_iban(col)]
+        return ibans
+
+    def list_groups(self):
+        """Listet alle in der Datenbank vorhandenen Gruppen auf.
+        
+        Returns:
+            list: Liste der Gruppen.
+        """
+        groups = []
+        meta_results = self.filter_metadata([
+            {
+                'key': 'metatype',
+                'value': 'config'
+            },{
+                'key': 'name',
+                'value': 'group'
+            }
+        ], multi='AND')
+
+        for group in meta_results:
+            groups.append(group.get('groupname'))
+
+        return groups
+
+    def _get_collections(self):
+        """
+        Ruft alle Collections in der Datenbank ab.
+
+        Returns:
+            list: Liste der Collections.
+        """
+        raise NotImplementedError()
 
     def _generate_unique(self, tx_entry: dict | list[dict]):
         """
@@ -334,13 +436,6 @@ class BaseDb():
                 if not isinstance(parsed_data, list):
                     parsed_data = [parsed_data]
 
-                    #for i, _ in enumerate(parsed_data):
-                    #    parsed_data[i]['metatype'] = metatype
-
-                #else:
-                #    parsed_data['metatype'] = metatype
-                #    parsed_data = [parsed_data]
-
                 # Store in DB (do not overwrite)
                 inserted = 0
                 for data in parsed_data:
@@ -360,8 +455,9 @@ class BaseDb():
         """
         # Check if path exists
         if not os.path.exists(path):
-            logging.error(f"Path {path} does not exist")
-            return
+            error_msg = f"Path {path} does not exist"
+            logging.error(error_msg)
+            return {'error': error_msg}
 
         # Parse JSON
         with open(path, 'r', encoding='utf-8') as j:
@@ -391,7 +487,7 @@ class BaseDb():
         logging.info(f"Stored {inserted} imported metadata from {path}")
         return {'inserted': inserted}
 
-    def _check_collection_is_iban(self, collection: str):
+    def check_collection_is_iban(self, collection: str):
         """
         Überprüft, ob die angegebene Collection eine IBAN ist.
 

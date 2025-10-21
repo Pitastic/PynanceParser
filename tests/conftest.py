@@ -30,7 +30,6 @@ def test_app():
     # App Context
     app = create_app(config_path)
     with app.app_context():
-        app.host.db_handler.truncate()
         yield app
 
     shutil.rmtree("/tmp/pynance-test", ignore_errors=True)

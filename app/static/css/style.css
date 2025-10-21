@@ -3,6 +3,18 @@ html, body {
     color: white;
 }
 
+hr {
+    margin-top: 3em;
+    margin-bottom: 3em;
+}
+
+nav ul {
+    display: flex;
+    padding: 0;
+    justify-content: space-between;
+    list-style: none;
+}
+
 .my-buttons {
     display: inline-block;
     cursor: pointer;
@@ -11,9 +23,22 @@ html, body {
     background-color: silver;
 }
 
+.popup {
+    border: 1px solid silver;
+    display: inline-block;
+}
+
+#file-drop-area, #settings-drop-area {
+    border: 2px dashed #ccc;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    position: relative;
+}
+
 #result-text {
     display: block;
-    background-color: silver;
+    background-color: green;
     padding: 1em;
     margin: 1em;
 }
@@ -35,4 +60,16 @@ table.transactions {
     }
     table.transactions tr:hover {
         background-color: #374d3a;
+    }
+
+.tag-chip {
+    margin-right: 0.2em;
+    padding: 0.2em;
+    background-color: #4ab477;
+    color: black;
+    border-radius: 0.2em;
+}
+    .tag-chip.parsed {
+        display: inline-block;
+        background-color: blueviolet;
     }

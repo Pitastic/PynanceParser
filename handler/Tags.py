@@ -72,11 +72,12 @@ class Tagger():
             raise ValueError('Es existieren noch keine Cat-Regeln für den Benutzer')
 
         # Benutzer Regeln ignoriert alle automatischen Regeln,
+        # wenn 'prio' gesetzt nicht explizit gesetzt ist,
         # setzt aber wieder nur seine eigene Prio.
-        prio = prio_set = None
+        prio_set = None
         if rule_name is not None:
             prio_set = cat_rules[rule_name].get('prioriry')
-            prio = 99
+            prio = prio if prio is not None else 99
 
         for r_name, rule in cat_rules.items():
             logging.info(f"Kategorisierung mit Rule {r_name}...")
@@ -99,11 +100,11 @@ class Tagger():
             # Allgemeiner Startfilter und spezielle Conditions einer Rule
             if prio is not None:
                 # prio values override
-                query_args = self._form_tag_query(prio, iban)
+                query_args = self._form_tag_query(iban, prio)
 
             else:
                 # use rule prio or default
-                query_args = self._form_tag_query(rule.get('prio', 1))
+                query_args = self._form_tag_query(iban, rule.get('prio', 1))
 
             # -- Add all Filters
             for f in rule.get('filter', []):
@@ -153,7 +154,7 @@ class Tagger():
                     continue
 
                 query = {'key': 'uuid', 'value': uuid}
-                updated = self.db_handler.update(data=new_categories, condition=query)
+                updated = self.db_handler.update(new_categories, iban, query)
 
                 # soft Exception Handling
                 if not updated:
@@ -165,7 +166,7 @@ class Tagger():
 
         return result
 
-    def tag(self, iban: str=None, rule_name: str=None, dry_run: bool=False) -> dict:
+    def tag(self, iban: str, rule_name: str=None, dry_run: bool=False) -> dict:
         """
         Tagged Transaktionen anhand von Regeln in der Datenbank.
 
@@ -195,7 +196,7 @@ class Tagger():
             raise ValueError('Es existieren noch keine Regeln für den Benutzer')
 
         # Allgemeine Startfilter für die Condition (ignore Prio bei Tagging)
-        query_args = self._form_tag_query(99, iban)
+        query_args = self._form_tag_query(iban, 99)
 
         for r_name, rule in tagging_rules.items():
             logging.info(f"RegEx Tagging mit Rule {r_name}...")
@@ -264,7 +265,7 @@ class Tagger():
                     continue
 
                 query = {'key': 'uuid', 'value': uuid}
-                updated = self.db_handler.update(data={'tags': tags_to_set}, condition=query)
+                updated = self.db_handler.update({'tags': tags_to_set}, iban, query)
 
                 # soft Exception Handling
                 if not updated:
@@ -276,13 +277,12 @@ class Tagger():
 
         return result
 
-    def tag_ai(self, iban: str=None, dry_run: bool=False) -> dict:
+    def tag_ai(self, iban: str, dry_run: bool=False) -> dict:
         """
         Automatisches Tagging mit AI.
 
         Args:
             iban:           Name der Collection, in die Werte eingefügt werden sollen.
-                            Default: IBAN aus der Config.
             dry_run         Switch to show, which TX would be updated. Do not update.
         Returns:
             dict:
@@ -292,7 +292,7 @@ class Tagger():
         logging.info("Tagging with AI....")
 
         # Allgemeine Startfilter für die Condition
-        query_args = self._form_tag_query(collection=iban, ai=True)
+        query_args = self._form_tag_query(iban, ai=True)
         matched = self.db_handler.select(**query_args)
 
         tagged = 0
@@ -317,7 +317,7 @@ class Tagger():
                 new_category = {
                     'guess': entry.get('guess')
                 }
-                updated = self.db_handler.update(data=new_category, condition=query)
+                updated = self.db_handler.update(new_category, iban, query)
                 updated = updated.get('updated')
 
                 # soft Exception Handling
@@ -419,7 +419,7 @@ class Tagger():
         if category is not None:
             # Set Category: Tags are filter arguments; Prio matters
             update_data['prio'] = prio_set
-            query_args = self._form_tag_query(prio, iban)
+            query_args = self._form_tag_query(iban, prio)
 
             if tags:
                 query_args['condition'].append({
@@ -433,7 +433,7 @@ class Tagger():
 
         else:
             # Set Tags: Prio does not matter (tags to set will be uniqued later)
-            query_args = self._form_tag_query(99, iban)
+            query_args = self._form_tag_query(iban, 99)
 
         # Add all Filters
         filters = [] if filters is None else filters
@@ -484,7 +484,7 @@ class Tagger():
                 existing_tags = row.get('tags', [])
                 update_data['tags'] = [t for t in tags if t not in existing_tags]
 
-            updated = self.db_handler.update(data=update_data, condition=query)
+            updated = self.db_handler.update(update_data, iban, query)
 
             # soft Exception Handling
             if not updated:
@@ -502,13 +502,13 @@ class Tagger():
 
         return result
 
-    def _form_tag_query(self, prio: int=1, collection: str=None, ai=False) -> dict:
+    def _form_tag_query(self, collection: str, prio: int=1, ai=False) -> dict:
         """
         Erstellt die Standardabfrage-Filter für den Ausgangsdatensatz eines Taggings.
 
         Args:
-            prio, int: Filter more important tags
             collection, str: Collection to select from
+            prio, int: Filter more important tags
             ai, bool: True if AI Tagging
         Return:
             dict: Query Dict for db_handler.select()

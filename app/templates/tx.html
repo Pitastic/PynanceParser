@@ -1,0 +1,110 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+
+<h1>Transaktionsdetails</h1>
+
+<header>
+    <nav>
+        <ul>
+            <li>
+                <button onclick="removeTags('{{tx.uuid}}')">Tags entfernen</button>
+            </li>
+            <li>
+                <button onclick="removeCats('{{tx.uuid}}')">Kategorie entfernen</button>
+            </li>
+        </ul>
+    </nav>
+</header>
+
+<main>
+
+    <table class="transactions">
+        <thead>
+            <tr>
+                <th colspan="2">Info</td>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Art:</td>
+                <td>{{tx.art}}</td>
+            </tr>
+            <tr>
+                <td>Datum (Wertstellnug)</td>
+                <td>{{tx.date_wert}}</td>
+            </tr>
+            <tr>
+                <td>Datum (Transaktion)</td>
+                <td>{{tx.date_tx}}</td>
+            </tr>
+            <tr>
+                <td>Betrag</td>
+                <td>{{tx.betrag}} {{tx.currency}}</td>
+            </tr>
+            <tr>
+                <td>Buchungstext</td>
+                <td>{{tx.text_tx}}</td>
+            </tr>
+        </tbody>
+    </table>
+
+<hr />
+
+    <table class="transactions">
+        <thead>
+            <tr>
+                <th>Kategorie</th>
+                <th>Tags</th>
+                <th>Parsed</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    <input type="text" id="cat-input" list="cat-list" placeholder="Kategorie" value="{{tx.category if tx.category else ''}}">
+                    <datalist id="cat-list">
+                        {% for c in cats %}
+                        <option>{{ c }}</option>
+                        {% endfor %}
+                    </datalist>
+                    <button onclick="manualCatTx('{{tx.uuid}}')">Speichern</button>
+                </td>
+                <td id="tag-container">
+                    <input type="text" id="tag-input" list="tag-list" placeholder="Neues Tag" value="">
+                    <datalist id="tag-list">
+                        {% for t in tags %}
+                        <option>{{ t }}</option>
+                        {% endfor %}
+                    </datalist>
+                    <button onclick="manualTagTx('{{tx.uuid}}')">Speichern</button>
+                </td>
+                <td>
+                    {% for key, value in tx.parsed.items() %}
+                    <div class="tag-chip parsed">
+                        <b>{{ key }}</b><br>{{ value }}
+                    </div>
+                    {% endfor %}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+</main>
+
+<script src="{{ url_for('static', filename='js/tx.js') }}"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+    
+        // Create Tag Bullets
+        const inputField = document.getElementById("tag-input");
+    
+        {% for tag in tx.tags %}
+            addTagBullet(inputField, "tag-container", "{{tag}}");
+        {% endfor %}
+    
+    });
+</script>
+
+{% endblock %}

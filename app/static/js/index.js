@@ -2,229 +2,238 @@
 
 document.addEventListener('DOMContentLoaded', function () {
 
-    // Upload Button Listener
-    //document.getElementById('uploadButton').addEventListener('click', uploadFile);
+    // PopUps
+    document.getElementById('add-iban-btn').addEventListener('click', function () {
+        openPopup('add-iban');
+    });
+    document.getElementById('add-group-btn').addEventListener('click', function () {
+        openPopup('add-group');
+    });
+    document.getElementById('settings-button').addEventListener('click', function () {
+        openPopup('settings-popup');
+    });
 
+    // Import Input
+    const fileInput = document.getElementById('file-input');
+    const fileLabel = document.getElementById('file-label');
+    const fileDropArea = document.getElementById('file-drop-area');
+
+    fileDropArea.addEventListener('click', () => {
+        fileInput.click();
+    });
+
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length > 0) {
+            fileLabel.textContent = fileInput.files[0].name;
+        } else {
+            fileLabel.textContent = 'Datei hier ablegen oder auswählen (PDF / CSV / HTML)';
+        }
+    });
+
+    fileDropArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+    });
+
+    fileDropArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            fileLabel.textContent = files[0].name;
+        }
+    });
+
+    // Metadata-Select
+    document.getElementById('read-setting').addEventListener('change', function () {
+        document.getElementById('set-setting').value = "";
+    });
 });
 
+// ----------------------------------------------------------------------------
+// -- DOM Functions -----------------------------------------------------------
+// ----------------------------------------------------------------------------
 
 /**
- * Shows a given Result in the Result-Box.
- *
- * @param {string} result - The text to be shwon.
+ * Gets a value for a Metadate into a textarea.
+ * The key is selected via the select input element 'read-setting'
+ * and written to 'set-setting'.
  */
-function printResult(result){
-    const box = document.getElementById('result-text');
-    box.innerHTML = result;
+function loadSetting() {
+    const setting_uuid = document.getElementById('read-setting').value;
+    const result_text = document.getElementById('set-setting');
+    if (!setting_uuid) {
+        alert('Kein Name einer Einstellung angegeben!');
+        return;
+    }
+
+    apiGet('getMeta/' + setting_uuid, {}, function (responseText, error) {
+        if (error) {
+            alert('Settings not loaded: ' + '(' + error + ')' + responseText);
+
+        } else {
+            result_text.value = responseText;
+
+        }
+    });
+}
+
+/**
+ * Sets a value for a Metadate.
+ * The key is selected via the select input element 'read-setting'
+ * and the value is taken from 'set-setting'.
+ */
+function saveSetting() {
+    const setting_uuid = document.getElementById('read-setting').value;
+    const result_text = document.getElementById('set-setting');
+    if (!setting_uuid || !result_text.value) {
+        alert('Kein Name einer Einstellung oder Wert angegeben!');
+        return;
+    }
+
+    let payload;
+    let meta_type;
+    try {
+        payload = JSON.parse(result_text.value);
+        if (!payload['metatype']) {
+            throw new ValueError("No metatype provided!");
+        }
+        meta_type = payload['metatype'];
+
+    } catch (error) {
+        alert('Could not parse settingsvalue!' + error);
+        return;
+    }
+
+    apiSubmit('saveMeta/' + meta_type, payload, function (responseText, error) {
+        if (error) {
+            alert('Settings not saved: ' + '(' + error + ')' + responseText);
+
+        } else {
+            alert('Settings saved: ' + responseText)
+            result_text.value = '';
+
+        }
+    }, false);
 }
 
 
+// ----------------------------------------------------------------------------
+// -- API Functions -----------------------------------------------------------
+// ----------------------------------------------------------------------------
+
 /**
  * Sends a file to the server for upload.
- * The file is selected via the file input element 'input_file'.
+ * The file is selected via the file input element 'settings-input'.
  */
 function uploadFile() {
-    const iban = document.getElementById('input_iban').value;
-    const fileInput = document.getElementById('input_file');
+    const settings_type = document.getElementById('settings-type').value;
+
+    const fileInput = document.getElementById('settings-input');
     if (fileInput.files.length === 0) {
         alert('Please select a file to upload.');
         return;
     }
 
-    const params = { file: 'input_file' }; // The key 'file' corresponds to the input element's ID
-    apiSubmit('upload/' + iban, params, function (responseText, error) {
+    const params = { file: 'file-input' }; // The value of 'file' corresponds to the input element's ID
+    apiSubmit('upload/metadata/' + settings_type, params, function (responseText, error) {
         if (error) {
-            printResult('File upload failed: ' + '(' + error + ')' + responseText);
+            alert('File upload failed: ' + '(' + error + ')' + responseText);
 
         } else {
             alert('File uploaded successfully!' + responseText);
-            window.location.reload();
+            window.location.href = '/' + settings_type;
 
         }
     }, true);
 }
 
-
 /**
- * Truncates the database.
- * An optional IBAN to truncate is selected by input with ID 'iban'.
+ * Sends a file to the server for upload.
+ * The file is selected via the file input element 'file-input'.
  */
-function truncateDB() {
-    const iban = document.getElementById('input_iban').value;
+function uploadFile() {
+    const iban = document.getElementById('iban-input').value;
+    if (!iban) {
+        alert("Keine IBAN angegeben!");
+        return;
+    }
 
-    apiGet('truncateDatabase/'+iban, {}, function (responseText, error) {
+    const fileInput = document.getElementById('file-input');
+    if (fileInput.files.length === 0) {
+        alert('Please select a file to upload.');
+        return;
+    }
+
+    const params = { file: 'file-input' }; // The value of 'file' corresponds to the input element's ID
+    apiSubmit('upload/' + iban, params, function (responseText, error) {
         if (error) {
-            printResult('Truncate failed: ' + '(' + error + ')' + responseText);
+            alert('File upload failed: ' + '(' + error + ')' + responseText);
 
         } else {
-            alert('Database truncated successfully!' + responseText);
+            alert('File uploaded successfully!' + responseText);
+            window.location.href = '/' + iban;
+
+        }
+    }, true);
+}
+
+/**
+ * Saves a group with the specified name and associated IBANs.
+ * 
+ * This function retrieves the group name from an input field and the selected IBANs
+ * from checkboxes. It then sends the data to the server using the `apiSubmit` function.
+ * If the operation is successful, the page is reloaded; otherwise, an error message is displayed.
+ */
+function saveGroup() {
+    const groupname = document.getElementById("groupname-input").value;
+    if (!groupname) {
+        alert("Keine Gruppe angegeben!");
+        return;
+    }
+
+    const checkboxes = document.querySelectorAll('input[name="iban-checkbox"]:checked');
+    const selectedIbans = Array.from(checkboxes).map(checkbox => checkbox.value);
+    const params = {'ibans': selectedIbans}
+
+    apiSubmit('addgroup/' + groupname, params, function (responseText, error) {
+        if (error) {
+            alert('Gruppe nicht angelegt: ' + '(' + error + ')' + responseText);
+
+        } else {
+            alert('Gruppe gespeichert!' + responseText);
+            window.location.reload();
+
+        }
+    }, false);
+
+    return selectedIbans;
+}
+
+/**
+ * Deletes the database for the given IBAN or the Config for a Groupname
+ */
+function deleteDB(delete_group) {
+    let collection;
+    if (delete_group) {
+        collection = document.getElementById('groupname-input').value;
+    } else {
+        collection = document.getElementById('iban-input').value;
+    }
+    
+    if (!collection) {
+        alert("Keine IBAN/Gruppe angegeben!");
+        return;
+    }
+
+    apiGet('deleteDatabase/'+ collection, {}, function (responseText, error) {
+        if (error) {
+            alert('Delete failed: ' + '(' + error + ')' + responseText);
+
+        } else {
+            alert('DB deleted successfully!' + responseText);
             window.location.reload();
 
         }
     }, 'DELETE');
     
-}
-
-
-/**
- * Tags the entries in the database.
- * Optional Tagging commands are read from the input with ID
- * 'input_tagging_name' (more in the Future)
- */
-function tagEntries() {
-    const iban = document.getElementById('input_iban').value;
-    const rule_name = document.getElementById('tagging_name').value;
-    let rules = {}
-    if (rule_name) {
-        rules['rule_name'] = rule_name
-    }
-
-    apiSubmit('tag/'+iban, rules, function (responseText, error) {
-        if (error) {
-            printResult('Tagging failed: ' + '(' + error + ')' + responseText);
-
-        } else {
-            alert('Entries tagged successfully!' + responseText);
-            window.location.reload();
-
-        }
-    }, false);
-}
-
-
-function removeTags() {
-    const iban = document.getElementById('input_iban').value;
-    const checkboxes = document.querySelectorAll('input[name="entry-select[]"]');
-    const t_ids = [];    
-    checkboxes.forEach((checkbox) => {
-        if (checkbox.checked) {
-            t_ids.push(checkbox.value);
-        }
-    });
-
-    if (!iban) {
-        alert('Please provide an IBAN.');
-        return;
-    }
-    if (!t_ids) {
-        alert('Please provide a Transaction ID (checkbox).');
-        return;
-    }
-
-    let api_function;
-    let tags = {};
-    if (t_ids.length == 1) {
-        api_function = 'removeTag/'+iban+'/'+t_ids[0];
-    } else {
-        api_function = 'removeTags/'+iban;
-        tags['t_ids'] = t_ids;
-    };
-
-    apiSubmit(api_function, tags, function (responseText, error) {
-        if (error) {
-            printResult('Tagging failed: ' + '(' + error + ')' + responseText);
-
-        } else {
-            alert('Entries tagged successfully!' + responseText);
-            window.location.reload();
-
-        }
-    }, false);
-}
-
-
-/**
- * Tags the entries in the database in a direct manner (assign Categories, no rules)
- * Optional Tagging commands are read from the inputs with IDs
- * 'input_manual_category' , 'input_manual_tags' , 'input_iban' and 'input_tid'.
- * While the IBAN and Transaction_ID are mandatory, the other inputs are optional.
- */
-function manualTagEntries() {
-    const category = document.getElementById('input_manual_category').value;
-    let tags = document.getElementById('input_manual_tags').value;
-    const iban = document.getElementById('input_iban').value;
-
-    const checkboxes = document.querySelectorAll('input[name="entry-select[]"]');
-    const t_ids = [];    
-    checkboxes.forEach((checkbox) => {
-        if (checkbox.checked) {
-            t_ids.push(checkbox.value);
-        }
-    });
-
-    if (!iban) {
-        alert('Please provide an IBAN.');
-        return;
-    }
-    if (!t_ids) {
-        alert('Please provide a Transaction ID (checkbox).');
-        return;
-    }
-
-    let tagging = {
-        'category': category,
-        'tags': tags
-    }
-    
-    let api_function;
-    if (t_ids.length == 1) {
-        api_function = 'setManualTag/'+iban+'/'+t_ids[0];
-    } else {
-        api_function = 'setManualTags/'+iban;
-        tagging['t_ids'] = t_ids;
-    };
-
-    apiSubmit(api_function, tagging, function (responseText, error) {
-        if (error) {
-            printResult('Tagging failed: ' + '(' + error + ')' + responseText);
-
-        } else {
-            alert('Entries tagged successfully!' + responseText);
-            window.location.reload();
-
-        }
-    }, false);
-}
-
-
-/**
- * Fetches information based on the provided UUID and IBAN input value.
- *
- * @param {string} uuid - The unique identifier used to fetch specific information.
- * 
- * This function retrieves the info for a given uuid from the server.
- */
-function getInfo(uuid) {
-    const iban = document.getElementById('input_iban').value;
-
-    apiGet('/'+iban+'/'+uuid, {}, function (responseText, error) {
-        if (error) {
-            printResult('getTx failed: ' + '(' + error + ')' + responseText);
-
-        } else {
-            alert(responseText);
-
-        }
-    });
-}
-
-
-function saveMeta() {
-    const meta_type = document.getElementById('select_meta').value;
-    const fileInput = document.getElementById('input-json');
-    if (fileInput.files.length === 0) {
-        alert('Please select a file to upload.');
-        return;
-    }
-
-    const params = { file: 'input_file' }; // The key 'file' corresponds to the input element's ID
-    apiSubmit('upload/metadata/'+meta_type, params, function (responseText, error) {
-        if (error) {
-            printResult('Rule saving failed: ' + '(' + error + ')' + responseText);
-
-        } else {
-            alert('Rule saved successfully!' + responseText);
-
-        }
-    }, true);
 }
