@@ -12,7 +12,7 @@ def test_read_input_csv(test_app):
     wird bei 'None' belassen, um auch das Erraten des Formats zu testen.
     """
     with test_app.app_context():
-        found_rows = test_app.host._read_input(os.path.join( # pylint: disable=protected-access
+        found_rows = test_app.host.read_input(os.path.join( # pylint: disable=protected-access
             os.path.dirname(os.path.abspath(__file__)),
             'commerzbank.csv'
         ), bank='Commerzbank', data_format=None)
@@ -54,7 +54,7 @@ def test_set_manual_tag(test_app):
         t_id = '6884802db5e07ee68a68e2c64f9c0cdd'
 
         # Setzen des Tags
-        r = test_app.host._set_manual_tag_and_cat( # pylint: disable=protected-access
+        r = test_app.host.set_manual_tag_and_cat( # pylint: disable=protected-access
             iban, t_id, tags= ['Test_Second'], category='Test_Pri'
         )
         assert r.get('updated') == 1, 'Es wurde kein Eintrag aktualisiert. '

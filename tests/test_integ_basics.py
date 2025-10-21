@@ -649,6 +649,31 @@ def test_iban_filtering(test_app):
                 f"Es wurden {len(rows)} Einträge gefunden, statt der erwarteten 1"
 
 
+def test_statspage(test_app):
+    """Testet die Darstellung der Statistikseite"""
+    with test_app.app_context():
+
+        with test_app.test_client() as client:
+            # Basic Stats
+            result = client.get("/DE89370400440532013000/stats")
+            assert result.status_code == 200, \
+                "Die Statistikseite ist nicht (richtig) erreichbar"
+            soup = BeautifulSoup(result.text, features="html.parser")
+            table_rows = soup.css.select('table.ranking tr')
+            assert len(table_rows) == 8, \
+                "Es wurde nicht die richtige Anzahl an Einträgen im Ranking der Kategorien gefunden"
+
+            # ...mit Filter
+            result = client.get(
+                "/DE89370400440532013000/stats?startDate=02.01.2023&endDate=03.01.2023")
+            assert result.status_code == 200, \
+                "Die Statistikseite ist nicht (richtig) erreichbar"
+            soup = BeautifulSoup(result.text, features="html.parser")
+            table_rows = soup.css.select('table.ranking tr')
+            assert len(table_rows) == 5, \
+                "Es wurde nicht die richtige Anzahl an Einträgen im Ranking der Kategorien gefunden"
+
+
 def test_remove_category(test_app):
     """Testet das Entfernen einer Kategorie.
     Alle anderen Einträge zur Transaktion bleiben erhalten."""

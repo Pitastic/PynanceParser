@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Filter IBAN Button
     document.getElementById('apply-filter').addEventListener('click', () => {
-        getFilteredList();
+        window.location.href = '/' + IBAN + getFilteredList();
     })
     document.getElementById('reset-filter').addEventListener('click', () => {
         window.location.href = '/' + IBAN;
@@ -55,56 +55,6 @@ document.addEventListener('DOMContentLoaded', function () {
 // ----------------------------------------------------------------------------
 // -- DOM Functions -----------------------------------------------------------
 // ----------------------------------------------------------------------------
-
-/**
- * Redirect to a GET URL using all defined Filters
- */
-function getFilteredList() {
-    let url = '/' + IBAN;
-    let arg_concat = '?';
-
-    const startDate = document.getElementById('filter-range-start').value;
-    if (startDate) {
-        url = url + arg_concat + 'startDate=' + startDate;
-        arg_concat = '&';
-    }
-
-    const endDate = document.getElementById('filter-range-end').value;
-    if (endDate) {
-        url = url + arg_concat + 'endDate=' + endDate;
-        arg_concat = '&';
-    }
-
-    const category = document.getElementById('filter-cat').value;
-    if (category) {
-        url = url + arg_concat + 'category=' + category;
-        arg_concat = '&';
-    }
-
-    const tags = document.getElementById('filter-tag').value;
-    if (tags) {
-        url = url + arg_concat + 'tags=' + tags;
-        arg_concat = '&';
-        const tag_mode = document.getElementById('filter-tag-mode').value;
-        if (tag_mode) {
-            url = url + arg_concat + 'tag_mode=' + tag_mode;
-            arg_concat = '&';
-        }
-    }
-
-    let betrag = document.getElementById('filter-betrag').value;
-    if (betrag) {
-        betrag = betrag.replace(',', '.');
-        url = url + arg_concat + 'betrag=' + betrag;
-        arg_concat = '&';
-        const betrag_mode = document.getElementById('filter-betrag-mode').value;
-        if (betrag_mode) {
-            url = url + arg_concat + 'betrag_mode=' + betrag_mode;
-            arg_concat = '&';
-        }
-    }
-    window.location.href = url;
-}
 
 
 /**

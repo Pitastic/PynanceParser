@@ -42,6 +42,9 @@
                 <button id="reset-filter">Reset</button>
             </li>
             <li>
+                <a href="/{{IBAN}}/stats" title="Logout">&sum;</a>
+            </li>
+            <li>
                 <a href="/logout" title="Logout">🚪</a>
             </li>
         </ul>
@@ -86,7 +89,7 @@
                 <td class="td-betrag">{{ transaction.currency }} {{ transaction.betrag }}</td>
                 <td>
                     <button class="details-button" title="Show details" onclick="openDetailsPopup('details-popup', '{{ transaction.uuid }}')" style="cursor: pointer;">ℹ️</button>
-                    <a href="/{{iban}}/{{transaction.uuid}}" target="_blank">🔎</a>
+                    <a href="/{{IBAN}}/{{transaction.uuid}}" target="_blank">🔎</a>
                 </td>
             </tr>
             {% endfor %}

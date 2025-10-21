@@ -27,6 +27,59 @@ function closePopup(popupId) {
 }
 
 /**
+ * Redirect to a GET URL using all defined Filters
+ * 
+ * @returns {string} - Returns one GET query args string for all filter inputs
+ */
+function getFilteredList() {
+    let query_args = '';
+    let arg_concat = '?';
+
+    const startDate = document.getElementById('filter-range-start').value;
+    if (startDate) {
+        query_args = query_args + arg_concat + 'startDate=' + startDate;
+        arg_concat = '&';
+    }
+
+    const endDate = document.getElementById('filter-range-end').value;
+    if (endDate) {
+        query_args = query_args + arg_concat + 'endDate=' + endDate;
+        arg_concat = '&';
+    }
+
+    const category = document.getElementById('filter-cat').value;
+    if (category) {
+        query_args = query_args + arg_concat + 'category=' + category;
+        arg_concat = '&';
+    }
+
+    const tags = document.getElementById('filter-tag').value;
+    if (tags) {
+        query_args = query_args + arg_concat + 'tags=' + tags;
+        arg_concat = '&';
+        const tag_mode = document.getElementById('filter-tag-mode').value;
+        if (tag_mode) {
+            query_args = query_args + arg_concat + 'tag_mode=' + tag_mode;
+            arg_concat = '&';
+        }
+    }
+
+    let betrag = document.getElementById('filter-betrag').value;
+    if (betrag) {
+        betrag = betrag.replace(',', '.');
+        query_args = query_args + arg_concat + 'betrag=' + betrag;
+        arg_concat = '&';
+        const betrag_mode = document.getElementById('filter-betrag-mode').value;
+        if (betrag_mode) {
+            query_args = query_args + arg_concat + 'betrag_mode=' + betrag_mode;
+            arg_concat = '&';
+        }
+    }
+
+	return query_args;
+}
+
+/**
  * Dynamic Bullet list
  * Takes text-input to create new Tag-Bullets
  * 
