@@ -39,7 +39,7 @@
     'date_tx': int,         # (UTC)
     'text_tx': str,
     'betrag': float,
-    'iban': str,
+    'gegenkonto': str,
 
     ----------- optional -----------
 

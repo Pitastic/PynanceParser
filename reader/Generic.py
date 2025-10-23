@@ -49,7 +49,7 @@ class Reader:
                     'art': row['Umsatzart'],
                     'text_tx': row['Buchungstext'],
                     'betrag': betrag,
-                    'iban': row['IBAN Auftraggeberkonto'],
+                    'gegenkonto': row.get('Auftraggeber', row.get('IBAN Auftraggeberkonto')),
                     'currency': row['Währung'],
                     'parsed': {},
                     'category': None,

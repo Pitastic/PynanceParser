@@ -11,7 +11,7 @@ def check_transaktion_list(tx_list):
 
         # Dict Struktur
         required_keys = [
-            'date_tx', 'text_tx', 'betrag', 'iban',
+            'date_tx', 'text_tx', 'betrag', 'gegenkonto',
             'parsed', 'category', 'tags', # Leer aber vorhanden
             'date_wert', 'art', 'currency' # optional aber vorhanden
         ]
@@ -36,9 +36,9 @@ def check_transaktion_list(tx_list):
             f"'text_tx' wurde nicht oder falsch erkannt: {text_tx}"
 
         # IBAN
-        iban = entry.get('iban')
-        assert isinstance(iban, str) and len(iban), \
-            f"'iban' wurde nicht oder falsch erkannt: {iban}"
+        gegenkonto = entry.get('gegenkonto')
+        assert isinstance(gegenkonto, str) and len(gegenkonto), \
+            f"'gegenkonto' wurde nicht oder falsch erkannt: {gegenkonto}"
 
         # Wertstellung (optional, aber bei Generic mit dabei)
         assert isinstance(entry.get('date_wert'), float), (
@@ -48,7 +48,7 @@ def check_transaktion_list(tx_list):
         # Buchungsart (optional, aber bei Generic mit dabei)
         buchungs_art = entry.get('art')
         assert isinstance(buchungs_art, str) and len(buchungs_art), \
-            f"'art' wurde nicht oder falsch erkannt: {iban}"
+            f"'art' wurde nicht oder falsch erkannt: {gegenkonto}"
 
         # Währung (optional, aber bei Generic mit dabei)
         currency = entry.get('currency')
