@@ -9,34 +9,29 @@ Analyse und Darstellung von Kontoumsätzen bei mehreren Banken.
 
 ### Parsing
 
-Importieren von Kontoumsätzen aus
-
-- Umsatzübersicht im Online Banking
-    - CSV Export
-    - PDF Export
-- Kontoauszüge
-    - PDFs aus dem Online Banking Archiv
-    - PDFs eingescannter Papierauszüge
-- Online Quellen
-    - HTTP (Daten von APIs - keine Banken-APIs leider :man_shrugging: )
+Importiere Kontoumsätzen aus Dateien im Format unterstützter Banken (Exports von Umsatzübersichten als CSV, Kontoauszüge als PDF).
 
 Modulare Importer können nach und nach für verschiedene Banken oder spezielle Formate entwickelt werden. Füge einen Importer für deine Bank hinzu :wink:
 
 ### Analyse
 
-- Automatisches Extrahieren und bewerten einer Transaktion durch Muster *(RegEx parst Kerninformationen)*
-- Automatisches Kategorisieren anhand hinterlegter Regeln *(RegEx + Kerninformationen)*
-- Manuelles Kategorisieren
+- Automatisches Extrahieren von Zusatzinformationen einer Transaktion durch Muster *(RegEx parst Kerninformationen)*
+- Automatisches und/oder manuelles Taggen von Umsätzen *(Regelbasiert: RegEx + Zusatzinformationen)*
+- Automatisches und/oder manuelles Kategorisieren von Umsätzen *(Regelbasiert: RegEx + Tags und weitere Indikatoren)*
+- Übersicht über alle Transaktionen *(Vielseitige Filtermöglichkeiten)*
+- Statistische Auswertung auf dem angereicherten Datensatz vieler Transaktionen *(interaktive Grafiken)*
 
 Hinterlegte Regeln können die extrahierten Informationen, weitere Umsatzinformationen und weitere RegExes berücksichtigen und ermöglichen so komplexe Bewertungen einfach zu erstellen.
 
-Eine Klassifizierung *(Tagging)* wird dabei nach Haupt- und Unterkategorie vorgenommen. Sie erfolgt bei einem Durchlauf optional für alle unkategorisierten Umsätze, auf alle oder auf einen Teil anhand einer festgelegten Priorität (der Kategorie).
+Ein Tagging findet anschließend auf angereicherten Informationen regelbasiert statt und kann außerdem auch manuell erfolgen.
+
+Auf dieser Grundlage werden Umsätze Kategorisiert wobei auch das händisch editiert werden kann.
 
 ### Darstellung
 
-- Umsatzübersicht
-- Statistiken
-- Verteilungen
+- Kontohistorie
+- Transaktionsansicht
+- Statistiken/Verteilungen/Verläufe
 
 Listen und Diagramme zeigen dir, wo eigentlich das Geld geblieben ist :thinking:
 
@@ -44,9 +39,7 @@ Listen und Diagramme zeigen dir, wo eigentlich das Geld geblieben ist :thinking:
 
 You're Welcome !
 
-Erstelle einen Reader für verschiedene Formate deiner Bank.
-
-Dieses Repo ist test-driven. Vor dem Merge ist ein Unit- und ggf. Integrationtest erforderlich, der aber auch vom Kernprojekt erstellt werden kann.
+Erstelle einen Reader für verschiedene Formate deiner Bank oder ergänze die `parser` und `rules`.
 
 ## Setup
 
@@ -66,3 +59,20 @@ pip install -r requirements.txt
 pip install -r tests/requirements.txt
 pytest
 ```
+
+## Entwickeln von neuen Readern
+
+- Erstelle einen neuen Test unter `tests/`
+    - (kopiere am besten `tests/test_unit_reader_Comdirect.py`)
+- Erstelle ein neues Skript unter `reader/`
+    - (kopiere am besten `reader/Generic.py`)
+- Passe die Logik im Test so an, dass dieser ausgeführt wird, wenn eine Testdatei vorhanden ist.
+- Entwickle deinen Reader und teste ihn dabei immer wieder mit `pytest -svx tests/test_unit_reader_*.py`
+- Pushe **keine** Testdaten (Kontoumsätze) ins Repo!
+
+## Entwickeln neuer `parser` / `rules`
+
+- Erstelle Testdaten, auf die die neuen Regeln treffen können
+    - (am einfachsten ist eine JSON Datei wie `tests/commerzbank.json`)
+- Erstelle einen Test wie in (`test_unit_handler_Tags.py`: `test_parsing_regex()`)
+    - Tests helfen beim entwickeln, können aber auch durch mich beim Pull Request erstellt werden
