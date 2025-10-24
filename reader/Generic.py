@@ -40,12 +40,12 @@ class Reader:
                 date_tx = datetime.datetime.strptime(
                             row['Buchungstag'], date_format
                         ).replace(tzinfo=datetime.timezone.utc).timestamp()
-                date_wert = datetime.datetime.strptime(
+                valuta = datetime.datetime.strptime(
                             row['Wertstellung'], date_format
                         ).replace(tzinfo=datetime.timezone.utc).timestamp()
                 result.append({
                     'date_tx': date_tx,
-                    'date_wert': date_wert,
+                    'valuta': valuta,
                     'art': row['Umsatzart'],
                     'text_tx': row['Buchungstext'],
                     'betrag': betrag,

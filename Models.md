@@ -43,7 +43,7 @@
 
     ----------- optional -----------
 
-    'date_wert': int ,      # (UTC)
+    'valuta': int ,      # (UTC)
     'art': str,
     'currency': str,
     'parsed': dict( str: str )

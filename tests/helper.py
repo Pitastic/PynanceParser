@@ -13,7 +13,7 @@ def check_transaktion_list(tx_list):
         required_keys = [
             'date_tx', 'text_tx', 'betrag', 'gegenkonto',
             'parsed', 'category', 'tags', # Leer aber vorhanden
-            'date_wert', 'art', 'currency' # optional aber vorhanden
+            'valuta', 'art', 'currency' # optional aber vorhanden
         ]
 
         for r_key in required_keys:
@@ -41,9 +41,9 @@ def check_transaktion_list(tx_list):
             f"'gegenkonto' wurde nicht oder falsch erkannt: {gegenkonto}"
 
         # Wertstellung (optional, aber bei Generic mit dabei)
-        assert isinstance(entry.get('date_wert'), float), (
-            f"'date_wert' bei Zeile {i} nicht als Zeit in Sekunden (float) eingelesen: "
-            f"{entry.get('date_wert')}")
+        assert isinstance(entry.get('valuta'), float), (
+            f"'valuta' bei Zeile {i} nicht als Zeit in Sekunden (float) eingelesen: "
+            f"{entry.get('valuta')}")
 
         # Buchungsart (optional, aber bei Generic mit dabei)
         buchungs_art = entry.get('art')
@@ -87,7 +87,7 @@ def check_entry(tx_entry, key_vals=None):
     required_keys = [
         'uuid',
         'date_tx', 'text_tx', 'betrag', 'iban',
-        'parsed', 'date_wert', 'art', 'currency',
+        'parsed', 'valuta', 'art', 'currency',
         'category', 'tags'
     ]
     for r_key in required_keys:
@@ -173,7 +173,7 @@ class MockDatabase:
         self.db_all = [
 
             {
-            'date_tx': 1672531200, 'date_wert': 1684195200, 'art': 'Überweisung',
+            'date_tx': 1672531200, 'valuta': 1684195200, 'art': 'Überweisung',
             'text_tx': ('Wucherpfennig sagt Danke 88//HANNOV 2023-01-01T08:59:42 '
                         'KFN 9 VJ 7777 Kartenzahlung'),
             'betrag': -11.63, 'iban': 'DE89370400440532013000', 'currency': 'USD',
@@ -182,7 +182,7 @@ class MockDatabase:
             },
 
             {
-            'date_tx': 1672617600, 'date_wert': 1684108800, 'art': 'Überweisung',
+            'date_tx': 1672617600, 'valuta': 1684108800, 'art': 'Überweisung',
             'text_tx': ('MEIN GARTENCENTER//Berlin 2023-01-02T12:57:02 KFN 9 VJ 7777 '
                         'Kartenzahlung'),
             'betrag': -118.94, 'iban': 'DE89370400440532013000', 'currency': 'USD',
@@ -191,7 +191,7 @@ class MockDatabase:
             },
 
             {
-            'date_tx': 1672704000, 'date_wert': 1684108800, 'art': 'Überweisung',
+            'date_tx': 1672704000, 'valuta': 1684108800, 'art': 'Überweisung',
             'text_tx': ('EDEKA, München//München/ 2023-01-03T14:39:49 KFN 9 VJ '
                         '7777 Kartenzahlung'),
             'betrag': -99.58, 'iban': 'DE89370400440532013000', 'currency': 'EUR',
@@ -200,7 +200,7 @@ class MockDatabase:
             },
 
             {
-            'date_tx': 1672790400, 'date_wert': 1684108800, 'art': 'Überweisung',
+            'date_tx': 1672790400, 'valuta': 1684108800, 'art': 'Überweisung',
             'text_tx': ('DM FIL.2222 F:1111//Frankfurt/DE 2023-01-04T13:22:16 KFN 9 VJ '
                         '7777 Kartenzahlung'),
             'betrag': -71.35, 'iban': 'DE89370400440532013000', 'currency': 'EUR',
@@ -209,7 +209,7 @@ class MockDatabase:
             },
 
             {
-            'date_tx': 1672876800, 'date_wert': 1684108800, 'art': 'Überweisung',
+            'date_tx': 1672876800, 'valuta': 1684108800, 'art': 'Überweisung',
             'text_tx': ('Stadt Halle 0000005112 OBJEKT 0001 ABGABEN LT. BESCHEID '
                         'End-to-End-Ref.: 2023-01-00111-9090-0000005112 '
                         'Mandatsref: M1111111 Gläubiger-ID: DE7000100000077777 '
@@ -242,7 +242,7 @@ class MockDatabase:
         if condition == self.query_ai:
             return [
                 {
-                'date_tx': 1672531200, 'date_wert': 1684195200, 'art': 'Überweisung',
+                'date_tx': 1672531200, 'valuta': 1684195200, 'art': 'Überweisung',
                 'text_tx': ('Wucherpfennig sagt Danke 88//HANNOV 2023-01-01T08:59:42 '
                             'KFN 9 VJ 7777 Kartenzahlung'),
                 'betrag': -11.63, 'iban': 'DE89370400440532013000', 'currency': 'EUR',

@@ -145,7 +145,7 @@ def test_select_lt_eq(test_app):
 def test_select_not_eq(test_app):
     """Testet das Auslesen von Datensätzen mit 'ungleich'"""
     with test_app.app_context():
-        query = {'key': 'date_wert', 'compare': '!=', 'value': 1684108800}
+        query = {'key': 'valuta', 'compare': '!=', 'value': 1684108800}
         result_filtered = test_app.host.db_handler.select("DE89370400440532013000",
                                                 condition=query)
         assert len(result_filtered) == 1, \

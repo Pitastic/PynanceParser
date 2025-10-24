@@ -1,6 +1,10 @@
 #!/usr/bin/python3 # pylint: disable=invalid-name
 """Reader für das Einlesen von Kontoumsätzen in den Formaten der Comdirect Bank."""
 
+import datetime
+import csv
+import re
+
 from reader.Generic import Reader as Generic
 
 
@@ -25,7 +29,47 @@ class Reader(Generic):
             Liste mit Dictonaries, als Standard-Objekt mit allen
             ausgelesenen Kontoumsätzen entspricht.
         """
-        raise NotImplementedError()
+        result = []
+        with open(filepath, 'r', encoding='Windows-1252') as infile:
+
+            # Skip the first 4 lines of the file: Standard Comdirect Header
+            for _ in range(4):
+                next(infile)
+
+            # Start Reading CSV content
+            reader = csv.DictReader(infile, delimiter=';')
+            date_format = "%d.%m.%Y"
+            for row in reader:
+                date_tx = row['Buchungstag']
+                if date_tx == "offen":
+                    # Skippe offene Buchungen
+                    continue
+
+                date_tx = datetime.datetime.strptime(
+                            date_tx, date_format
+                        ).replace(tzinfo=datetime.timezone.utc).timestamp()
+                valuta = datetime.datetime.strptime(
+                            row['Wertstellung (Valuta)'], date_format
+                        ).replace(tzinfo=datetime.timezone.utc).timestamp()
+                betrag = float(row['Umsatz in EUR'].replace(',', '.'))
+                text_tx = row['Buchungstext']
+                rx = re.compile(r'Auftraggeber\:\s(.*)Buchungstext\:\s(.*)')
+                match = rx.match(text_tx)
+
+                result.append({
+                    'date_tx': date_tx,
+                    'valuta': valuta,
+                    'art': row['Vorgang'],
+                    'text_tx': match.group(2).strip(),
+                    'betrag': betrag,
+                    'gegenkonto': match.group(1).strip(),
+                    'currency': "EUR",
+                    'parsed': {},
+                    'category': None,
+                    'tags': None
+                })
+
+        return result
 
     def from_pdf(self, filepath):
         """
