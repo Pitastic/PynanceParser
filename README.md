@@ -9,12 +9,13 @@ Analyse und Darstellung von Kontoumsätzen bei mehreren Banken.
 
 ### Parsing
 
-Importiere Kontoumsätzen aus Dateien im Format unterstützter Banken (Exports von Umsatzübersichten als CSV, Kontoauszüge als PDF).
+Importiere Kontoumsätzen aus Dateien im Format unterstützter Banken (Exports von Umsatzübersichten als CSV, Kontoauszüge als PDF). Für Auswertung der Ausgaben von Zeit zu Zeit.
 
 Modulare Importer können nach und nach für verschiedene Banken oder spezielle Formate entwickelt werden. Füge einen Importer für deine Bank hinzu :wink:
 
 ### Analyse
 
+- Keine doppelten Imports *(Datum, Text und Betrag bilden eine einmalige Kombination)*
 - Automatisches Extrahieren von Zusatzinformationen einer Transaktion durch Muster *(RegEx parst Kerninformationen)*
 - Automatisches und/oder manuelles Taggen von Umsätzen *(Regelbasiert: RegEx + Zusatzinformationen)*
 - Automatisches und/oder manuelles Kategorisieren von Umsätzen *(Regelbasiert: RegEx + Tags und weitere Indikatoren)*

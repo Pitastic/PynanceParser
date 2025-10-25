@@ -27,7 +27,6 @@ def test_read_from_csv(test_app):
         check_transaktion_list(transaction_list)
 
 
-@pytest.mark.skip(reason="Currently not implemented yet")
 def test_read_from_pdf(test_app):
     """Testet das Einlesen einer PDF Datei mit Kontoumsätzen"""
     test_file_pdf = os.path.join('/tmp', 'comdirect.pdf')
@@ -36,7 +35,7 @@ def test_read_from_pdf(test_app):
         pytest.skip("Testfile /tmp/comdirect.pdf not found....skipping")
 
     with test_app.app_context():
-        transaction_list = Comdirect().from_csv(test_file_pdf)
+        transaction_list = Comdirect().from_pdf(test_file_pdf)
 
         # Check Reader Ergebnisse
         check_transaktion_list(transaction_list)
