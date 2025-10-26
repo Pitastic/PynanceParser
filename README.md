@@ -38,12 +38,6 @@ Listen und Diagramme zeigen dir, wo eigentlich das Geld geblieben ist :thinking:
 
 ## Misc
 
-### Tagging- und Kategorisierungsregeln
-
-In diesem Repository werden nur Basis-Regeln mitgeliefert, da speziellere und genauere Regeln sehr individuell auf einzelne Personen zugeschnitten sind. So schreibt zum Beispiel eine Versicherung die Versichertennummer mit in die Abbuchungen, was einen sehr guten Tagging-Indikator darstellt, jedoch nur für einen speziellen Nutzer dieses Programms. Das schreiben eigener Regeln ist daher unumgänglich, um bessere Ergebnisse zu erzielen.
-
-Für diesen Zweck gibt es aber die Möglichkeit im Frontend Regeln auszuprobieren, ohne dass Umsätze geändert werden. Neue Regeln können ebenfalls über die Oberfläche temporär hochgeladen werden (bis zum Neustart des Servers) oder dauerhaft im Ordner `settings/rule` abgelegt werden.
-
 ### Unterstützte Banken
 
 - Comdirect
@@ -52,6 +46,24 @@ Für diesen Zweck gibt es aber die Möglichkeit im Frontend Regeln auszuprobiere
 - Commerzbank
     - CSV Umsatzübersicht
     - PDF Kontoauszüge *(work in progress)*
+
+### Workflow (CSV / PDF Imports)
+
+Umsätze können sich beim Import überschneiden oder mehrfach hochgeladen werden: Transaktionen werden in der Regel nicht doppelt importiert.
+
+Die Umsatzinformationen eines Kontoauszugs als PDF und der Export der Ansicht im Online Banking als CSV hat schon bei der Erstellung einen unterschiedlichen Informationsgehalt. Hinzu kommt, dass das Einlesen einer PDF nicht so verlässlich bei Zeilenumbrüchen und Leerzeichen funktioniert, weshalb Worte getrennt oder zusammengeschoben werden können. Ein und die selbe Transaktion kann daher unterschiedlich beschrieben worden sein, was einen doppelten Import (einer je Format) leider möglich macht.
+
+Daher sollte man beachten:
+
+- Regeln nicht auf zwingend vorhandene Leerzeichen auszulegen
+- Beim Wechsel eines Formats (PDF / CSV) keine Überschneidungen zu haben (PDF zuerst, dann fehlende Transaktionen selektieren und via CSV exportieren - alternativ bei einem Format bleiben)
+
+### Tagging- und Kategorisierungsregeln
+
+In diesem Repository werden nur Basis-Regeln mitgeliefert, da speziellere und genauere Regeln sehr individuell auf einzelne Personen zugeschnitten sind. So schreibt zum Beispiel eine Versicherung die Versichertennummer mit in die Abbuchungen, was einen sehr guten Tagging-Indikator darstellt, jedoch nur für einen speziellen Nutzer dieses Programms. Das schreiben eigener Regeln ist daher unumgänglich, um bessere Ergebnisse zu erzielen.
+
+Für diesen Zweck gibt es aber die Möglichkeit im Frontend Regeln auszuprobieren, ohne dass Umsätze geändert werden. Neue Regeln können ebenfalls über die Oberfläche temporär hochgeladen werden (bis zum Neustart des Servers) oder dauerhaft im Ordner `settings/rule` abgelegt werden.
+
 
 ## Contribution
 
