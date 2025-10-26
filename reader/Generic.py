@@ -36,7 +36,7 @@ class Reader:
             date_format = "%d.%m.%Y"
 
             for row in reader:
-                betrag = float(row['Betrag'].replace(',', '.'))
+                betrag = float(row['Betrag'].replace('.', '').replace(',', '.'))
                 date_tx = datetime.datetime.strptime(
                             row['Buchungstag'], date_format
                         ).replace(tzinfo=datetime.timezone.utc).timestamp()

@@ -36,6 +36,23 @@ Auf dieser Grundlage werden Umsätze Kategorisiert wobei auch das händisch edit
 
 Listen und Diagramme zeigen dir, wo eigentlich das Geld geblieben ist :thinking:
 
+## Misc
+
+### Tagging- und Kategorisierungsregeln
+
+In diesem Repository werden nur Basis-Regeln mitgeliefert, da speziellere und genauere Regeln sehr individuell auf einzelne Personen zugeschnitten sind. So schreibt zum Beispiel eine Versicherung die Versichertennummer mit in die Abbuchungen, was einen sehr guten Tagging-Indikator darstellt, jedoch nur für einen speziellen Nutzer dieses Programms. Das schreiben eigener Regeln ist daher unumgänglich, um bessere Ergebnisse zu erzielen.
+
+Für diesen Zweck gibt es aber die Möglichkeit im Frontend Regeln auszuprobieren, ohne dass Umsätze geändert werden. Neue Regeln können ebenfalls über die Oberfläche temporär hochgeladen werden (bis zum Neustart des Servers) oder dauerhaft im Ordner `settings/rule` abgelegt werden.
+
+### Unterstützte Banken
+
+- Comdirect
+    - CSV Umsatzübersicht
+    - PDF Finanzreport
+- Commerzbank
+    - CSV Umsatzübersicht
+    - PDF Kontoauszüge *(work in progress)*
+
 ## Contribution
 
 You're Welcome !

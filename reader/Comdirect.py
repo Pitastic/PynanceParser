@@ -94,32 +94,34 @@ class Reader(Generic):
         if not tables:
             raise ValueError("No tables found in PDF file.")
 
-        #TODO: Add Loop über alle Tables/alleSeiten
-        # Beim ersten Table nach "Alter Saldo" suchen
-        # Bei allen anderen den Header überspringen (Textmarke?)
-        # Code lesbarer lassen !
+        # Tabellen aller Seiten zusammenfügen
+        all_rows = []
+        for t in tables[:-2]:
+            if not t.data:
+                continue
+
+            all_rows.extend(t.data)
 
         # Start bei den Kontoumsätzen
         start_index = 0
-        end_index = len(tables[0].data)
-        for row in tables[0].data:
+        end_index = len(all_rows)
+        for row in all_rows:
 
             if row[0] == 'Alter Saldo':
                 # Last row before transactions
-                start_index = tables[0].data.index(row) + 1
-
-            if row[0] == 'Neuer Saldo':
-                # First row after transactions
-                end_index = tables[0].data.index(row)
-                break
+                start_index = all_rows.index(row) + 1
 
         # Ausschnit der Tabelle entnehmen und
         # Zeilen anhand der Datumsspalte zusammenfügen
         # Format:
-        # tables[0].data # Table [ Row1: [ Cell1, Cell2, Cell3 ] , Row2: [ ... ] , ... ]
+        # all_rows # Table [ Row1: [ Cell1, Cell2, Cell3 ] , Row2: [ ... ] , ... ]
         result = []
-        enumerated_table = enumerate(tables[0].data[start_index:end_index])
+        enumerated_table = enumerate(all_rows[start_index:end_index])
         for i, row in enumerated_table:
+
+            if row[0] == 'BuchungstagValuta':
+                continue  # Skip Header Rows
+
             date_format = "%d.%m.%Y"
             line = {
                 'date_tx': datetime.datetime.strptime(
@@ -130,7 +132,7 @@ class Reader(Generic):
                     ).replace(tzinfo=datetime.timezone.utc).timestamp(),
                 'art': row[1].replace(' ', ''),
                 'text_tx': row[3],
-                'betrag': float(row[4].replace(',', '.')),
+                'betrag': float(row[4].replace('.', '').replace(',', '.')),
                 'gegenkonto': row[2],
                 'currency': "EUR",
                 'parsed': {},
@@ -139,8 +141,8 @@ class Reader(Generic):
             }
 
             while start_index + i + 1 < end_index and \
-               tables[0].data[start_index + i + 1][0] == '' and \
-               tables[0].data[start_index + i + 1][3] != '':
+               all_rows[start_index + i + 1][0] == '' and \
+               all_rows[start_index + i + 1][3] != '':
                 # 1. There are more lines in the table
                 # 2. Next line belongs to this transaction (no new date but text continuation)
                 i, row = next(enumerated_table)
