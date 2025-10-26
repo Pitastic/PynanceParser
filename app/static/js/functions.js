@@ -47,6 +47,12 @@ function getFilteredList() {
         arg_concat = '&';
     }
 
+    const text_search = document.getElementById('filter-text').value;
+    if (text_search) {
+        query_args = query_args + arg_concat + 'text=' + text_search;
+        arg_concat = '&';
+    }
+
     const category = document.getElementById('filter-cat').value;
     if (category) {
         query_args = query_args + arg_concat + 'category=' + category;
