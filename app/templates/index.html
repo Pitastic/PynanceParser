@@ -46,12 +46,17 @@
     <h2>Neue Transactionen</h2>
     <p>Importiere Kontoumsätze in folgendem Konto:</p>
     <p>
-        <input type="text" name="iban-input" id="iban-input" placeholder="DE XXXXXXXXXXXXX" list="iban-list">
+        <input type="text" name="iban-input" id="iban-input" placeholder="DE XXXXXXXXXXXXX" list="iban-list" 
+               oninput="this.value = this.value.replace(/\s+/g, '')">
         <datalist id="iban-list">
             {% for iban in ibans %}
             <option value="{{iban}}"></option>
             {% endfor %}
         </datalist>
+        <select id="bank-type">
+            <option>Comdirect</option>
+            <option>Commerzbank</option>
+        </select>
     </p>
     <p>
         <div id="file-drop-area">

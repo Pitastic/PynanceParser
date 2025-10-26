@@ -125,7 +125,7 @@ function saveSetting() {
  * Sends a file to the server for upload.
  * The file is selected via the file input element 'settings-input'.
  */
-function uploadFile() {
+function importSettings() {
     const settings_type = document.getElementById('settings-type').value;
 
     const fileInput = document.getElementById('settings-input');
@@ -158,13 +158,15 @@ function uploadFile() {
         return;
     }
 
+    const bank_id = document.getElementById('bank-type').value
+
     const fileInput = document.getElementById('file-input');
     if (fileInput.files.length === 0) {
         alert('Please select a file to upload.');
         return;
     }
 
-    const params = { file: 'file-input' }; // The value of 'file' corresponds to the input element's ID
+    const params = { file: 'file-input', 'bank':  bank_id}; // The value of 'file' corresponds to the input element's ID
     apiSubmit('upload/' + iban, params, function (responseText, error) {
         if (error) {
             alert('File upload failed: ' + '(' + error + ')' + responseText);

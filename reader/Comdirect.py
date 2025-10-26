@@ -150,10 +150,6 @@ class Reader(Generic):
 
             result.append(line)
 
-        #TODO: DEV !
-        for r in result:
-            print(r)
-
         return result
 
     def from_http(self, url):

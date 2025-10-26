@@ -19,6 +19,7 @@ from handler.MongoDb import MongoDbHandler
 from handler.Tags import Tagger
 
 from reader.Generic import Reader as Generic
+from reader.Comdirect import Reader as Comdirect
 from reader.Commerzbank import Reader as Commerzbank
 
 
@@ -48,6 +49,7 @@ class UserInterface():
         self.readers = {
             'Generic': Generic,
             'Commerzbank': Commerzbank,
+            'Comdirect': Comdirect,
         }
 
         # Tagger
