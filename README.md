@@ -46,6 +46,10 @@ Listen und Diagramme zeigen dir, wo eigentlich das Geld geblieben ist :thinking:
 - Commerzbank
     - CSV Umsatzübersicht
     - PDF Kontoauszüge *(work in progress)*
+- Sparkasse Hannover
+    - *(work in Progress)*
+- Volksbank Mittelhessen eG (Meine Bank)
+    - *(work in Progress)*
 
 ### Workflow (CSV / PDF Imports)
 
