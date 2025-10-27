@@ -66,7 +66,7 @@ Daher sollte man beachten:
 
 In diesem Repository werden nur Basis-Regeln mitgeliefert, da speziellere und genauere Regeln sehr individuell auf einzelne Personen zugeschnitten sind. So schreibt zum Beispiel eine Versicherung die Versichertennummer mit in die Abbuchungen, was einen sehr guten Tagging-Indikator darstellt, jedoch nur für einen speziellen Nutzer dieses Programms. Das schreiben eigener Regeln ist daher unumgänglich, um bessere Ergebnisse zu erzielen.
 
-Für diesen Zweck gibt es aber die Möglichkeit im Frontend Regeln auszuprobieren, ohne dass Umsätze geändert werden. Neue Regeln können ebenfalls über die Oberfläche temporär hochgeladen werden (bis zum Neustart des Servers) oder dauerhaft im Ordner `settings/rule` abgelegt werden.
+Für diesen Zweck gibt es aber die Möglichkeit im Frontend Regeln auszuprobieren, ohne dass Umsätze geändert werden. Neue Regeln können ebenfalls über die Oberfläche temporär hochgeladen werden (bis zum Neustart des Servers) oder dauerhaft im Ordner `settings/rule` abgelegt werden. Die Dateien hier werden in alphabetisch sortierter Reihenfolge geladen (angefangen bei `00-*`), wobei spätere Regeln ggf. bestehende Regeln überschreiben können. Im Rwepository werden nur die Default-Regeln angepasst. Auf diese Weise können eigene Regeln gepflegt werden, ohne dass sie bei Updates verloren gehen.
 
 
 ## Contribution

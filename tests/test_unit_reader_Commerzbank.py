@@ -29,7 +29,16 @@ def test_read_from_csv(test_app):
 @pytest.mark.skip(reason="Currently not implemented yet")
 def test_read_from_pdf(test_app):
     """Testet das Einlesen einer PDF Datei mit Kontoumsätzen"""
-    return None
+    test_file_pdf = os.path.join('/tmp', 'commerzbank.pdf')
+    if not os.path.isfile(test_file_pdf):
+        # Test file not provided (sensitive data is not part of git repo)
+        pytest.skip("Testfile /tmp/comdirect.pdf not found....skipping")
+
+    with test_app.app_context():
+        transaction_list = Commerzbank().from_pdf(test_file_pdf)
+
+        # Check Reader Ergebnisse
+        check_transaktion_list(transaction_list)
 
 
 @pytest.mark.skip(reason="Currently not implemented yet")

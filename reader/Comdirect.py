@@ -31,6 +31,7 @@ class Reader(Generic):
             ausgelesenen Kontoumsätzen entspricht.
         """
         result = []
+        rx = re.compile(r'Auftraggeber\:\s(.*)Buchungstext\:\s(.*)')
         with open(filepath, 'r', encoding='Windows-1252') as infile:
 
             # Skip the first 4 lines of the file: Standard Comdirect Header
@@ -54,7 +55,6 @@ class Reader(Generic):
                         ).replace(tzinfo=datetime.timezone.utc).timestamp()
                 betrag = float(row['Umsatz in EUR'].replace(',', '.'))
                 text_tx = row['Buchungstext']
-                rx = re.compile(r'Auftraggeber\:\s(.*)Buchungstext\:\s(.*)')
                 match = rx.match(text_tx)
 
                 result.append({
