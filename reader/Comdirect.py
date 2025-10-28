@@ -86,7 +86,7 @@ class Reader(Generic):
             filepath,
             pages="2-end",
             flavor="stream",
-            strip_text="\n",
+            #strip_text="\n",
             row_tol=10,
             columns=["115,187,305,500"]
         )
@@ -110,6 +110,7 @@ class Reader(Generic):
             if row[0] == 'Alter Saldo':
                 # Last row before transactions
                 start_index = all_rows.index(row) + 1
+                break
 
         # Ausschnit der Tabelle entnehmen und
         # Zeilen anhand der Datumsspalte zusammenfügen
@@ -119,21 +120,23 @@ class Reader(Generic):
         enumerated_table = enumerate(all_rows[start_index:end_index])
         for i, row in enumerated_table:
 
-            if row[0] == 'BuchungstagValuta':
+            if row[0] == 'Buchungstag\nValuta':
                 continue  # Skip Header Rows
 
             date_format = "%d.%m.%Y"
+            date_row = row[0].replace('\n', '')
+
             line = {
                 'date_tx': datetime.datetime.strptime(
-                        row[0][:10], date_format
+                        date_row[:10], date_format
                     ).replace(tzinfo=datetime.timezone.utc).timestamp(),
                 'valuta': datetime.datetime.strptime(
-                        row[0][10:], date_format
+                        date_row[10:], date_format
                     ).replace(tzinfo=datetime.timezone.utc).timestamp(),
-                'art': row[1].replace(' ', ''),
-                'text_tx': row[3],
+                'art': row[1].replace('\n', '').replace(' ', ''),
+                'text_tx': self._newline_replace(row[3]),
                 'betrag': float(row[4].replace('.', '').replace(',', '.')),
-                'gegenkonto': row[2],
+                'gegenkonto': self._newline_replace(row[2]),
                 'currency': "EUR",
                 'parsed': {},
                 'category': None,
@@ -146,7 +149,7 @@ class Reader(Generic):
                 # 1. There are more lines in the table
                 # 2. Next line belongs to this transaction (no new date but text continuation)
                 i, row = next(enumerated_table)
-                line['text_tx'] += ' ' + row[3]
+                line['text_tx'] += ' ' + self._newline_replace(row[3])
 
             result.append(line)
 
@@ -157,3 +160,18 @@ class Reader(Generic):
         Liest Kontoumsätze von einer Internetressource ein.
         """
         raise NotImplementedError()
+
+    def _newline_replace(self, text_in:str) -> str:
+        """Ersetzt Newlines im Buchungsinformationen
+        intelligent durch Leerzeichen oder nichts
+        Args:
+            text_in, str:   Input Text aus Kontoauszug
+        Return:
+            str: Text ohne Newlines"""
+        if not '\n' in text_in:
+            return text_in
+
+        if text_in.index('\n') < 35:
+            return text_in.replace('\n', ' ')
+
+        return text_in.replace('\n', '')

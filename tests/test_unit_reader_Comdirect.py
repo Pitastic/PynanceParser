@@ -45,4 +45,3 @@ def test_read_from_pdf(test_app):
 def test_read_from_http(test_app):
     """Testet das Einlesen Kontoumsätzen aus einer Online-Quelle"""
     return None
-
