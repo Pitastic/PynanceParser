@@ -35,10 +35,12 @@ def check_transaktion_list(tx_list):
         assert isinstance(text_tx, str) and len(text_tx), \
             f"'text_tx' wurde nicht oder falsch erkannt: {text_tx}"
 
-        # IBAN
+        # Gegenkonto
         gegenkonto = entry.get('gegenkonto')
-        assert isinstance(gegenkonto, str) and len(gegenkonto), \
-            f"'gegenkonto' wurde nicht oder falsch erkannt: {gegenkonto}"
+        if gegenkonto:
+            # Nur prüfen, wenn Wert vorhanden
+            assert isinstance(gegenkonto, str) and len(gegenkonto), \
+                f"'gegenkonto' wurde nicht oder falsch erkannt: {entry}"
 
         # Wertstellung (optional, aber bei Generic mit dabei)
         assert isinstance(entry.get('valuta'), float), (

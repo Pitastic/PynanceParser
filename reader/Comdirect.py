@@ -93,7 +93,7 @@ class Reader(Generic):
             pages="2-end",
             flavor="stream",
             row_tol=10,
-            columns=["115,187,305,500"]
+            columns=["115,187,305,500"]*16 #TODO: Hack-araound: https://github.com/atlanhq/camelot/issues/357#issuecomment-520986016 # disable=line-too-long
         )
 
         if not tables:
@@ -121,12 +121,13 @@ class Reader(Generic):
         # Zeilen anhand der Datumsspalte zusammenfügen
         # Format:
         # all_rows # Table [ Row1: [ Cell1, Cell2, Cell3 ] , Row2: [ ... ] , ... ]
+        re_datecheck = re.compile(r'^\d{2}\.\d{2}\.\d{4}\s\d{2}\.\d{2}\.\d{4}')
         result = []
         enumerated_table = enumerate(all_rows[start_index:end_index])
         for i, row in enumerated_table:
 
-            if row[0] == 'Buchungstag\nValuta':
-                continue  # Skip Header Rows
+            if re_datecheck.match(row[0]) is None:
+                continue  # Skip Header and unvalid Rows
 
             betrag = float(row[4].replace('.', '').replace(',', '.'))
             date_format = "%d.%m.%Y"
