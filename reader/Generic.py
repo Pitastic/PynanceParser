@@ -36,6 +36,7 @@ class Reader:
             date_format = "%d.%m.%Y"
 
             for row in reader:
+
                 betrag = float(row['Betrag'].replace('.', '').replace(',', '.'))
                 date_tx = datetime.datetime.strptime(
                             row['Buchungstag'], date_format
@@ -43,7 +44,7 @@ class Reader:
                 valuta = datetime.datetime.strptime(
                             row['Wertstellung'], date_format
                         ).replace(tzinfo=datetime.timezone.utc).timestamp()
-                result.append({
+                line = {
                     'date_tx': date_tx,
                     'valuta': valuta,
                     'art': row['Umsatzart'],
@@ -54,7 +55,12 @@ class Reader:
                     'parsed': {},
                     'category': None,
                     'tags': None
-                })
+                }
+
+                if not line['betrag']:
+                    continue  # Skip Null-Buchungen
+
+                result.append(line)
 
         return result
 

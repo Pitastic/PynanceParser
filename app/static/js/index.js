@@ -172,9 +172,9 @@ function uploadFile() {
             alert('File upload failed: ' + '(' + error + ')' + responseText);
 
         } else {
-            alert('File uploaded successfully!' + responseText);
-            window.location.href = '/' + iban;
-
+            if (confirm('File uploaded successfully!' + responseText + '\nKonto aufrufen?')) {
+                window.location.href = '/' + iban;
+            }
         }
     }, true);
 }

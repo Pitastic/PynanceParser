@@ -47,17 +47,18 @@ class Reader(Generic):
                     # Skippe offene Buchungen
                     continue
 
+                betrag = float(row['Umsatz in EUR'].replace(',', '.'))    
                 date_tx = datetime.datetime.strptime(
                             date_tx, date_format
                         ).replace(tzinfo=datetime.timezone.utc).timestamp()
                 valuta = datetime.datetime.strptime(
                             row['Wertstellung (Valuta)'], date_format
                         ).replace(tzinfo=datetime.timezone.utc).timestamp()
-                betrag = float(row['Umsatz in EUR'].replace(',', '.'))
+
                 text_tx = row['Buchungstext']
                 match = rx.match(text_tx)
 
-                result.append({
+                line = {
                     'date_tx': date_tx,
                     'valuta': valuta,
                     'art': row['Vorgang'],
@@ -68,7 +69,12 @@ class Reader(Generic):
                     'parsed': {},
                     'category': None,
                     'tags': None
-                })
+                }
+
+                if not line['betrag']:
+                    continue  # Skip Null-Buchungen
+
+                result.append(line)
 
         return result
 
@@ -86,7 +92,6 @@ class Reader(Generic):
             filepath,
             pages="2-end",
             flavor="stream",
-            #strip_text="\n",
             row_tol=10,
             columns=["115,187,305,500"]
         )
@@ -123,6 +128,7 @@ class Reader(Generic):
             if row[0] == 'Buchungstag\nValuta':
                 continue  # Skip Header Rows
 
+            betrag = float(row[4].replace('.', '').replace(',', '.'))
             date_format = "%d.%m.%Y"
             date_row = row[0].replace('\n', '')
 
@@ -135,7 +141,7 @@ class Reader(Generic):
                     ).replace(tzinfo=datetime.timezone.utc).timestamp(),
                 'art': row[1].replace('\n', '').replace(' ', ''),
                 'text_tx': self._newline_replace(row[3]),
-                'betrag': float(row[4].replace('.', '').replace(',', '.')),
+                'betrag': betrag,
                 'gegenkonto': self._newline_replace(row[2]),
                 'currency': "EUR",
                 'parsed': {},
@@ -150,6 +156,9 @@ class Reader(Generic):
                 # 2. Next line belongs to this transaction (no new date but text continuation)
                 i, row = next(enumerated_table)
                 line['text_tx'] += ' ' + self._newline_replace(row[3])
+
+            if not line['betrag']:
+                continue  # Skip Null-Buchungen
 
             result.append(line)
 
@@ -167,7 +176,8 @@ class Reader(Generic):
         Args:
             text_in, str:   Input Text aus Kontoauszug
         Return:
-            str: Text ohne Newlines"""
+            str: Text ohne Newlines
+        """
         if not '\n' in text_in:
             return text_in
 
