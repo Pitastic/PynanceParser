@@ -41,7 +41,7 @@ Listen und Diagramme zeigen dir, wo eigentlich das Geld geblieben ist :thinking:
 ### Unterstützte Banken
 
 | Bank                         | CSV | PDF |
-|------------------------------|-------------------------------------|
+|------------------------------|-----|-------------------------------|
 | Comdirect                    | 🟢 Umsatzübersicht | 🟢 Finanzreport |
 | Commerzbank                  | 🟢 Umsatzübersicht | 🟢 Kontoauszug |
 | Sparkasse Hannover           | ⚫ *planned* | ⚫ *planned* |
