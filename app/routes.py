@@ -297,6 +297,7 @@ class Routes:
 
                 Args (multipart/form-data):
                     file-input (binary): Dateiupload aus Formular-Submit
+                    bank (str, optional): Bankkennung (Default: Generic)
                 Returns:
                     json: Informationen zur Datei und Ergebnis der Untersuchung.
                 """
@@ -309,16 +310,22 @@ class Routes:
                 content_type, size = parent.mv_fileupload(input_file, path)
 
                 # Daten einlesen und in Object speichern (Bank und Format default bzw. wird geraten)
-                content_formats = {
+                content_format = {
                     'application/json': 'json',
                     'text/csv': 'csv',
                     'application/pdf': 'pdf',
                     'text/plain': 'text',
-                }
+                }.get(content_type)
+
+                # Special handling for PDFs (extension needed)
+                if content_format == 'pdf':
+                    os.rename(path, f'{path}.pdf')
+                    path = f'{path}.pdf'
 
                 # Read Input and Parse the contents
                 parsed_data = parent.read_input(
-                    path, data_format=content_formats.get(content_type)
+                    path, bank=request.form.get('bank', 'Generic'),
+                    data_format=content_format
                 )
 
                 # Verarbeitete Kontiumsätze in die DB speichern
@@ -454,8 +461,8 @@ class Routes:
                         category=custom_rule.get('category'),
                         tags=custom_rule.get('tags'),
                         filters=custom_rule.get('filters'),
-                        parsed_keys=custom_rule.get('parsed_keys'),
-                        parsed_vals=custom_rule.get('parsed_vals'),
+                        parsed_keys=list(custom_rule.get('parsed', {}).keys()),
+                        parsed_vals=list(custom_rule.get('parsed', {}).values()),
                         multi=custom_rule.get('multi', 'AND'),
                         prio=custom_rule.get('prio', 1),
                         prio_set=custom_rule.get('prio_set'),

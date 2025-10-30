@@ -36,25 +36,31 @@ class Reader:
             date_format = "%d.%m.%Y"
 
             for row in reader:
-                betrag = float(row['Betrag'].replace(',', '.'))
+
+                betrag = float(row['Betrag'].replace('.', '').replace(',', '.'))
                 date_tx = datetime.datetime.strptime(
                             row['Buchungstag'], date_format
                         ).replace(tzinfo=datetime.timezone.utc).timestamp()
-                date_wert = datetime.datetime.strptime(
+                valuta = datetime.datetime.strptime(
                             row['Wertstellung'], date_format
                         ).replace(tzinfo=datetime.timezone.utc).timestamp()
-                result.append({
+                line = {
                     'date_tx': date_tx,
-                    'date_wert': date_wert,
+                    'valuta': valuta,
                     'art': row['Umsatzart'],
                     'text_tx': row['Buchungstext'],
                     'betrag': betrag,
-                    'iban': row['IBAN Auftraggeberkonto'],
+                    'gegenkonto': row.get('Auftraggeber', row.get('IBAN Auftraggeberkonto')),
                     'currency': row['Währung'],
                     'parsed': {},
                     'category': None,
                     'tags': None
-                })
+                }
+
+                if not line['betrag']:
+                    continue  # Skip Null-Buchungen
+
+                result.append(line)
 
         return result
 

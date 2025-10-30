@@ -1,7 +1,7 @@
 [
     {
         "date_tx": 1672790400,
-        "date_wert": 1684108800,
+        "valuta": 1684108800,
         "art": "Lastschrift",
         "text_tx": "DM FIL.2222 F:1111//Frankfurt/DE 2023-01-04T13:22:16 KFN 9 VJ 7777 Kartenzahlung",
         "betrag": -71.35,
@@ -11,7 +11,7 @@
     },
     {
         "date_tx": 1672876800,
-        "date_wert": 1684108800,
+        "valuta": 1684108800,
         "art": "Lastschrift",
         "text_tx": "Stadt Halle 0000005112 OBJEKT 0001 ABGABEN LT. BESCHEID End-to-End-Ref.: 2023-01-00111-9090-0000005112 Mandatsref: M1111111 Gläubiger-ID: DE7000100000077777 SEPA-BASISLASTSCHRIFT wiederholend",
         "betrag": -221.98,

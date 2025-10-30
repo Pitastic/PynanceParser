@@ -91,8 +91,8 @@ class BaseDb():
             if isinstance(r.get('date_tx'), int):
                 r['date_tx'] = datetime.fromtimestamp(r['date_tx']).strftime('%d.%m.%Y')
 
-            if isinstance(r.get('date_wert'), int):
-                r['date_wert'] = datetime.fromtimestamp(r['date_wert']).strftime('%d.%m.%Y')
+            if isinstance(r.get('valuta'), int):
+                r['valuta'] = datetime.fromtimestamp(r['valuta']).strftime('%d.%m.%Y')
 
         return result_list
 

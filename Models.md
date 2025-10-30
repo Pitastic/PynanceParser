@@ -39,11 +39,11 @@
     'date_tx': int,         # (UTC)
     'text_tx': str,
     'betrag': float,
-    'iban': str,
+    'gegenkonto': str,
 
     ----------- optional -----------
 
-    'date_wert': int ,      # (UTC)
+    'valuta': int ,      # (UTC)
     'art': str,
     'currency': str,
     'parsed': dict( str: str )

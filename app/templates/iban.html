@@ -23,6 +23,7 @@
             <li>
                 <input type="text" id="filter-range-start" placeholder="Start Date: d.m.Y" value="{{filters.startDate|ctime if filters.startDate}}">
                 <input type="text" id="filter-range-end" placeholder="End Date: d.m.Y" value="{{filters.endDate|ctime if filters.endDate}}">
+                <input type="text" id="filter-text" placeholder="RegEx Textfilter" value="{{filters.text}}">
                 <input type="text" id="filter-cat" list="cat-list" placeholder="Kategorie" value="{{filters.category}}">
                 <input type="text" id="filter-tag" list="tag-list" placeholder="Tag (, getrennt)" value="{{filters.tags}}">
                 <select id="filter-tag-mode">

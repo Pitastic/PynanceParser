@@ -19,6 +19,7 @@ from handler.MongoDb import MongoDbHandler
 from handler.Tags import Tagger
 
 from reader.Generic import Reader as Generic
+from reader.Comdirect import Reader as Comdirect
 from reader.Commerzbank import Reader as Commerzbank
 
 
@@ -48,6 +49,7 @@ class UserInterface():
         self.readers = {
             'Generic': Generic,
             'Commerzbank': Commerzbank,
+            'Comdirect': Comdirect,
         }
 
         # Tagger
@@ -155,6 +157,17 @@ class UserInterface():
 
             except (ValueError, TypeError) as e:
                 logging.warning(f"Invalid betrag format '{e}' will be ignored")
+
+        # Filter for Text Search
+        text_search = get_args.get('text')
+        if text_search is not None:
+            condition.append({
+                'key': 'text_tx',
+                'value': text_search,
+                'compare': 'regex'
+            })
+
+            frontend_filters['text'] = text_search
 
         return condition, frontend_filters
 
