@@ -40,16 +40,12 @@ Listen und Diagramme zeigen dir, wo eigentlich das Geld geblieben ist :thinking:
 
 ### Unterstützte Banken
 
-- Comdirect
-    - CSV Umsatzübersicht
-    - PDF Finanzreport
-- Commerzbank
-    - CSV Umsatzübersicht
-    - PDF Kontoauszüge *(work in progress)*
-- Sparkasse Hannover
-    - *(work in Progress)*
-- Volksbank Mittelhessen eG (Meine Bank)
-    - *(work in Progress)*
+| Bank                         | CSV | PDF |
+|------------------------------|-------------------------------------|
+| Comdirect                    | 🟢 Umsatzübersicht | 🟢 Finanzreport |
+| Commerzbank                  | 🟢 Umsatzübersicht | 🟢 Kontoauszug |
+| Sparkasse Hannover           | ⚫ *planned* | ⚫ *planned* |
+| Volksbank Mittelhessen eG    | 🟢 Umsatzübersicht | ⚫ *planned* |
 
 ### Workflow (CSV / PDF Imports)
 

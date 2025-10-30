@@ -14,12 +14,6 @@ class Reader(Generic):
     Reader um aus übermittelten Daten Kontoführungsinformationen auszulesen.
     Dieser Reader ist speziell für die Daten angepasst, wie sie bei der Comidrect Bank vorkommen.
     """
-    def __init__(self): # pylint: disable=useless-parent-delegation
-        """
-        Initialisiert eine Instanz der Reader-Klasse für Kontoumsätze der Comdirect Bank.
-        """
-        #TODO: Es wird ggf. einen Usecase für super.__init__() in Zukunft geben
-        super().__init__()
 
     def from_csv(self, filepath):
         """
@@ -47,7 +41,7 @@ class Reader(Generic):
                     # Skippe offene Buchungen
                     continue
 
-                betrag = float(row['Umsatz in EUR'].replace(',', '.'))    
+                betrag = float(row['Umsatz in EUR'].replace(',', '.'))
                 date_tx = datetime.datetime.strptime(
                             date_tx, date_format
                         ).replace(tzinfo=datetime.timezone.utc).timestamp()
@@ -93,8 +87,9 @@ class Reader(Generic):
             pages="2-end",
             flavor="stream",
             row_tol=10,
-            columns=["115,187,305,500"]*16 #TODO: Hack-araound: https://github.com/atlanhq/camelot/issues/357#issuecomment-520986016 # disable=line-too-long
+            columns=["115,187,305,500"]*16
         )
+        #TODO: Hack-araound: https://github.com/atlanhq/camelot/issues/357#issuecomment-520986016
 
         if not tables:
             raise ValueError("No tables found in PDF file.")
