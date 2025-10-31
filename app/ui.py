@@ -21,6 +21,7 @@ from handler.Tags import Tagger
 from reader.Generic import Reader as Generic
 from reader.Comdirect import Reader as Comdirect
 from reader.Commerzbank import Reader as Commerzbank
+from reader.Volksbank_Mittelhessen import Reader as Volksbank_Mittelhessen
 
 
 class UserInterface():
@@ -50,6 +51,7 @@ class UserInterface():
             'Generic': Generic,
             'Commerzbank': Commerzbank,
             'Comdirect': Comdirect,
+            'Volksbank Mittelhessen': Volksbank_Mittelhessen,
         }
 
         # Tagger

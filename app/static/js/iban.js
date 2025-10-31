@@ -69,6 +69,7 @@ function openDetailsPopup(id, tx_hash = null) {
 		console.log('Fetching details for transaction hash: ' + tx_hash);
         resetDetails();
         getInfo(tx_hash, fillTxDetails);
+        
         openPopup(id);
 
     } else {

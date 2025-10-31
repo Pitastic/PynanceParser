@@ -10,19 +10,19 @@
     <nav>
         <ul>
             <li>
-                <button id="edit-selected" onclick="openDetailsPopup('massedit-popup')" disabled title="Edit (nichts ausgewählt)">
+                <button id="edit-selected" data-target="massedit-popup" onclick="toggleModal(event)" disabled title="Edit (nichts ausgewählt)">
                     ✏️
                 </button>
-                <button onclick="openDetailsPopup('tag-popup')">
+                <button data-target="tag-popup" onclick="toggleModal(event)">
                     Rule Tagging
                 </button>
-                <button onclick="openDetailsPopup('cat-popup')">
+                <button data-target="cat-popup" onclick="toggleModal(event)">
                     Rule Kategorisieren
                 </button>
             </li>
             <li>
-                <input type="text" id="filter-range-start" placeholder="Start Date: d.m.Y" value="{{filters.startDate|ctime if filters.startDate}}">
-                <input type="text" id="filter-range-end" placeholder="End Date: d.m.Y" value="{{filters.endDate|ctime if filters.endDate}}">
+                <input type="date" id="filter-range-start" placeholder="Start Date: d.m.Y" value="{{filters.startDate|ctime if filters.startDate}}">
+                <input type="date" id="filter-range-end" placeholder="End Date: d.m.Y" value="{{filters.endDate|ctime if filters.endDate}}">
                 <input type="text" id="filter-text" placeholder="RegEx Textfilter" value="{{filters.text}}">
                 <input type="text" id="filter-cat" list="cat-list" placeholder="Kategorie" value="{{filters.category}}">
                 <input type="text" id="filter-tag" list="tag-list" placeholder="Tag (, getrennt)" value="{{filters.tags}}">
@@ -89,7 +89,8 @@
                 </td>
                 <td class="td-betrag">{{ transaction.currency }} {{ transaction.betrag }}</td>
                 <td>
-                    <button class="details-button" title="Show details" onclick="openDetailsPopup('details-popup', '{{ transaction.uuid }}')" style="cursor: pointer;">ℹ️</button>
+                    <button class="details-button" title="Show details" data-target="details-popup" dataset-tx="{{ transaction.uuid }}"
+                        onclick="toggleModal(event)" style="cursor: pointer;">ℹ️</button>
                     <a href="/{{IBAN}}/{{transaction.uuid}}" target="_blank">🔎</a>
                 </td>
             </tr>
@@ -99,7 +100,7 @@
 </main>
 
 <!-- Popups -->
-<div id="massedit-popup" style="display: none;" class="popup">
+<dialog id="massedit-popup">
     <h2>Mass Edit</h2>
     <p>Aktion auf die ausgewählten Transaktionen anwenden:</p>
     <ul id="tx-select-list">
@@ -125,10 +126,10 @@
     <hr />
     <button onclick="removeTags()">Tags entfernen</button>
     <button onclick="removeCats()">Kategorie entfernen</button>
-    <button onclick="closePopup('massedit-popup')">Close</button>
-</div>
+    <button button data-target="massedit-popup" onclick="toggleModal(event)">Close</button>
+</dialog>
 
-<div id="tag-popup" style="display: none;" class="popup">
+<dialog id="tag-popup">
     <h2>Tag</h2>
     <p>Es können standardmäßig alle oder nur eine ausgewählte Regel auf alle Transaktionen zum Tagging genutzt werden.</p>
     <p>Die "Custom" Regel nutzt das Eingabefeld zur Entwicklung neuer Regeln.</p>
@@ -151,10 +152,10 @@
         <textarea type="text" id="custom-tag" placeholder="{&#10;  JSON&#10;}" rows="10"></textarea>
     </p>
     <button onclick="tagAndCat('tag')">Tag</button>
-    <button onclick="closePopup('tag-popup')">Close</button>
-</div>
+    <button button data-target="tag" onclick="toggleModal(event)">Close</button>
+</dialog>
 
-<div id="cat-popup" style="display: none;" class="popup">
+<dialog id="cat-popup">
     <h2>Kategorie</h2>
     <p>Es können standardmäßig alle oder nur eine ausgewählte Regel auf alle Transaktionen zum Kategorisieren genutzt werden.</p>
     <p>Die "Custom" Regel nutzt das Eingabefeld zur Entwicklung neuer Regeln.</p>
@@ -177,16 +178,16 @@
         <textarea type="text" id="custom-cat" placeholder="{&#10;  JSON&#10;}" rows="10"></textarea>
     </p>
     <button onclick="tagAndCat('cat')">Kategorisieren</button>
-    <button onclick="closePopup('cat-popup')">Close</button>
-</div>
+    <button button data-target="cat-popup" onclick="toggleModal(event)">Close</button>
+</dialog>
 
-<div id="details-popup" style="display: none;" class="popup">
+<dialog id="details-popup">
     <h2>Transaction Details</h2>
     <code id="result-text">
         ...
     </code>
-    <button onclick="closePopup('details-popup')">Close</button>
-</div>
+    <button data-target="details-popup" onclick="toggleModal(event)">Close</button>
+</dialog>
 
 <script src="{{ url_for('static', filename='js/iban.js') }}"></script>
 
