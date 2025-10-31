@@ -7,23 +7,21 @@ let TAGS = [];
 // -- DOM Functions ----------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-
 /**
- * Opens a popup to display details
+ * Converts a Unix timestamp (in seconds) to a formatted date string.
  *
- * @param {string} id - The ID of the HTML element to display as a popup.
+ * @param {number} unixSeconds - The Unix timestamp in seconds.
+ * @returns {string} - The formatted date string in the format "%Y.%m.%d".
  */
-function openPopup(id) {
-    document.getElementById(id).style.display = 'block';
-}
-
-/**
- * Closes a popup by setting its display style to 'none'.
- *
- * @param {string} popupId - The ID of the popup element to be closed.
- */
-function closePopup(popupId) {
-	document.getElementById(popupId).style.display = 'none';
+function formatUnixToDate(unixSeconds) {
+	if (!unixSeconds) {
+		return "";
+	}
+	const date = new Date(unixSeconds * 1000); // Convert seconds to milliseconds
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+	const day = String(date.getDate()).padStart(2, '0');
+	return `${day}.${month}.${year}`;
 }
 
 /**

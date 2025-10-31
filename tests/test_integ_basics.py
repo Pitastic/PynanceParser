@@ -41,7 +41,7 @@ def test_upload_csv_commerzbank(test_app):
         with test_app.test_client() as client:
             # Cleared DB ?
             result = client.get("/DE89370400440532013000")
-            assert "<td class=" not in result.text, \
+            assert '<td><input type="checkbox"' not in result.text, \
                 "Die Datenbank war zum Start des Tests nicht leer"
 
             # Visit Form
@@ -80,21 +80,21 @@ def test_upload_csv_commerzbank(test_app):
 
         # 1. Example
         tx_hash = 'cf1fb4e6c131570e4f3b2ac857dead40'
-        row1 = soup.css.select(f'#tr-{tx_hash}')
+        row1 = soup.css.select(f'tr[name="{tx_hash}"]')
         assert len(row1) == 1, \
             f"Es wurden {len(row1)} rows für das erste Beispiel gefunden"
 
-        content = row1[0].css.filter('.td-betrag')[0].contents[0]
+        content = row1[0].css.filter('.betrag')[0].contents[0]
         assert content == 'EUR -11.63', \
             f"Der Content von {tx_hash} ist anders als erwartet: '{content}'"
 
         # 2. Example
         tx_hash = '786e1d4e16832aa321a0176c854fe087'
-        row2 = soup.css.select(f'#tr-{tx_hash}')
+        row2 = soup.css.select(f'tr[name="{tx_hash}"]')
         assert len(row2) == 1, \
             f"Es wurden {len(row2)} rows für das zweite Beispiel gefunden"
 
-        content = row2[0].css.filter('.td-betrag')[0].contents[0]
+        content = row2[0].css.filter('.betrag')[0].contents[0]
         assert content == 'EUR -221.98', \
             f"Der Content von {tx_hash} / 'betrag' ist anders als erwartet: '{content}'"
 
@@ -128,7 +128,7 @@ def test_double_upload(test_app):
         with test_app.test_client() as client:
             # Cleared DB ?
             result = client.get("/DE89370400440532013000")
-            assert "<td class=" not in result.text, \
+            assert '<td><input type="checkbox"' not in result.text, \
                 "Die Datenbank war zum Start des Tests nicht leer"
 
             # Prepare File
@@ -162,7 +162,7 @@ def test_double_upload(test_app):
             result = client.get("/DE89370400440532013000")
 
             soup = BeautifulSoup(result.text, features="html.parser")
-            rows = soup.css.select('table .td-date_tx')
+            rows = soup.css.select('table td input.row-checkbox')
 
             assert len(rows) == 5, f"Es wurden zu viele Einträge ({len(rows)}) angelegt"
 
@@ -598,7 +598,7 @@ def test_iban_filtering(test_app):
             # Date Range Filter
             result = client.get("/DE89370400440532013000?startDate=02.01.2023&endDate=03.01.2023")
             soup = BeautifulSoup(result.text, features="html.parser")
-            rows = soup.css.select('table.transactions tr[id] td input.row-checkbox')
+            rows = soup.css.select('table.transactions tr[name] td input.row-checkbox')
             assert result.status_code == 200, \
                 "Die Ergebnisseite mit den Transaktionen ist nicht (richtig) erreichbar"
             assert len(rows) == 2, \
@@ -607,7 +607,7 @@ def test_iban_filtering(test_app):
             # Category Filter
             result = client.get(r"/DE89370400440532013000?category=Force%20Overwrite")
             soup = BeautifulSoup(result.text, features="html.parser")
-            rows = soup.css.select('table.transactions tr[id] td input.row-checkbox')
+            rows = soup.css.select('table.transactions tr[name] td input.row-checkbox')
             assert result.status_code == 200, \
                 "Die Ergebnisseite mit den Transaktionen ist nicht (richtig) erreichbar"
             assert len(rows) == 1, \
@@ -616,7 +616,7 @@ def test_iban_filtering(test_app):
             # Tag Filter
             result = client.get(r"/DE89370400440532013000?tags=Supermarkt%2CStadt&tag_mode=in")
             soup = BeautifulSoup(result.text, features="html.parser")
-            rows = soup.css.select('table.transactions tr[id] td input.row-checkbox')
+            rows = soup.css.select('table.transactions tr[name] td input.row-checkbox')
             assert result.status_code == 200, \
                 "Die Ergebnisseite mit den Transaktionen ist nicht (richtig) erreichbar"
             assert len(rows) == 2, \
@@ -624,7 +624,7 @@ def test_iban_filtering(test_app):
 
             result = client.get(r"/DE89370400440532013000?tags=Supermarkt%2CStadt&tag_mode=notin")
             soup = BeautifulSoup(result.text, features="html.parser")
-            rows = soup.css.select('table.transactions tr[id] td input.row-checkbox')
+            rows = soup.css.select('table.transactions tr[name] td input.row-checkbox')
             assert result.status_code == 200, \
                 "Die Ergebnisseite mit den Transaktionen ist nicht (richtig) erreichbar"
             assert len(rows) == 3, \
@@ -633,7 +633,7 @@ def test_iban_filtering(test_app):
             result = client.get(
                 r"/DE89370400440532013000?tags=Test_SECONDARY_2%2CReplaced_TAG&tag_mode=all")
             soup = BeautifulSoup(result.text, features="html.parser")
-            rows = soup.css.select('table.transactions tr[id] td input.row-checkbox')
+            rows = soup.css.select('table.transactions tr[name] td input.row-checkbox')
             assert result.status_code == 200, \
                 "Die Ergebnisseite mit den Transaktionen ist nicht (richtig) erreichbar"
             assert len(rows) == 1, \
@@ -642,7 +642,7 @@ def test_iban_filtering(test_app):
             # Betrag Filter
             result = client.get("/DE89370400440532013000?betrag=-200&betrag_mode=%3C")
             soup = BeautifulSoup(result.text, features="html.parser")
-            rows = soup.css.select('table.transactions tr[id] td input.row-checkbox')
+            rows = soup.css.select('table.transactions tr[name] td input.row-checkbox')
             assert result.status_code == 200, \
                 "Die Ergebnisseite mit den Transaktionen ist nicht (richtig) erreichbar"
             assert len(rows) == 1, \

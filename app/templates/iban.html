@@ -68,14 +68,14 @@
         </thead>
         <tbody>
             {% for transaction in transactions %}
-            <tr id="tr-{{ transaction.uuid }}">
+            <tr name="{{ transaction.uuid }}">
                 <td><input type="checkbox" class="row-checkbox" name="{{ transaction.uuid }}"
                     data-txuuid="{{transaction.uuid}}" data-txdate="{{transaction.date_tx}}"></td>
-                <td class="td-date_tx">{{ transaction.date_tx | ctime }}</td>
-                <td class="td-text_tx">{{ transaction.text_tx }}</td>
+                <td>{{ transaction.date_tx | ctime }}</td>
+                <td>{{ transaction.text_tx }}</td>
                 <td>
                     {% if transaction.category %}
-                    <span title="{{ transaction.category }}" style="cursor: help;">🔖</span>
+                    <span title="{{ transaction.category }}">🔖</span>
                     {% else %}
                     &nbsp;
                     {% endif %}
@@ -87,11 +87,10 @@
                     </span>
                     {% endfor %}
                 </td>
-                <td class="td-betrag">{{ transaction.currency }} {{ transaction.betrag }}</td>
+                <td class="betrag">{{ transaction.currency }} {{ transaction.betrag }}</td>
                 <td>
-                    <button class="details-button" title="Show details" data-target="details-popup" dataset-tx="{{ transaction.uuid }}"
-                        onclick="toggleModal(event)" style="cursor: pointer;">ℹ️</button>
-                    <a href="/{{IBAN}}/{{transaction.uuid}}" target="_blank">🔎</a>
+                    <button class="outline secondary" title="Show details" data-target="details-popup" data-tx="{{ transaction.uuid }}"
+                        onclick="toggleModal(event)">ℹ️</button>
                 </td>
             </tr>
             {% endfor %}
@@ -101,92 +100,154 @@
 
 <!-- Popups -->
 <dialog id="massedit-popup">
-    <h2>Mass Edit</h2>
-    <p>Aktion auf die ausgewählten Transaktionen anwenden:</p>
-    <ul id="tx-select-list">
-    </ul>
-    <hr />
-    <div id="tag-container">
-        <input type="text" id="add-tag" list="tag-list" placeholder="Tag hinzufügen" value="">
-        <datalist id="tag-list">
-            {% for t in tags %}
-            <option>{{ t }}</option>
+    <article>
+        <header>
+            <button aria-label="Close" rel="prev" data-target="massedit-popup" onclick="toggleModal(event)"></button>
+            <h2>Mass Edit</h2>
+        </header>
+
+        <details name="tx_list">
+            <summary>Liste der Transaktionen, die bearbeitet werden:</summary>
+            <ul id="tx-select-list">
+            </ul>
+        </details>
+
+        <div id="tag-container">
+            <input type="text" id="add-tag" list="tag-list" placeholder="Tag hinzufügen" value="">
+            <datalist id="tag-list">
+                {% for t in tags %}
+                <option>{{ t }}</option>
+                {% endfor %}
+            </datalist>
+            <button onclick="addTag()">Tag hinzufügen</button>
+            <button onclick="removeTags()" class="delete">Tags entfernen</button>
+        </div>
+
+        <input type="text" id="add-cat" list="cat-list" placeholder="Kategorie" value="">
+        <datalist id="cat-list">
+            {% for c in categories %}
+            <option>{{ c }}</option>
             {% endfor %}
         </datalist>
-        <button onclick="addTag()">Tag hinzufügen</button>
-    </div>
-    <hr />
-    <input type="text" id="add-cat" list="cat-list" placeholder="Kategorie" value="">
-    <datalist id="cat-list">
-        {% for c in categories %}
-        <option>{{ c }}</option>
-        {% endfor %}
-    </datalist>
-    <button onclick="addCat()">Kategorie setzen</button>
-    <hr />
-    <button onclick="removeTags()">Tags entfernen</button>
-    <button onclick="removeCats()">Kategorie entfernen</button>
-    <button button data-target="massedit-popup" onclick="toggleModal(event)">Close</button>
+        <button onclick="addCat()">Kategorie setzen</button>
+        <button onclick="removeCats()">Kategorie entfernen</button>
+    </article>
 </dialog>
 
 <dialog id="tag-popup">
-    <h2>Tag</h2>
-    <p>Es können standardmäßig alle oder nur eine ausgewählte Regel auf alle Transaktionen zum Tagging genutzt werden.</p>
-    <p>Die "Custom" Regel nutzt das Eingabefeld zur Entwicklung neuer Regeln.</p>
-    <p>
-        <select id="tag-select">
-            <option value="">Alle Regeln</option>
-            {% for r in rules %}
-            <option>{{r}}</option>
-            {% endfor %}
-            <option value="ui_selected_custom">Custom</option>
-        </select>
-    </p>
-    <p>
-        <label>
-        <input type="checkbox" id="tag-dry">
-        Dry Run
-        </label>
-    </p>
-    <p>
-        <textarea type="text" id="custom-tag" placeholder="{&#10;  JSON&#10;}" rows="10"></textarea>
-    </p>
-    <button onclick="tagAndCat('tag')">Tag</button>
-    <button button data-target="tag" onclick="toggleModal(event)">Close</button>
+    <article>
+        <header>
+            <button aria-label="Close" rel="prev" data-target="tag" onclick="toggleModal(event)"></button>
+            <h2>Tagging</h2>
+        </header>
+        
+        <p>Es können standardmäßig alle oder nur eine ausgewählte Regel auf alle Transaktionen zum Tagging genutzt werden.</p>
+        <p>
+            <select id="tag-select">
+                <option value="">Alle Regeln</option>
+                {% for r in rules %}
+                <option>{{r}}</option>
+                {% endfor %}
+                <option value="ui_selected_custom">Custom</option>
+            </select>
+            <label>
+                <input type="checkbox" id="tag-dry">
+                Dry Run (Es werden keine Transaktionen geändert)
+            </label>
+        </p>
+        <p>
+            <textarea type="text" id="custom-tag" placeholder="{&#10;  JSON&#10;}" rows="8"></textarea>
+            <small>Wähle die Regel "Custom", um dieses Textfeld zu nutzen.</small>
+        </p>
+        
+        <footer>
+            <button onclick="tagAndCat('tag')">Tag Transaktionen</button>
+        </footer>
+    </article>
 </dialog>
 
 <dialog id="cat-popup">
-    <h2>Kategorie</h2>
-    <p>Es können standardmäßig alle oder nur eine ausgewählte Regel auf alle Transaktionen zum Kategorisieren genutzt werden.</p>
-    <p>Die "Custom" Regel nutzt das Eingabefeld zur Entwicklung neuer Regeln.</p>
-    <p>
-        <select id="cat-select">
-            <option value="">Alle Regeln</option>
-            {% for c in categories %}
-            <option>{{c}}</option>
-            {% endfor %}
-            <option value="ui_selected_custom">Custom</option>
-        </select>
-    </p>
-    <p>
-        <label>
-            <input type="checkbox" id="cat-dry">
-            Dry Run
-        </label>
-    </p>
-    <p>
-        <textarea type="text" id="custom-cat" placeholder="{&#10;  JSON&#10;}" rows="10"></textarea>
-    </p>
-    <button onclick="tagAndCat('cat')">Kategorisieren</button>
-    <button button data-target="cat-popup" onclick="toggleModal(event)">Close</button>
+    <article>
+        <header>
+            <button rel="prev" aria-label="Close" data-target="cat-popup" onclick="toggleModal(event)"></button>
+            <h2>Kategoriesierung</h2>
+        </header>
+
+        <p>Es können standardmäßig alle oder nur eine ausgewählte Regel auf alle Transaktionen zum Kategorisieren genutzt werden.</p>
+        <p>
+            <select id="cat-select">
+                <option value="">Alle Regeln</option>
+                {% for c in categories %}
+                <option>{{c}}</option>
+                {% endfor %}
+                <option value="ui_selected_custom">Custom</option>
+            </select>
+            <label>
+                <input type="checkbox" id="cat-dry">
+                Dry Run (Es werden keine Transaktionen geändert)
+            </label>
+        </p>
+        <p>
+            <textarea type="text" id="custom-cat" placeholder="{&#10;  JSON&#10;}" rows="10"></textarea>
+            <small>Wähle die Regel "Custom", um dieses Textfeld zu nutzen.</small>
+        </p>
+
+        <footer>
+            <button onclick="tagAndCat('cat')">Kategorisieren</button>
+        </footer>        
+    </article>
 </dialog>
 
 <dialog id="details-popup">
-    <h2>Transaction Details</h2>
-    <code id="result-text">
-        ...
-    </code>
-    <button data-target="details-popup" onclick="toggleModal(event)">Close</button>
+    <article>
+        <header>
+            <button rel="prev" aria-label="Close" data-target="details-popup" onclick="toggleModal(event)"></button>
+            <h2>Transaktions Details</h2>
+        </header>
+        <table id="dynamic-results">
+            <tbody>
+                <tr>
+                    <th>Buchungsdatum:</th>
+                    <td class="date_tx"></td>
+                </tr>
+                <tr>
+                    <th>Wertstellung:</th>
+                    <td class="valuta"></td>
+                </tr>
+                <tr>
+                    <th>Art:</th>
+                    <td class="art"></td>
+                </tr>
+                <tr>
+                    <th>Gegenkonto:</th>
+                    <td class="gegenkonto"></td>
+                </tr>
+                <tr>
+                    <th>Betrag</th>
+                    <td class="betrag"></td>
+                </tr>
+                <tr>
+                    <th>Währung:</th>
+                    <td class="currency"></td>
+                </tr>
+                <tr>
+                    <th>Kategorie:</th>
+                    <td class="category"></td>
+                </tr>
+                <tr>
+                    <th>Tags:</th>
+                    <td class="tags"></td>
+                </tr>
+                <tr>
+                    <th>Buchungstext:</th>
+                    <td class="text_tx"></td>
+                </tr>
+            </tbody>
+        </table>
+        <footer>
+            <a role="button" class="outline" target="_blank" href="">Mehr</a>
+        </footer>
+    </article>
 </dialog>
 
 <script src="{{ url_for('static', filename='js/iban.js') }}"></script>

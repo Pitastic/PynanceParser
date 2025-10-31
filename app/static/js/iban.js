@@ -56,51 +56,47 @@ document.addEventListener('DOMContentLoaded', function () {
 // -- DOM Functions -----------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-
-/**
- * Opens a popup to display details for a specific element and optionally fetches transaction details.
- *
- * @param {string} id - The ID of the HTML element to display as a popup.
- * @param {string|null} [tx_hash=null] - Optional transaction hash to fetch additional details for.
- */
-function openDetailsPopup(id, tx_hash = null) {
-	if (tx_hash) {
-		// Use AJAX to fetch and populate details for the transaction with the given ID
-		console.log('Fetching details for transaction hash: ' + tx_hash);
-        resetDetails();
-        getInfo(tx_hash, fillTxDetails);
-        
-        openPopup(id);
-
-    } else {
-        if (['cat-popup', 'tag-popup'].includes(id)) {
-            document.getElementById('custom-tag').value = "";
-            document.getElementById('custom-cat').value = "";
-        }
-        openPopup(id);
-		
-	}
-}
-
-
 /**
  * Clears information from a result Box
 *
 */
 function resetDetails() {
-    const box = document.getElementById('result-text');
-    box.innerHTML = "";
+    const all_td = document.querySelectorAll('#dynamic-results td');
+    all_td.forEach(td => {
+        td.innerHTML = "";
+    });
+    const tx_link = document.querySelector('#details-popup footer a').href = "";
 }
 
 
 /**
  * Shows a given Result in the Result-Box.
  *
- * @param {string} result - The text to be shwon.
+ * @param {string} result - The text to be shwon as JSON string.
  */
-function fillTxDetails(result){
-    const box = document.getElementById('result-text');
-    box.innerHTML = result;
+function fillTxDetails(result) {
+    const r = JSON.parse(result);
+    const selector = "#dynamic-results td.";
+    for (const key in r) {
+        if (r.hasOwnProperty(key)) {
+            const value = r[key];
+            let td = document.querySelector(selector + key);
+            if (!td) {
+                continue;
+            }
+
+            if (key == 'date_tx' || key == "valuta"){
+                td.innerHTML = formatUnixToDate(r[key]);
+
+            } else {
+                td.innerHTML = r[key];
+
+            }
+        }
+    }
+
+    const tx_link = document.querySelector('#details-popup footer a');
+    tx_link.href = '/' + IBAN + '/' + r['uuid'];
 }
 
 /**
@@ -138,9 +134,9 @@ function listTxElements() {
     rowCheckboxes.forEach(checkbox => {
         if (checkbox.checked) {
             const li = document.createElement('li');
-            li.textContent = checkbox.dataset.txdate;
+            li.textContent = formatUnixToDate(checkbox.dataset.txdate) + " ";
             const a = document.createElement('a');
-            a.textContent = "(" + checkbox.dataset.txuuid + ")";
+            a.textContent = "(" + checkbox.dataset.txuuid.substring(0, 8) + ")";
             a.href = "/" + IBAN + "/" + checkbox.dataset.txuuid;
             a.target = "_blank";
             li.appendChild(a);

@@ -33,12 +33,12 @@ const openModal = (modal, tx) => {
     // Vorbereitungen
     if (tx) {
 		// Use AJAX to fetch and populate details for the transaction with the given ID
-		console.log('Fetching details for transaction hash: ' + tx_hash);
+		  console.log('Fetching details for transaction hash: ' + tx);
         resetDetails();
-        getInfo(tx_hash, fillTxDetails);
+        getInfo(tx, fillTxDetails);
     }
 
-    if (['cat-popup', 'tag-popup'].includes(modal)) {
+    if (['cat-popup', 'tag-popup'].includes(modal.id)) {
         // Clear Inputs in Modal
         document.getElementById('custom-tag').value = "";
         document.getElementById('custom-cat').value = "";
@@ -63,6 +63,9 @@ const closeModal = (modal) => {
     html.style.removeProperty(scrollbarWidthCssVar);
     modal.close();
   }, animationDuration);
+  if (modal.id == 'details-popup') {
+    resetDetails();
+  }
 };
 
 // Close with a click outside
