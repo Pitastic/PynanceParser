@@ -25,12 +25,20 @@ class Reader:
         Semikolon-separierten Liste pro Zeile angenommen, die dem Datenbankschema entspricht.
         Abweichungen werden explizit je Bank / Dienst in spezielleren Modulen berücksichtigt.
 
+        Erwartetes Format:
+            - Encoding: UTF-8
+            - Text eingeschlossen mit ` " `
+            - Spalten getrennt mit ` ; `
+            - Datumsformate: ` %d.%m.%Y `
+            - Erwartete Spalten (Reihenfolge egal, 'Gegenkonto' ist optional):
+                - Buchungstag, Valuta, Art, Betrag, Währung, Buchungstext, Gegenkonto
+
         Returns:
             Liste mit Dictonaries, als Standard-Objekt mit allen ausgelesenen
-            Kontoumsätzen entspricht.
+            Kontoumsätzen.
         """
         result = []
-        with open(filepath, 'r', encoding='utf-8-sig') as infile:
+        with open(filepath, 'r', encoding='utf-8') as infile:
 
             reader = csv.DictReader(infile, delimiter=';')
             date_format = "%d.%m.%Y"
@@ -42,15 +50,15 @@ class Reader:
                             row['Buchungstag'], date_format
                         ).replace(tzinfo=datetime.timezone.utc).timestamp()
                 valuta = datetime.datetime.strptime(
-                            row['Wertstellung'], date_format
+                            row['Valuta'], date_format
                         ).replace(tzinfo=datetime.timezone.utc).timestamp()
                 line = {
                     'date_tx': date_tx,
                     'valuta': valuta,
-                    'art': row['Umsatzart'],
+                    'art': row['Art'],
                     'text_tx': row['Buchungstext'],
                     'betrag': betrag,
-                    'gegenkonto': row.get('Auftraggeber', row.get('IBAN Auftraggeberkonto')),
+                    'gegenkonto': row.get('Gegenkonto'),
                     'currency': row['Währung'],
                     'parsed': {},
                     'category': None,
@@ -74,8 +82,6 @@ class Reader:
             Liste mit Dictonaries, als Standard-Objekt mit allen
             ausgelesenen Kontoumsätzen entspricht.
         """
-        # Import specific Libraries
-        #import ...
         raise NotImplementedError()
 
     def from_http(self, url):
@@ -88,6 +94,4 @@ class Reader:
             Liste mit Dictonaries, als Standard-Objekt mit allen
             ausgelesenen Kontoumsätzen entspricht.
         """
-        # Import specific Libraries
-        #import requests
         raise NotImplementedError()

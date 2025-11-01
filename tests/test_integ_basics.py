@@ -52,7 +52,10 @@ def test_upload_csv_commerzbank(test_app):
 
             # Prepare File
             content = get_testfile_contents(EXAMPLE_CSV, binary=True)
-            files = {'file-input': (io.BytesIO(content), 'commerzbank.csv')}
+            files = {
+                'file-input': (io.BytesIO(content), 'commerzbank.csv'),
+                'bank': 'Commerzbank'
+            }
             # Post File
             result = client.post(
                 "/api/upload/DE89370400440532013000",
@@ -133,7 +136,10 @@ def test_double_upload(test_app):
 
             # Prepare File
             content = get_testfile_contents(EXAMPLE_CSV, binary=True)
-            files = {'file-input': (io.BytesIO(content), 'commerzbank.csv')}
+            files = {
+                'file-input': (io.BytesIO(content), 'commerzbank.csv'),
+                'bank': 'Commerzbank'
+            }
             # Post File 1
             result = client.post(
                 "/api/upload/DE89370400440532013000",
@@ -147,7 +153,10 @@ def test_double_upload(test_app):
                 "Angaben zum Upload wurden nicht gefunden"
 
             # Post File 2
-            files = {'file-input': (io.BytesIO(content), 'commerzbank.csv')}
+            files = {
+                'file-input': (io.BytesIO(content), 'commerzbank.csv'),
+                'bank': 'Commerzbank'
+            }
             result = client.post(
                 "/api/upload/DE89370400440532013000",
                 data=files, content_type='multipart/form-data'
@@ -193,7 +202,10 @@ def test_save_meta(test_app):
                 'regex': '[0-5]]{4}'
             }
             parameters = json.dumps(parameters).encode('utf-8')
-            files = {'file-input': (io.BytesIO(parameters), 'commerzbank.csv')}
+            files = {
+                'file-input': (io.BytesIO(parameters), 'commerzbank.csv'),
+                'bank': 'Commerzbank'
+            }
             result = client.post(
                 "/api/upload/metadata/parser",
                 data=files, content_type='multipart/form-data'

@@ -54,10 +54,18 @@
             {% endfor %}
         </datalist>
         <select id="bank-type">
+            <option value="Generic">Standardimport</option>
             <option>Comdirect</option>
             <option>Commerzbank</option>
             <option>Volksbank Mittelhessen</option>
         </select>
+        <small>
+            Nicht ünterstützte Banken können als CSV mit
+            <span data-tooltip="Spalten: Buchungstag, Valuta, Art, Buchungstext, Betrag, Währung, Gegenkonto (optional) | Trenner ';'">
+                vorgegebenem Format
+            </span>
+            Über den Standardimport eingelesen werden.
+        </small>
     </p>
     <p>
         <div id="file-drop-area">

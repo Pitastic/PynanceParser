@@ -22,7 +22,7 @@ class Reader(Generic):
 
         Returns:
             Liste mit Dictonaries, als Standard-Objekt mit allen
-            ausgelesenen Kontoumsätzen entspricht.
+            ausgelesenen Kontoumsätzen.
         """
         result = []
         rx = re.compile(r'Auftraggeber\:\s(.*)Buchungstext\:\s(.*)')
