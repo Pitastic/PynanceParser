@@ -2,6 +2,7 @@
 """Reader für das Einlesen von Kontoumsätzen in dem Format, der Commerzbank."""
 
 import datetime
+import csv
 import camelot
 
 from reader.Generic import Reader as Generic
@@ -12,6 +13,50 @@ class Reader(Generic):
     Reader um aus übermittelten Daten Kontoführungsinformationen auszulesen.
     Dieser Reader ist speziell für die Daten angepasst, wie sie bei der Commerzbank vorkommen.
     """
+
+    def from_csv(self, filepath):
+        """
+        Liest Kontoumsätze von Kontoauszügen ein,
+        die im CSV Format von der Commerzbank herintergeladen wurden.
+
+        Returns:
+            Liste mit Dictonaries, als Standard-Objekt mit allen ausgelesenen
+            Kontoumsätzen.
+        """
+        result = []
+        with open(filepath, 'r', encoding='utf-8-sig') as infile:
+
+            reader = csv.DictReader(infile, delimiter=';')
+            date_format = "%d.%m.%Y"
+
+            for row in reader:
+
+                betrag = float(row['Betrag'].replace('.', '').replace(',', '.'))
+                date_tx = datetime.datetime.strptime(
+                            row['Buchungstag'], date_format
+                        ).replace(tzinfo=datetime.timezone.utc).timestamp()
+                valuta = datetime.datetime.strptime(
+                            row['Wertstellung'], date_format
+                        ).replace(tzinfo=datetime.timezone.utc).timestamp()
+                line = {
+                    'date_tx': date_tx,
+                    'valuta': valuta,
+                    'art': row['Umsatzart'],
+                    'text_tx': row['Buchungstext'],
+                    'betrag': betrag,
+                    'gegenkonto': row.get('Auftraggeber', row.get('IBAN Auftraggeberkonto')),
+                    'currency': row['Währung'],
+                    'parsed': {},
+                    'category': None,
+                    'tags': None
+                }
+
+                if not line['betrag']:
+                    continue  # Skip Null-Buchungen
+
+                result.append(line)
+
+        return result
 
     def from_pdf(self, filepath):
         """

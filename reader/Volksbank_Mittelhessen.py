@@ -21,7 +21,7 @@ class Reader(Generic):
 
         Returns:
             Liste mit Dictonaries, als Standard-Objekt mit allen
-            ausgelesenen Kontoumsätzen entspricht.
+            ausgelesenen Kontoumsätzen.
         """
         result = []
         with open(filepath, 'r', encoding='utf-8') as infile:
