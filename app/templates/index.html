@@ -2,7 +2,11 @@
 
 {% block content %}
 
-<main>
+<main class="container">
+    <hgroup>
+        <h1>Pynance Parser</h1>
+        <p>Manage your Bankaccounts like a Boss !</p>
+    </hgroup>
     {% if groups or ibans %}
     Wähle
     {% endif %}
@@ -29,121 +33,144 @@
     {% endif %}
 
     <p>
-        <button id="add-iban-btn">
+        <button data-target="add-iban" onclick="toggleModal(event)">
         Konten verwalten
         </button>
-        <button id="add-group-btn">
+        <button data-target="add-group" onclick="toggleModal(event)">
         Gruppen verwalten
         </button>
     </p>
     <p>
-        <button id="settings-button" title="Settings">⚙️</button>
+        <button data-target="settings-popup" onclick="toggleModal(event)">⚙️</button>
     </p>
 </main>
 
 <!-- PopUps -->
-<div id="add-iban" style="display: none;" class="popup">
-    <h2>Neue Transaktionen</h2>
-    <p>Importiere Kontoumsätze in folgendem Konto:</p>
-    <p>
-        <input type="text" name="iban-input" id="iban-input" placeholder="DE XXXXXXXXXXXXX" list="iban-list" 
-               oninput="this.value = this.value.replace(/\s+/g, '')">
-        <datalist id="iban-list">
+<dialog id="add-iban">
+    <article>
+        <header>
+            <button aria-label="Close" rel="prev" data-target="add-iban" onclick="toggleModal(event)"></button>
+            <h2>Neue Transaktionen</h2>
+        </header>
+        <p>Importiere Kontoumsätze in folgendem Konto:</p>
+        <div role="group">
+            <input type="text" name="iban-input" id="iban-input" placeholder="DE XXXXXXXXXXXXX" list="iban-list" 
+                oninput="this.value = this.value.replace(/\s+/g, '')">
+            <datalist id="iban-list">
+                {% for iban in ibans %}
+                <option value="{{iban}}"></option>
+                {% endfor %}
+            </datalist>
+            <button class="delete" onclick="deleteDB()">Löschen</button>
+        </div>
+        <p>
+            <select id="bank-type">
+                <option value="Generic">Standardimport</option>
+                <option>Comdirect</option>
+                <option>Commerzbank</option>
+                <option>Volksbank Mittelhessen</option>
+            </select>
+            <small>
+                Nicht ünterstützte Banken können als CSV mit
+                <span class="long-tooltip" data-tooltip="Spalten: Buchungstag, Valuta, Art, Buchungstext, Betrag, Währung, Gegenkonto (optional) | Trenner ';'">
+                    vorgegebenem Format
+                </span>
+                Über den Standardimport eingelesen werden.
+            </small>
+        </p>
+        <div role="group">
+            <div id="file-drop-area">
+                <span id="file-label">Datei hier ablegen oder auswählen<br><small>(PDF / CSV / HTML)</small></span>
+                <input type="file" id="file-input" name="file-input" accept=".csv,.pdf,.html" style="display: none;">
+            </div>
+            <button onclick="uploadFile()">Import</button>
+        </div>
+        <footer>
+        </footer>
+    </article>
+</dialog>
+
+
+<dialog id="add-group">
+    <article>
+        <header>
+            <button aria-label="Close" rel="prev" data-target="add-group" onclick="toggleModal(event)"></button>
+            <h2>Gruppen anlegen</h2>
+        </header>
+        <p>Wähle Konten aus, die zu einer Gruppe hinzugefügt werden sollen:</p>
+        <ul>
             {% for iban in ibans %}
-            <option value="{{iban}}"></option>
+            <li>
+                <label>
+                    <input type="checkbox" name="iban-checkbox" role="switch" value="{{iban}}">
+                    {{iban}}
+                </label>
+            </li>
             {% endfor %}
-        </datalist>
-        <select id="bank-type">
-            <option value="Generic">Standardimport</option>
-            <option>Comdirect</option>
-            <option>Commerzbank</option>
-            <option>Volksbank Mittelhessen</option>
-        </select>
-        <small>
-            Nicht ünterstützte Banken können als CSV mit
-            <span data-tooltip="Spalten: Buchungstag, Valuta, Art, Buchungstext, Betrag, Währung, Gegenkonto (optional) | Trenner ';'">
-                vorgegebenem Format
-            </span>
-            Über den Standardimport eingelesen werden.
-        </small>
-    </p>
-    <p>
-        <div id="file-drop-area">
-            <span id="file-label">Datei hier ablegen oder auswählen (PDF / CSV / HTML)</span>
-            <input type="file" id="file-input" name="file-input" accept=".csv,.pdf,.html" style="display: none;">
-        </div>
-    </p>
-    <p>
-        <button onclick="uploadFile()">Import</button>
-        <button onclick="deleteDB()">Löschen</button>
-    </p>
-    <button onclick="closePopup('add-iban')">Close</button>
-</div>
+        </ul>
+        <p>
+            <input type="text" name="groupname-input" id="groupname-input" placeholder="" list="group-list">
+            <datalist id="group-list">
+                {% for group in groups %}
+                <option value="{{group}}"></option>
+                {% endfor %}
+            </datalist>
+        </p>
+        <footer>
+            <button class="delete" onclick="deleteDB(true)">Löschen</button>
+            <button onclick="saveGroup()">Speichern</button>
+        </footer>
+    </article>
+</dialog>
 
 
-<div id="add-group" style="display: none;" class="popup">
-    <h2>Gruppen anlegen</h2>
-    <p>Wähle Konten aus, die zu einer Gruppe hinzugefügt werden sollen:</p>
-    <ul>
-        {% for iban in ibans %}
-        <li>
-            <label>
-                <input type="checkbox" name="iban-checkbox" value="{{iban}}">
-                {{iban}}
-            </label>
-        </li>
-        {% endfor %}
-    </ul>
-    <p>
-        <input type="text" name="groupname-input" id="groupname-input" placeholder="" list="group-list">
-        <datalist id="group-list">
-            {% for group in groups %}
-            <option value="{{group}}"></option>
-            {% endfor %}
-        </datalist>
-    </p>
-    <p>
-        <button onclick="saveGroup()">Speichern</button>
-        <button onclick="deleteDB(true)">Löschen</button>
-    </p>
-    <button onclick="closePopup('add-group')">Close</button>
-</div>
-
-
-<div id="settings-popup" style="display: none;" class="popup">
-    <h2>Settings</h2>
-    <p>Einstellungen können in die Datenbank importiert werden, ohne sie explizit im Backend ablegen zu müssen:</p>
-    <p>
-        <select id="settings-type">
-            <option value="rule">Regel</option>
-            <option value="parser">Parsing-Anweisung</option>
-            <option value="config">Einstellungen</option>
-        </select>
-    </p>
-    <p>
-        <div id="settings-drop-area">
-            <span id="file-label">Datei hier ablegen oder auswählen (PDF / CSV / HTML)</span>
+<dialog id="settings-popup">
+    <article>
+        <header>
+            <button aria-label="Close" rel="prev" data-target='settings-popup' onclick="toggleModal(event)"></button>
+            <h2>Settings</h2>
+        </header>
+        <p>Einstellungen können hier als <kbd>json</kbd> Datei hochgeladen oder über ein Eingabefeld geändert werden.</p>
+        <details>
+            <summary>
+                Import einer Datei in die Datenbank:
+            </summary>
+            <p>
+                <select id="settings-type">
+                    <option value="rule">Regel</option>
+                    <option value="parser">Parsing-Anweisung</option>
+                    <option value="config">Einstellungen</option>
+                </select>
+            </p>
+            <div role="group">
+                <div id="settings-drop-area">
+                    <span id="file-label">Datei hier ablegen oder auswählen (JSON)</span>
+                </div>
+                <button onclick="importSettings()">Importieren</button>
+            </div>
             <input type="file" id="settings-input" name="settings-input" accept=".csv,.pdf,.html" style="display: none;">
-        </div>
-        <button onclick="importSettings()">Importieren</button>
-    </p>
+            <small>Diese Datei kann auch im Server-Backend abgelegt werden, um für alle verfügbar zu sein.</small>
+        </details>
 
-    <p>
-        Alternativ können auch Werte für einzelne Einträge abgefragt und direkt geändert werden:
-    </p>
-    <p>
-        <select id="read-setting">
-            {% for m in meta %}
-            <option value="{{m.uuid}}">{{m.metatype}} "{{m.name}}" ({{m.uuid}})</option>
-            {% endfor %}
-        </select>
-        <textarea id="set-setting" placeholder="Setting Wert" rows="10" cols="15"></textarea>
-        <button onclick="loadSetting()">Laden</button>
-        <button onclick="saveSetting()">Speichern</button>
-    </p>
-    
-    <button onclick="closePopup('settings-popup')">Close</button>
-</div>
+        <details>
+            <summary>
+                Abfragen oder Editieren von Werten:
+            </summary>
+            <p>
+                <select id="read-setting">
+                    {% for m in meta %}
+                    <option value="{{m.uuid}}">{{m.metatype}} "{{m.name}}" ({{m.uuid}})</option>
+                    {% endfor %}
+                </select>
+                <textarea id="set-setting" placeholder="Setting Wert" rows="10" cols="15"></textarea>
+            </p>
+            <footer class="right-align">
+                <button class="secondary" onclick="loadSetting()">Laden</button>
+                <button onclick="saveSetting()">Speichern</button>
+            </footer>
+        </details>
+    </article>
+</dialog>
 
 <script src="{{ url_for('static', filename='js/index.js') }}"></script>
 

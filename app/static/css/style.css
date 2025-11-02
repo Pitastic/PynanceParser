@@ -1,24 +1,39 @@
-.my-buttons {
-    display: inline-block;
-    cursor: pointer;
-    padding: 1em;
-    margin: 1em;
-    background-color: silver;
+/* Pico Tooltip Feature with newlines*/
+.long-tooltip:before {
+    white-space: wrap;
+    width: 200px;
 }
 
+/* full width block with right aligned Elements */
+.right-align {
+    text-align: right;
+}
+
+/* Red Button */
+.delete {
+    color: white;
+    border-color: rgb(175, 41, 29);
+    background-color: rgb(175, 41, 29);
+}
+
+/* File Upload Area */
 #file-drop-area, #settings-drop-area {
-    border: 2px dashed #ccc;
+    border-width: 2px 0 2px 2px;
+    border-style: dashed;
+    border-color: #ccc;
     padding: 20px;
     text-align: center;
     cursor: pointer;
     position: relative;
 }
 
+/* Details-Table */
 #dynamic-results th {
     font-weight: bold;
     text-align: right;
 }
 
+/* Tag Steuerung */
 .tag-chip {
     margin-right: 0.2em;
     padding: 0.2em;

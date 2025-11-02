@@ -2,17 +2,6 @@
 
 document.addEventListener('DOMContentLoaded', function () {
 
-    // PopUps
-    document.getElementById('add-iban-btn').addEventListener('click', function () {
-        openPopup('add-iban');
-    });
-    document.getElementById('add-group-btn').addEventListener('click', function () {
-        openPopup('add-group');
-    });
-    document.getElementById('settings-button').addEventListener('click', function () {
-        openPopup('settings-popup');
-    });
-
     // Import Input
     const fileInput = document.getElementById('file-input');
     const fileLabel = document.getElementById('file-label');
