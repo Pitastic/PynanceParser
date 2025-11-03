@@ -45,6 +45,9 @@ def create_app(config_path: str) -> Flask:
     if app.config.get('DATABASE_BACKEND') is None:
         raise IOError(f"Config Pfad '{config_path}' konnte nicht geladen werden !")
 
+    with open(os.path.join(parent_dir, 'VERSION'), 'r', encoding='utf-8') as version_file:
+        app.config['VERSION'] = version_file.read().strip()
+
     with app.app_context():
         app.host = UserInterface()
 

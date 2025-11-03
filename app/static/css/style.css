@@ -1,3 +1,14 @@
+/* Full Page Layout */
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+main {
+  flex: 1;
+}
+
 /* Pico Tooltip Feature with newlines*/
 .long-tooltip:before {
     white-space: wrap;
@@ -5,8 +16,8 @@
 }
 
 /* full width block with right aligned Elements */
-.right-align {
-    text-align: right;
+.center {
+    text-align: center;
 }
 
 /* Red Button */
@@ -15,10 +26,15 @@
     border-color: rgb(175, 41, 29);
     background-color: rgb(175, 41, 29);
 }
+    .outline.delete {
+        color: rgb(217, 53, 38);
+        border-color: rgb(217, 53, 38);
+        background-color: transparent;
+    }
 
 /* File Upload Area */
 #file-drop-area, #settings-drop-area {
-    border-width: 2px 0 2px 2px;
+    border-width: 2px;
     border-style: dashed;
     border-color: #ccc;
     padding: 20px;

@@ -17,6 +17,12 @@ class Routes:
             def timectime(s):
                 return datetime.fromtimestamp(s).strftime('%d.%m.%Y')
 
+            @current_app.context_processor
+            def version_string():
+                return dict(
+                    version=current_app.config.get('VERSION', 'unknown')
+                )
+
             @current_app.route('/', methods=['GET'])
             def welcome() -> str:
                 """

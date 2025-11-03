@@ -50,7 +50,7 @@
     <article>
         <header>
             <button aria-label="Close" rel="prev" data-target="add-iban" onclick="toggleModal(event)"></button>
-            <h2>Neue Transaktionen</h2>
+            <h2>Konten verwalten</h2>
         </header>
         <p>Importiere Kontoumsätze in folgendem Konto:</p>
         <div role="group">
@@ -61,7 +61,7 @@
                 <option value="{{iban}}"></option>
                 {% endfor %}
             </datalist>
-            <button class="delete" onclick="deleteDB()">Löschen</button>
+            <button class="outline delete" onclick="deleteDB()">Löschen</button>
         </div>
         <p>
             <select id="bank-type">
@@ -78,14 +78,12 @@
                 Über den Standardimport eingelesen werden.
             </small>
         </p>
-        <div role="group">
-            <div id="file-drop-area">
-                <span id="file-label">Datei hier ablegen oder auswählen<br><small>(PDF / CSV / HTML)</small></span>
-                <input type="file" id="file-input" name="file-input" accept=".csv,.pdf,.html" style="display: none;">
-            </div>
-            <button onclick="uploadFile()">Import</button>
+        <div id="file-drop-area">
+            <span id="file-label">Datei hier ablegen oder auswählen<br><small>(PDF / CSV / HTML)</small></span>
+            <input type="file" id="file-input" name="file-input" accept=".csv,.pdf,.html" style="display: none;">
         </div>
         <footer>
+            <button onclick="uploadFile()">Import</button>
         </footer>
     </article>
 </dialog>
@@ -95,7 +93,7 @@
     <article>
         <header>
             <button aria-label="Close" rel="prev" data-target="add-group" onclick="toggleModal(event)"></button>
-            <h2>Gruppen anlegen</h2>
+            <h2>Gruppen verwalten</h2>
         </header>
         <p>Wähle Konten aus, die zu einer Gruppe hinzugefügt werden sollen:</p>
         <ul>
@@ -164,7 +162,7 @@
                 </select>
                 <textarea id="set-setting" placeholder="Setting Wert" rows="10" cols="15"></textarea>
             </p>
-            <footer class="right-align">
+            <footer dir="rtl">
                 <button class="secondary" onclick="loadSetting()">Laden</button>
                 <button onclick="saveSetting()">Speichern</button>
             </footer>
