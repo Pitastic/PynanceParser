@@ -18,12 +18,13 @@ const toggleModal = (event) => {
     event.preventDefault();
     const modal = document.getElementById(event.currentTarget.dataset.target);
     const tx = event.currentTarget.dataset.tx;
+    const collection = event.currentTarget.dataset.collection;
     if (!modal) return;
-    modal && (modal.open ? closeModal(modal) : openModal(modal, tx));
+    modal && (modal.open ? closeModal(modal) : openModal(modal, event));
 };
 
 // Open modal
-const openModal = (modal, tx) => {
+const openModal = (modal, event) => {
     const { documentElement: html } = document;
     const scrollbarWidth = getScrollbarWidth();
     if (scrollbarWidth) {
@@ -31,8 +32,9 @@ const openModal = (modal, tx) => {
     }
 
     // Vorbereitungen
-    if (tx) {
-		// Use AJAX to fetch and populate details for the transaction with the given ID
+    if (event.currentTarget.dataset.tx) {
+		  // Use AJAX to fetch and populate details for the transaction with the given ID
+      const tx = event.currentTarget.dataset.tx;
 		  console.log('Fetching details for transaction hash: ' + tx);
         resetDetails();
         getInfo(tx, fillTxDetails);
@@ -42,6 +44,34 @@ const openModal = (modal, tx) => {
         // Clear Inputs in Modal
         document.getElementById('custom-tag').value = "";
         document.getElementById('custom-cat').value = "";
+    }
+
+    // Place Iban from dataset into Input field or clean it
+    if (modal.id == "add-iban"){
+      const iban_input = document.getElementById("iban-input");
+      const link_open = document.querySelector("#add-iban footer a.contrast");
+      if (event.currentTarget.dataset.iban) {
+        iban_input.value = event.currentTarget.dataset.iban;
+        link_open.href = '/' + encodeURIComponent(event.currentTarget.dataset.group);
+        link_open.classList.remove('hide');
+      } else {
+        iban_input.value = "";
+        link_open.classList.add('hide');
+      }
+    }
+
+    // Place Groupname from dataset into Input field or clean it
+    if (modal.id == "add-group") {
+      const group_input = document.getElementById("groupname-input");
+      const link_open = document.querySelector("#add-group footer a.contrast");
+      if (event.currentTarget.dataset.group) {
+        group_input.value = event.currentTarget.dataset.group;
+        link_open.href = '/' + encodeURIComponent(event.currentTarget.dataset.group);
+        link_open.classList.remove('hide');
+      } else {
+        group_input.value = "";
+        link_open.classList.add('hide');
+      }
     }
 
     // Open

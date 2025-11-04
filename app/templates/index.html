@@ -9,59 +9,50 @@
     </hgroup>
 
     <p>
-        Wenn du neu hier bist, beginne mit deinem ersten Import zu einem Konto. Es wird dabei automatisch erstellt.
-    </p><p>
-        Wähle ansonsten aus deinen bereits bestehenden Kontoumsätzen oder Gruppen von Konten jene aus, die du öffnen möchtest.
+        Importiere neue Kontoumsätze oder wähle die Übersicht aus, an der du weiterarbeiten möchtest. Das Konto wird bei einem Import automatisch erstellt.
     </p>
-    <section>
-        <div class="grid">
-            <article role="button" class="outline contrast">&#128212; DE89370400440532013001</article>
-            <article role="button" class="outline contrast">&#128212; DE89370400440532013002</article>
-            <article role="button" class="outline contrast">&#128212; DE89370400440532013003</article>
-        </div>
-        <div class="grid">
-            <article>&#128218; Gruppe 1</article>
-            <article>&#128218; Gruppe 2</article>
-            <article>&#128218; Gruppe 3</article>
-        </div>
-    </section>
-    {% if groups or ibans %}
-    Wähle
-    {% endif %}
-    {% if groups %}
-    eine Gruppe:
-    <ul>
-        {% for group in groups %}
-        <li><a href="/{{group}}">{{group}}</a></li>
-        {% endfor %}
-    </ul>
-        {% if ibans %}
-        oder
-        {% endif %}
-    {% endif %}
-    {% if ibans %}
-    ein Konto:
-    <ul>
-    {% for iban in ibans %}
-    <li><a href="/{{iban}}">{{iban}}</a></li>
-    {% endfor %}
-    </ul>
-    {% else %}
-    Es sind noch keine Konten vorhanden. Starte mit deinem ersten Import...
-    {% endif %}
 
-    <p>
-        <button data-target="add-iban" onclick="toggleModal(event)">
-        Konten verwalten
-        </button>
-        <button data-target="add-group" onclick="toggleModal(event)">
-        Gruppen verwalten
-        </button>
-    </p>
-    <p>
-        <button data-target="settings-popup" onclick="toggleModal(event)">⚙️</button>
-    </p>
-</main>
+    <section class="outer-card-grid">
+
+        <article>
+            <header>
+                <strong>Konten</strong>
+            </header>
+            <div class="card-grid">
+                {% if ibans %}
+                {% for iban in ibans %}
+                <button class="outline contrast" data-target="add-iban" data-iban="{{iban}}" onclick="toggleModal(event)">&#128212; {{iban}}</button>
+                {% endfor %}
+                {% endif %}
+                <button class="outline" data-target="add-iban" onclick="toggleModal(event)"><b>+</b></button>
+            </div>
+        </article>
+
+        <article>
+            <header>
+                <strong>Gruppen</strong>
+            </header>
+            <div class="card-grid no-large">
+                {% if groups %}
+                {% for group in groups %}
+                <button class="outline contrast" data-target="add-group" data-group="{{group}}" onclick="toggleModal(event)">&#128218; {{group}}</button>
+                {% endfor %}
+                {% endif %}
+                {% if ibans %}
+                <button class="outline" data-target="add-group" onclick="toggleModal(event)"><b>+</b></button>
+                {% else %}
+                <small><i>Es existiert noch kein Konto für eine Gruppe.</i></small>
+                {% endif %}
+            </div>
+        </article>
+
+    </section>
+
+    <section class="bottom-right">
+        <button class="secondary outline" data-target="settings-popup" onclick="toggleModal(event)">⚙️</button>
+    </section>
+
+    </main>
 
 <!-- PopUps -->
 <dialog id="add-iban">
@@ -96,12 +87,15 @@
                 Über den Standardimport eingelesen werden.
             </small>
         </p>
-        <div id="file-drop-area">
-            <span id="file-label">Datei hier ablegen oder auswählen<br><small>(PDF / CSV / HTML)</small></span>
-            <input type="file" id="file-input" name="file-input" accept=".csv,.pdf,.html" style="display: none;">
+        <div role="group">
+            <div id="file-drop-area">
+                <span id="file-label">PDF / CSV / HTML</span>
+                <input type="file" id="file-input" name="file-input" accept=".csv,.pdf,.html" style="display: none;">
+            </div>
+            <button onclick="uploadFile()" class="contrast">Import</button>
         </div>
         <footer>
-            <button onclick="uploadFile()">Import</button>
+            <a role="button" href="" class="contrast">Öffnen</a>
         </footer>
     </article>
 </dialog>
@@ -113,28 +107,27 @@
             <button aria-label="Close" rel="prev" data-target="add-group" onclick="toggleModal(event)"></button>
             <h2>Gruppen verwalten</h2>
         </header>
-        <p>Wähle Konten aus, die zu einer Gruppe hinzugefügt werden sollen:</p>
-        <ul>
+        <p>Du kannst eine Gruppe hier ohne Änderungen öffnen, sie löschen, oder neue Konten zuordnen.</p>
+        <fieldset>
             {% for iban in ibans %}
-            <li>
-                <label>
-                    <input type="checkbox" name="iban-checkbox" role="switch" value="{{iban}}">
-                    {{iban}}
-                </label>
-            </li>
+            <label>
+                <input type="checkbox" name="iban-checkbox" role="switch" value="{{iban}}">
+                {{iban}}
+            </label>
             {% endfor %}
-        </ul>
-        <p>
-            <input type="text" name="groupname-input" id="groupname-input" placeholder="" list="group-list">
+        </fieldset>
+        <div role="group">
+            <input type="text" name="groupname-input" id="groupname-input" placeholder="Gruppenname" list="group-list">
             <datalist id="group-list">
                 {% for group in groups %}
                 <option value="{{group}}"></option>
                 {% endfor %}
             </datalist>
-        </p>
+            <button class="delete outline" onclick="deleteDB(true)">Löschen</button>
+        </div>
         <footer>
-            <button class="delete" onclick="deleteDB(true)">Löschen</button>
             <button onclick="saveGroup()">Speichern</button>
+            <a role="button" href="" class="contrast">Öffnen</a>
         </footer>
     </article>
 </dialog>

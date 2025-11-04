@@ -1,0 +1,64 @@
+/* Card Containers */
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    grid-template-rows: 1fr;
+    grid-column-gap: auto;
+    grid-row-gap: 15px;
+}
+
+@media (min-width: 768px) {
+    .card-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: 1fr;
+        grid-column-gap: 25px;
+        grid-row-gap: 20px;
+    }
+}
+
+@media (min-width: 1280px) {
+    .card-grid {
+        display: grid;
+        grid-template-columns: repeat(1, 1fr);
+        grid-template-rows: 1fr;
+        grid-column-gap: auto;
+        grid-row-gap: 15px;
+    }
+}
+
+@media (min-width: 1536px) {
+    .card-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: 1fr;
+        grid-column-gap: 30px;
+        grid-row-gap: 25px;
+    }
+        .card-grid.no-large {
+            grid-template-columns: repeat(1, 1fr);
+        }
+}
+
+/* Parent Containers */
+.outer-card-grid {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    grid-template-rows: 1fr;
+    grid-column-gap: auto;
+    grid-row-gap: 15px;
+}
+@media (min-width: 1280px) {
+    .outer-card-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: 1fr;
+        grid-column-gap: 30px;
+        grid-row-gap: 25px;
+    }
+}
+@media (min-width: 1536px) {
+    .outer-card-grid {
+        grid-template-columns: 66% 34%;
+    }
+}

@@ -20,7 +20,21 @@ main {
     text-align: center;
 }
 
-/* Red Button */
+/* Hide an Element */
+.hide {display: none !important;}
+
+/* float bottom righth Button/Container */
+.bottom-right {
+    position: fixed;
+    bottom: 1em;
+    right: 1em;
+    z-index: 1000;
+}
+    .bottom-right > button {
+        border-radius: 2em;
+    }
+
+/* Buttons */
 .delete {
     color: white;
     border-color: rgb(175, 41, 29);
@@ -34,13 +48,13 @@ main {
 
 /* File Upload Area */
 #file-drop-area, #settings-drop-area {
-    border-width: 2px;
+    padding: 0.5em;
+    line-height: 1.5em;
+    border-width: 2px 0 2px 2px;
     border-style: dashed;
     border-color: #ccc;
-    padding: 20px;
     text-align: center;
     cursor: pointer;
-    position: relative;
 }
 
 /* Details-Table */
