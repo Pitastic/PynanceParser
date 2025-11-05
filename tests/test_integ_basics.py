@@ -661,6 +661,28 @@ def test_iban_filtering(test_app):
                 f"Es wurden {len(rows)} Einträge gefunden, statt der erwarteten 1"
 
 
+def test_statsapi(test_app):
+    """Testet den API-Endpoint für die Statistiken"""
+    with test_app.app_context():
+
+        with test_app.test_client() as client:
+            # Basic Stats
+            result = client.get("/api/stats/DE89370400440532013000")
+            assert result.status_code == 200, \
+                "Der Statistik-API-Endpoint ist nicht (richtig) erreichbar"
+            result = result.json
+            assert 'count' in result, \
+                "Die Statistik-Antwort ist unvollständig"
+            assert result.get('count') == 5, \
+                "Die Statistik-Antwort ist fehlerhaft"
+            assert "min" in result, \
+                "Die Statistik-Antwort ist unvollständig"
+            assert result.get('min') == '2023-01-01', \
+                "Die Statistik-Antwort ist fehlerhaft"
+            assert "max" in result, \
+                "Die Statistik-Antwort ist unvollständig"
+
+
 def test_statspage(test_app):
     """Testet die Darstellung der Statistikseite"""
     with test_app.app_context():

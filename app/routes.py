@@ -652,3 +652,22 @@ class Routes:
                     updated_entries['updated'] += updated.get('updated')
 
                 return updated_entries
+
+            @current_app.route('/api/stats/<iban>', methods=['GET'])
+            def statsIban(iban):
+                """
+                Liefert Statistiken zur IBAN zurück.
+
+                Args (uri):
+                    iban, str:  IBAN zu der die Statistiken angezeigt werden sollen.
+                Returns:
+                    json: Statistiken zur IBAN
+                        - min_date, str: Datum der ältesten Transaktion
+                        - max_date, str: Datum der jüngsten Transaktion
+                        - number_tx, int: Anzahl der Transaktionen
+                """
+                if not parent.check_requested_iban(iban):
+                    return "", 404
+
+                stats = parent.db_handler.min_max_count_collection(iban, 'date_tx')
+                return stats, 200

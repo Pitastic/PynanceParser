@@ -420,3 +420,24 @@ class TinyDbHandler(BaseDb):
             list: A list of table names.
         """
         return self.connection.tables()
+
+    def min_max_count_collection(self, collection, key):
+        """
+        Bestimmt den minimalen und maximalen Wert eines Keys in einer Collection
+        sowie die Anzahl der Einträge.
+
+        Args:
+            collection (str): Name der Collection.
+            key (str): Key, für den min/max/count bestimmt werden soll.
+        Returns:
+            dict:
+                - min, any: Minimaler Wert
+                - max, any: Maximaler Wert
+                - count, int: Anzahl der Einträge
+        """
+        all_entries = self.select([collection])
+        return {
+            'min': min(all_entries, key=lambda x: x[key]),
+            'max': max(all_entries, key=lambda x: x[key]),
+            'count': len(all_entries)
+        }

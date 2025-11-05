@@ -46,7 +46,8 @@ function prepareAddModal(modal_id, event) {
     const mode = modal_id.split('-')[1];
     const text_input = document.getElementById(mode + "-input");
     const link_open = document.querySelector("#" + modal_id + " footer a");
-
+    const iban_stats = document.getElementById('iban-stats');
+    
     if (event.currentTarget.dataset[mode]) {
         // Load and fill
         const id = event.currentTarget.dataset[mode];
@@ -58,7 +59,6 @@ function prepareAddModal(modal_id, event) {
             // Get Group Info; Activate Checkboxes for Ibans in Group
             const iban_checkboxes = document.querySelectorAll("#" + modal_id + " fieldset input");
             apiGet("getMeta/" + id, {}, function (responseText, error) {
-                console.log(responseText, error);
                 const ibans = JSON.parse(responseText)['ibans'] || [];
                 iban_checkboxes.forEach(box => {
                     if (ibans.includes(box.value)) {
@@ -67,13 +67,26 @@ function prepareAddModal(modal_id, event) {
                     }
                 });
             });
+
+            return;
         }
 
-    } else {
-        // Clean
-        text_input.value = "";
-        link_open.classList.add('hide');
+        // Modal is Add-IBAN
+        // Get basic Stats
+        const r = [87, '31.01.2020', '01.05.2020'];
+        const stat_points = iban_stats.getElementsByTagName('b');
+        stat_points[0].innerHTML = r[0];
+        stat_points[1].innerHTML = r[1];
+        stat_points[2].innerHTML = r[2];
+        iban_stats.classList.remove('hide');
+
+        return;
     }
+
+    // Clean
+    text_input.value = "";
+    link_open.classList.add('hide');
+    iban_stats.classList.add('hide');
 }
 
 /**

@@ -45,7 +45,7 @@ const openModal = (modal, event) => {
     }
 
     // Place Iban/Groupname from dataset into Input field or clean it
-    if ( ["add-iban", "add-group"].includes(modal.id) ){
+  if (["add-iban", "add-group"].includes(modal.id)) {
       prepareAddModal(modal.id, event);
     }
  
