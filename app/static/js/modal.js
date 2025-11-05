@@ -17,8 +17,6 @@ let visibleModal = null;
 const toggleModal = (event) => {
     event.preventDefault();
     const modal = document.getElementById(event.currentTarget.dataset.target);
-    const tx = event.currentTarget.dataset.tx;
-    const collection = event.currentTarget.dataset.collection;
     if (!modal) return;
     modal && (modal.open ? closeModal(modal) : openModal(modal, event));
 };
@@ -46,34 +44,11 @@ const openModal = (modal, event) => {
         document.getElementById('custom-cat').value = "";
     }
 
-    // Place Iban from dataset into Input field or clean it
-    if (modal.id == "add-iban"){
-      const iban_input = document.getElementById("iban-input");
-      const link_open = document.querySelector("#add-iban footer a.contrast");
-      if (event.currentTarget.dataset.iban) {
-        iban_input.value = event.currentTarget.dataset.iban;
-        link_open.href = '/' + encodeURIComponent(event.currentTarget.dataset.group);
-        link_open.classList.remove('hide');
-      } else {
-        iban_input.value = "";
-        link_open.classList.add('hide');
-      }
+    // Place Iban/Groupname from dataset into Input field or clean it
+    if ( ["add-iban", "add-group"].includes(modal.id) ){
+      prepareAddModal(modal.id, event);
     }
-
-    // Place Groupname from dataset into Input field or clean it
-    if (modal.id == "add-group") {
-      const group_input = document.getElementById("groupname-input");
-      const link_open = document.querySelector("#add-group footer a.contrast");
-      if (event.currentTarget.dataset.group) {
-        group_input.value = event.currentTarget.dataset.group;
-        link_open.href = '/' + encodeURIComponent(event.currentTarget.dataset.group);
-        link_open.classList.remove('hide');
-      } else {
-        group_input.value = "";
-        link_open.classList.add('hide');
-      }
-    }
-
+ 
     // Open
     html.classList.add(isOpenClass, openingClass);
     setTimeout(() => {

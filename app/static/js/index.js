@@ -42,6 +42,40 @@ document.addEventListener('DOMContentLoaded', function () {
 // -- DOM Functions -----------------------------------------------------------
 // ----------------------------------------------------------------------------
 
+function prepareAddModal(modal_id, event) {
+    const mode = modal_id.split('-')[1];
+    const text_input = document.getElementById(mode + "-input");
+    const link_open = document.querySelector("#" + modal_id + " footer a");
+
+    if (event.currentTarget.dataset[mode]) {
+        // Load and fill
+        const id = event.currentTarget.dataset[mode];
+        text_input.value = id;
+        link_open.href = '/' + encodeURIComponent(id);
+        link_open.classList.remove('hide');
+
+        if (mode == "group") {
+            // Get Group Info; Activate Checkboxes for Ibans in Group
+            const iban_checkboxes = document.querySelectorAll("#" + modal_id + " fieldset input");
+            apiGet("getMeta/" + id, {}, function (responseText, error) {
+                console.log(responseText, error);
+                const ibans = JSON.parse(responseText)['ibans'] || [];
+                iban_checkboxes.forEach(box => {
+                    if (ibans.includes(box.value)) {
+                        // Activate IBAN as Groupmember
+                        box.checked = true;
+                    }
+                });
+            });
+        }
+
+    } else {
+        // Clean
+        text_input.value = "";
+        link_open.classList.add('hide');
+    }
+}
+
 /**
  * Gets a value for a Metadate into a textarea.
  * The key is selected via the select input element 'read-setting'
@@ -176,7 +210,7 @@ function uploadFile() {
  * If the operation is successful, the page is reloaded; otherwise, an error message is displayed.
  */
 function saveGroup() {
-    const groupname = document.getElementById("groupname-input").value;
+    const groupname = document.getElementById("group-input").value;
     if (!groupname) {
         alert("Keine Gruppe angegeben!");
         return;
@@ -206,7 +240,7 @@ function saveGroup() {
 function deleteDB(delete_group) {
     let collection;
     if (delete_group) {
-        collection = document.getElementById('groupname-input').value;
+        collection = document.getElementById('group-input').value;
     } else {
         collection = document.getElementById('iban-input').value;
     }

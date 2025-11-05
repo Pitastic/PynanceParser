@@ -95,7 +95,7 @@
             <button onclick="uploadFile()" class="contrast">Import</button>
         </div>
         <footer>
-            <a role="button" href="" class="contrast">Öffnen</a>
+            <a role="button" href="">Öffnen</a>
         </footer>
     </article>
 </dialog>
@@ -117,7 +117,7 @@
             {% endfor %}
         </fieldset>
         <div role="group">
-            <input type="text" name="groupname-input" id="groupname-input" placeholder="Gruppenname" list="group-list">
+            <input type="text" name="group-input" id="group-input" placeholder="Gruppenname" list="group-list">
             <datalist id="group-list">
                 {% for group in groups %}
                 <option value="{{group}}"></option>
