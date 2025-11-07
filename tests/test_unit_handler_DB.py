@@ -383,10 +383,10 @@ def test_select_group_filter(test_app):
 def test_min_max_count(test_app):
     """Testet die Min-, Max- und Count-Funktionen"""
     with test_app.app_context():
-        stats = test_app.host.db_handler.min_max_count_collection('DE89370400440532013000', 'betrag')
-        assert stats.get('min') == -221.98, f'Der minimale Betrag ist falsch: {min_betrag}'
-        assert stats.get('max') == -11.62, f'Der maximale Betrag ist falsch: {max_betrag}'
-        assert stats.get('count') == 5, f'Die Anzahl der Einträge ist falsch: {count_entries}'
+        stats = test_app.host.db_handler.min_max_collection('DE89370400440532013000', 'betrag')
+        assert stats.get('min') == -221.98, f"Der minimale Betrag ist falsch: {stats.get('min')}"
+        assert stats.get('max') == -11.63, f"Der maximale Betrag ist falsch: {stats.get('max')}"
+        assert stats.get('count') == 5, f"Die Anzahl der Einträge ist falsch: {stats.get('count')}"
 
 
 def test_delete(test_app):

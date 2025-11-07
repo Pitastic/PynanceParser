@@ -365,7 +365,7 @@ class MongoDbHandler(BaseDb):
         """
         return self.connection.list_collection_names()
 
-    def min_max_count_collection(self, collection, key):
+    def min_max_collection(self, collection: str, key: str):
         """
         Bestimmt den minimalen und maximalen Wert eines Keys in einer Collection
         sowie die Anzahl der Einträge.

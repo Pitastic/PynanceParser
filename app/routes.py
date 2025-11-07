@@ -19,9 +19,9 @@ class Routes:
 
             @current_app.context_processor
             def version_string():
-                return dict(
-                    version=current_app.config.get('VERSION', 'unknown')
-                )
+                return {
+                    'version': current_app.config.get('VERSION', 'unknown')
+                }
 
             @current_app.route('/', methods=['GET'])
             def welcome() -> str:
@@ -669,5 +669,5 @@ class Routes:
                 if not parent.check_requested_iban(iban):
                     return "", 404
 
-                stats = parent.db_handler.min_max_count_collection(iban, 'date_tx')
+                stats = parent.db_handler.min_max_collection(iban, 'date_tx')
                 return stats, 200

@@ -499,7 +499,7 @@ class BaseDb():
         iban_regex = re.compile(r'[A-Z]{2}[0-9]{2}[ ]?([0-9]{4}[ ]?){4,7}[0-9]{1,4}')
         return bool(re.match(iban_regex, collection))
 
-    def min_max_count_collection(self, collection: str, key: str):
+    def min_max_collection(self, collection: str, key: str):
         """
         Gibt das Minimum und Maximum sowie die Gesamtzahl an Datensätzen einer Collection zurück.
 

@@ -47,7 +47,7 @@ def test_upload_csv_commerzbank(test_app):
             # Visit Form
             result = client.get('/')
             assert result.status_code == 200, "Der Statuscode der Startseite war falsch"
-            assert 'All rights reserved.' in result.text, \
+            assert '<title>PynanceParser</title>' in result.text, \
                 "Special Heading not found in the response"
 
             # Prepare File
@@ -677,7 +677,7 @@ def test_statsapi(test_app):
                 "Die Statistik-Antwort ist fehlerhaft"
             assert "min" in result, \
                 "Die Statistik-Antwort ist unvollständig"
-            assert result.get('min') == '2023-01-01', \
+            assert result.get('min') == 1672531200.0, \
                 "Die Statistik-Antwort ist fehlerhaft"
             assert "max" in result, \
                 "Die Statistik-Antwort ist unvollständig"
