@@ -49,11 +49,15 @@ main {
 /* File Upload Area */
 #file-drop-area, #settings-drop-area {
     padding: 0.5em;
+    max-width: 80%;
     line-height: 1.5em;
     border-width: 2px 0 2px 2px;
     border-style: dashed;
     border-color: #ccc;
     text-align: center;
+    text-overflow: ellipsis;
+    overflow-x: hidden;
+    white-space: nowrap;
     cursor: pointer;
 }
 

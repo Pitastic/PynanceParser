@@ -42,15 +42,25 @@ document.addEventListener('DOMContentLoaded', function () {
 // -- DOM Functions -----------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-function prepareAddModal(modal_id, event) {
+/**
+ * Prepares and configures a modal dialog for adding or editing data based on the provided mode.
+ * This function handles both "group" and "IBAN" modes, dynamically loading data and updating the modal's content.
+ *
+ * @param {string} modal_id - The ID of the modal element to be prepared.
+ * @param {Event} event - The event object triggered by the user interaction.
+ * @param {string} [force_id] - Optional parameter to force a specific mode or ID, overriding the event's dataset.
+ *
+ * @returns {void}
+ */
+function prepareAddModal(modal_id, event, force_id) {
     const mode = modal_id.split('-')[1];
     const text_input = document.getElementById(mode + "-input");
     const link_open = document.querySelector("#" + modal_id + " footer a");
     const iban_stats = document.getElementById('iban-stats');
     
-    if (event.currentTarget.dataset[mode]) {
+    if (force_id || (event && event.currentTarget.dataset[mode])) {
         // Load and fill
-        const id = event.currentTarget.dataset[mode];
+        const id = force_id || event.currentTarget.dataset[mode];
         text_input.value = id;
         link_open.href = '/' + encodeURIComponent(id);
         link_open.classList.remove('hide');
@@ -72,13 +82,19 @@ function prepareAddModal(modal_id, event) {
         }
 
         // Modal is Add-IBAN
-        // Get basic Stats
-        const r = [87, '31.01.2020', '01.05.2020'];
         const stat_points = iban_stats.getElementsByTagName('b');
-        stat_points[0].innerHTML = r[0];
-        stat_points[1].innerHTML = r[1];
-        stat_points[2].innerHTML = r[2];
-        iban_stats.classList.remove('hide');
+        apiGet('stats/' + id, {}, function (responseText, error) {
+            // Get basic Stats
+            if (error) {
+                alert(error);
+                return;
+            }
+            const r = JSON.parse(responseText);
+            stat_points[0].innerHTML = r.count;
+            stat_points[1].innerHTML = formatUnixToDate(r.min);
+            stat_points[2].innerHTML = formatUnixToDate(r.max);
+            iban_stats.classList.remove('hide');
+        })
 
         return;
     }
@@ -210,6 +226,8 @@ function uploadFile() {
         } else {
             if (confirm('File uploaded successfully!' + responseText + '\nKonto aufrufen?')) {
                 window.location.href = '/' + iban;
+            } else {
+                prepareAddModal('add-iban', null, iban);
             }
         }
     }, true);
