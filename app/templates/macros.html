@@ -1,0 +1,30 @@
+{% macro createTxRow(transaction) -%}
+{# Erstellt eine Zeile der Transaktionsübersicht #}
+
+    <tr name="{{ transaction.uuid }}">
+        <td><input type="checkbox" class="row-checkbox" name="{{ transaction.uuid }}"
+            data-txuuid="{{transaction.uuid}}" data-txdate="{{transaction.date_tx}}"></td>
+        <td>{{ transaction.date_tx | ctime }}</td>
+        <td>{{ transaction.text_tx }}</td>
+        <td>
+            {% if transaction.category %}
+            <span title="{{ transaction.category }}">🔖</span>
+            {% else %}
+            &nbsp;
+            {% endif %}
+        </td>
+        <td>
+            {% for tag in transaction.tags %}
+            <span class="tag-chip">
+                {{ tag }}
+            </span>
+            {% endfor %}
+        </td>
+        <td class="betrag">{{ transaction.currency }} {{ transaction.betrag }}</td>
+        <td>
+            <button class="outline secondary" title="Show details" data-target="details-popup" data-tx="{{ transaction.uuid }}"
+                onclick="toggleModal(event)">ℹ️</button>
+        </td>
+    </tr>
+
+{%- endmacro %}

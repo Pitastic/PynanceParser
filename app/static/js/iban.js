@@ -1,26 +1,27 @@
 "use strict";
 
-let rowCheckboxes = null;
+let ROW_CHECKBOXES = null;
+let PAGE = 1;
 
 document.addEventListener('DOMContentLoaded', function () {
 
     // enabling/disabling the edit button based on checkbox selection
     const selectAllCheckbox = document.getElementById('select-all');
-    rowCheckboxes = document.querySelectorAll('.row-checkbox');
+    ROW_CHECKBOXES = document.querySelectorAll('.row-checkbox');
 
     selectAllCheckbox.addEventListener('change', function () {
-        rowCheckboxes.forEach(checkbox => {
+        ROW_CHECKBOXES.forEach(checkbox => {
         checkbox.checked = selectAllCheckbox.checked;
         });
         updateEditButtonState();
         listTxElements();
     });
 
-    rowCheckboxes.forEach(checkbox => {
+    ROW_CHECKBOXES.forEach(checkbox => {
         checkbox.addEventListener('change', function () {
         if (!this.checked) {
             selectAllCheckbox.checked = false;
-        } else if (Array.from(rowCheckboxes).every(cb => cb.checked)) {
+        } else if (Array.from(ROW_CHECKBOXES).every(cb => cb.checked)) {
             selectAllCheckbox.checked = true;
         }
         updateEditButtonState();
@@ -106,15 +107,15 @@ function fillTxDetails(result) {
  * the "Edit Selected" button accordingly. It also updates the button's title to
  * reflect the number of selected checkboxes.
  * 
- * Assumes that `rowCheckboxes` is a collection of checkbox elements and that
+ * Assumes that `ROW_CHECKBOXES` is a collection of checkbox elements and that
  * there is a button with the ID `edit-selected` in the DOM.
  */
 function updateEditButtonState() {
-	const anyChecked = Array.from(rowCheckboxes).some(cb => cb.checked);
+	const anyChecked = Array.from(ROW_CHECKBOXES).some(cb => cb.checked);
     const editButton = document.getElementById('edit-selected');
     editButton.disabled = !anyChecked;
 	editButton.title = anyChecked
-	? `Edit (${Array.from(rowCheckboxes).filter(cb => cb.checked).length} selected)`
+	? `Edit (${Array.from(ROW_CHECKBOXES).filter(cb => cb.checked).length} selected)`
 	: 'Edit (nichts ausgewählt)';
 }
 
@@ -131,7 +132,7 @@ function listTxElements() {
     // Clean and rewrite TX List
     const result_list = document.getElementById('tx-select-list');
     result_list.innerHTML = '';
-    rowCheckboxes.forEach(checkbox => {
+    ROW_CHECKBOXES.forEach(checkbox => {
         if (checkbox.checked) {
             const li = document.createElement('li');
             li.textContent = formatUnixToDate(checkbox.dataset.txdate) + " ";
@@ -207,7 +208,7 @@ function tagAndCat(operation) {
  * Clear Tags from selected transactions
  */
 function removeTags() {
-    const t_ids = Array.from(rowCheckboxes)
+    const t_ids = Array.from(ROW_CHECKBOXES)
         .filter(cb => cb.checked)
         .map(cb => cb.getAttribute('name'));
 
@@ -237,7 +238,7 @@ function removeTags() {
  * Clear Category from selected transactions
  */
 function removeCats() {
-    const t_ids = Array.from(rowCheckboxes)
+    const t_ids = Array.from(ROW_CHECKBOXES)
         .filter(cb => cb.checked)
         .map(cb => cb.getAttribute('name'));
 
@@ -266,10 +267,10 @@ function removeCats() {
 /**
  * Add one or more Tags to a Transaction withput overwriting existing ones.
  * Tags will be loaded from the global TAGS variable. Transaktion will
- * be taken from rowCheckboxes.
+ * be taken from ROW_CHECKBOXES.
  */
 function addTag() {
-    const t_ids = Array.from(rowCheckboxes)
+    const t_ids = Array.from(ROW_CHECKBOXES)
         .filter(cb => cb.checked)
         .map(cb => cb.getAttribute('name'));
     return manualTag(t_ids, TAGS, false);
@@ -277,10 +278,10 @@ function addTag() {
 
 /**
  * Set a categorie for a set of Transactions.
- * Transaction will be taken from rowCheckboxes.
+ * Transaction will be taken from ROW_CHECKBOXES.
  */
 function addCat() {
-    const t_ids = Array.from(rowCheckboxes)
+    const t_ids = Array.from(ROW_CHECKBOXES)
         .filter(cb => cb.checked)
         .map(cb => cb.getAttribute('name'));
     const cat = document.getElementById('add-cat').value;
@@ -306,22 +307,23 @@ function getInfo(uuid, callback = alert) {
 }
 
 
-function saveMeta() {
-    const meta_type = document.getElementById('select_meta').value;
-    const fileInput = document.getElementById('input-json');
-    if (fileInput.files.length === 0) {
-        alert('Please select a file to upload.');
-        return;
-    }
-
-    const params = { file: 'input_file' }; // The key 'file' corresponds to the input element's ID
-    apiSubmit('upload/metadata/'+meta_type, params, function (responseText, error) {
+function loadMore() {
+    // Increment global
+    PAGE += 1;
+    // Get Page Content with a custom ajax call
+    const ajax = createAjax(function (responseText, error) {
         if (error) {
-            alert('Rule saving failed: ' + '(' + error + ')' + responseText);
-
-        } else {
-            alert('Rule saved successfully!' + responseText);
-
+            // No more Pages could be loaded
+            document.querySelector('.transactions + footer a').classList.add('hide');
+            return;
         }
-    }, true);
+
+        // Append new Rows
+        document.querySelector('.transactions tbody').innerHTML += responseText;
+    });
+
+    // Call URI
+    const get_args = concatURI({'page': PAGE});
+    ajax.open('GET', "/" + IBAN + '?' + get_args, true);
+	ajax.send();
 }

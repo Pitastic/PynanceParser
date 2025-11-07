@@ -67,35 +67,15 @@
             </tr>
         </thead>
         <tbody>
+            {% from 'macros.html' import createTxRow %}
             {% for transaction in transactions %}
-            <tr name="{{ transaction.uuid }}">
-                <td><input type="checkbox" class="row-checkbox" name="{{ transaction.uuid }}"
-                    data-txuuid="{{transaction.uuid}}" data-txdate="{{transaction.date_tx}}"></td>
-                <td>{{ transaction.date_tx | ctime }}</td>
-                <td>{{ transaction.text_tx }}</td>
-                <td>
-                    {% if transaction.category %}
-                    <span title="{{ transaction.category }}">🔖</span>
-                    {% else %}
-                    &nbsp;
-                    {% endif %}
-                </td>
-                <td>
-                    {% for tag in transaction.tags %}
-                    <span class="tag-chip">
-                        {{ tag }}
-                    </span>
-                    {% endfor %}
-                </td>
-                <td class="betrag">{{ transaction.currency }} {{ transaction.betrag }}</td>
-                <td>
-                    <button class="outline secondary" title="Show details" data-target="details-popup" data-tx="{{ transaction.uuid }}"
-                        onclick="toggleModal(event)">ℹ️</button>
-                </td>
-            </tr>
+
+                {{ createTxRow(transaction) }}
+
             {% endfor %}
         </tbody>
     </table>
+    <footer class="center"><a href='javascript:loadMore()' class="secondary">mehr laden</a></footer>
 </main>
 
 <!-- Popups -->

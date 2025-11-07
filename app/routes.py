@@ -49,6 +49,7 @@ class Routes:
                     tag_mode, str (query):  Vergleichsmodus für Tag-Filter (siehe Models.md)
                     betrag, float (query):  Betragsfilter
                     betrag_mode, str (query): Vergleichsmodus für Betragsfilter (siehe Models.md)
+                    page, int (query):      Seite für die Paginierung (default: 1)
                 Returns:
                     html: Startseite mit Navigation
                 """
@@ -61,6 +62,19 @@ class Routes:
                 # Table with Transactions
                 current_app.logger.debug(f"Using condition filter: {condition}")
                 rows = parent.db_handler.select(iban, condition)
+
+                # If pagination is requested, do not serve the whole page and all metadata
+                entries_per_page = 50
+                if 'page' in request.args:
+                    page = int(request.args.get('page'))
+                    start = (page - 1) * entries_per_page
+                    end = start + entries_per_page
+                    if start >= len(rows):
+                        return "", 404  # Return 404 if no more pages can be served
+                    return render_template('iban_page.html', transactions=rows[start:end])
+
+                # All distinct Rule Names
+                # (must be filtered on our own because TinyDB doesn't support 'distinct' queries)
                 rulenames = parent.db_handler.filter_metadata({'key':'metatype', 'value': 'rule'})
                 rulenames = [r.get('name') for r in rulenames if r.get('name')]
 
@@ -82,9 +96,9 @@ class Routes:
                     if c and c not in cats:
                         cats.append(c)
 
-                return render_template('iban.html', transactions=rows, IBAN=iban,
-                                       rules=rulenames, tags=tags, categories=cats,
-                                       filters=frontend_filters)
+                return render_template('iban.html', transactions=rows[:entries_per_page],
+                                       IBAN=iban, tags=tags, categories=cats,
+                                       rules=rulenames, filters=frontend_filters)
 
             @current_app.route('/<iban>/<t_id>', methods=['GET'])
             def showTx(iban, t_id):
