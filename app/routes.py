@@ -47,8 +47,8 @@ class Routes:
                     category, str (query):  Kategorie-Filter
                     tag, str (query):       Tag-Filter, einzelner Eintrag oder kommagetrennte Liste
                     tag_mode, str (query):  Vergleichsmodus für Tag-Filter (siehe Models.md)
-                    betrag, float (query):  Betragsfilter
-                    betrag_mode, str (query): Vergleichsmodus für Betragsfilter (siehe Models.md)
+                    betrag_min, float (query):  Betragsfilter (größer gleich betrag_min)
+                    betrag_max, float (query):  Betragsfilter (kleiner gleich betrag_max)
                     page, int (query):      Seite für die Paginierung (default: 1)
                 Returns:
                     html: Startseite mit Navigation
@@ -152,8 +152,8 @@ class Routes:
                     category, str (query):  Kategorie-Filter
                     tag, str (query):       Tag-Filter, einzelner Eintrag oder kommagetrennte Liste
                     tag_mode, str (query):  Vergleichsmodus für Tag-Filter (siehe Models.md)
-                    betrag, float (query):  Betragsfilter
-                    betrag_mode, str (query): Vergleichsmodus für Betragsfilter (siehe Models.md)
+                    betrag_min, float (query):  Betragsfilter (größer gleich betrag_min)
+                    betrag_max, float (query):  Betragsfilter (kleiner gleich betrag_max)
                 Returns:
                     html: Seite mit Grafiken und Statistiken über die slektierten Einträge
                     (IBAN und optional Query)

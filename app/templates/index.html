@@ -2,11 +2,12 @@
 
 {% block content %}
 
+<hgroup class="container">
+    <h1>Pynance Parser</h1>
+    <p>Manage your Bankaccounts like a Boss !</p>
+</hgroup>
+
 <main class="container">
-    <hgroup>
-        <h1>Pynance Parser</h1>
-        <p>Manage your Bankaccounts like a Boss !</p>
-    </hgroup>
 
     <p>
         Importiere neue Kontoumsätze oder wähle die Übersicht aus, an der du weiterarbeiten möchtest. Das Konto wird bei einem Import automatisch erstellt.
@@ -47,12 +48,14 @@
         </article>
 
     </section>
+    
+</main>
 
+<footer>
     <section class="bottom-right">
         <button class="secondary outline" data-target="settings-popup" onclick="toggleModal(event)">⚙️</button>
     </section>
-
-    </main>
+</footer>
 
 <!-- PopUps -->
 <dialog id="add-iban">

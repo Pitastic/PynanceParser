@@ -68,16 +68,18 @@ function getFilteredList() {
         }
     }
 
-    let betrag = document.getElementById('filter-betrag').value;
-    if (betrag) {
-        betrag = betrag.replace(',', '.');
-        query_args = query_args + arg_concat + 'betrag=' + betrag;
+    let betrag_min = document.getElementById('filter-betrag-min').value;
+    if (betrag_min) {
+        betrag_min = betrag_min.replace(',', '.');
+        query_args = query_args + arg_concat + 'betrag_min=' + betrag_min;
         arg_concat = '&';
-        const betrag_mode = document.getElementById('filter-betrag-mode').value;
-        if (betrag_mode) {
-            query_args = query_args + arg_concat + 'betrag_mode=' + betrag_mode;
-            arg_concat = '&';
-        }
+    }
+
+    let betrag_max = document.getElementById('filter-betrag-max').value;
+    if (betrag_max) {
+        betrag_max = betrag_max.replace(',', '.');
+        query_args = query_args + arg_concat + 'betrag_max=' + betrag_max;
+        arg_concat = '&';
     }
 
 	return query_args;

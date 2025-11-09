@@ -143,19 +143,34 @@ class UserInterface():
             frontend_filters['tags'] = " ,".join(tag_filter)
             frontend_filters['tag_mode'] = get_args.get('tag_mode', 'in')
 
-        # Filter for Betrag
-        betrag_filter = get_args.get('betrag')
-        if betrag_filter is not None:
+        # Filter for Betrag (min)
+        betrag_filter_min = get_args.get('betrag_min')
+        if betrag_filter_min is not None:
             try:
-                betrag_filter = float(betrag_filter)
+                betrag_filter_min = float(betrag_filter_min)
                 condition.append({
                     'key': 'betrag',
-                    'value': betrag_filter,
-                    'compare': get_args.get('betrag_mode', '==')
+                    'value': betrag_filter_min,
+                    'compare': '>='
                 })
 
-                frontend_filters['betrag'] = betrag_filter
-                frontend_filters['betrag_mode'] = get_args.get('betrag_mode', '==')
+                frontend_filters['betrag_min'] = betrag_filter_min
+
+            except (ValueError, TypeError) as e:
+                logging.warning(f"Invalid betrag format '{e}' will be ignored")
+
+        # Filter for Betrag (max)
+        betrag_filter_max = get_args.get('betrag_max')
+        if betrag_filter_max is not None:
+            try:
+                betrag_filter_max = float(betrag_filter_max)
+                condition.append({
+                    'key': 'betrag',
+                    'value': betrag_filter_max,
+                    'compare': '<='
+                })
+
+                frontend_filters['betrag_max'] = betrag_filter_max
 
             except (ValueError, TypeError) as e:
                 logging.warning(f"Invalid betrag format '{e}' will be ignored")

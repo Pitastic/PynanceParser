@@ -323,7 +323,20 @@ function loadMore() {
     });
 
     // Call URI
-    const get_args = concatURI({'page': PAGE});
-    ajax.open('GET', "/" + IBAN + '?' + get_args, true);
+    let get_args = '';
+    const page_args = concatURI({ 'page': PAGE });
+
+    // -- Add Filter args if any
+    const additional_filters = getFilteredList();
+    if (additional_filters) {
+        get_args = additional_filters + '&' + page_args;
+
+    } else {
+        get_args = '?' + page_args;
+
+    }
+    console.log(additional_filters, get_args);
+
+    ajax.open('GET', "/" + IBAN + get_args, true);
 	ajax.send();
 }
