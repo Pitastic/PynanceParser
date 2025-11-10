@@ -67,7 +67,7 @@ main {
     text-align: right;
 }
 
-/* Tag Steuerung */
+/* Tag Steuerung
 .tag-chip {
     margin-right: 0.2em;
     padding: 0.2em;
@@ -78,4 +78,32 @@ main {
     .tag-chip.parsed {
         display: inline-block;
         background-color: blueviolet;
+    }
+*/
+.tag-chip {
+    display: inline-block;
+    padding: .375rem;
+    margin: 0.33em 0;
+    margin-right: 0.33em;
+    background: var(--pico-code-background-color);
+    background-color: var(--pico-code-kbd-background-color);
+    border-radius: var(--pico-border-radius);
+    color: var(--pico-code-kbd-color);
+    vertical-align: baseline;
+    font-weight: bolder;
+    font-size: .875em;
+    font-family: var(--pico-font-family);
+    line-height: initial;
+    text-decoration: none;
+}
+    .tag-chip:hover, .tag-chip a, .tag-chip a:hover {
+        text-decoration: none;
+        color: initial;
+    }
+    .tag-chip.parsed {
+        background-color: blueviolet;
+    }
+    .tag-chip a {
+        margin-left: 0.33em;
+        color: var(--pico-secondary);
     }

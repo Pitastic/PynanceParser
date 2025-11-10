@@ -15,9 +15,9 @@
         </td>
         <td>
             {% for tag in transaction.tags %}
-            <span class="tag-chip">
+            <a class="tag-chip" href="?tags={{tag}}">
                 {{ tag }}
-            </span>
+            </a>
             {% endfor %}
         </td>
         <td class="betrag">{{ transaction.currency }} {{ transaction.betrag }}</td>

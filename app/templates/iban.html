@@ -60,7 +60,7 @@
 
 <footer>
     <section class="bottom-right">
-        <button class="secondary outline" data-target="filter-popup" onclick="toggleModal(event)">&#128207;</button>
+        <button class="{% if filters.keys() %}primary{%else%}secondary outline{%endif%}" data-target="filter-popup" onclick="toggleModal(event)">&#128207;</button>
     </section>
 </footer>
 
@@ -78,7 +78,7 @@
             </ul>
         </details>
 
-        <div id="tag-container">
+        <div id="add-tag-container">
             <input type="text" id="add-tag" list="tag-list" placeholder="Tag hinzufügen" value="">
             <datalist id="tag-list">
                 {% for t in tags %}
@@ -211,7 +211,7 @@
             </tbody>
         </table>
         <footer>
-            <a role="button" class="outline secondary" target="_blank" href="">Details öffnen</a>
+            <a role="button" class="secondary" target="_blank" href="">mehr Details</a>
         </footer>
     </article>
 </dialog>
@@ -264,14 +264,10 @@
         </label>
         <label>
             Tags
+            <div id="filter-tag-container"></div>
+            <input type="hidden" id="filter-tag-result" value="">
             <div class="grid">
-                <input type="text" id="filter-tag" list="tag-list" placeholder="Tag (, getrennt)"
-                    {% if 'tags' in filters %}
-                        value="{{filters.tags}}" aria-invalid="false"
-                    {% else %}
-                        value=""
-                    {% endif %}
-                />
+                <input type="text" id="filter-tag" list="tag-list" placeholder="Tag (mehrere mit Enter)" />
                 <select id="filter-tag-mode" {% if 'tags' in filters %} aria-invalid="false" {% endif %}/>
                     <option value="in" {{"selected" if filters.tag_mode and filters.tag_mode == 'in'}}>eines davon</option>
                     <option value="all" {{"selected" if filters.tag_mode and filters.tag_mode == 'all'}}>alle davon</option>
@@ -306,5 +302,17 @@
 </dialog>
 
 <script src="{{ url_for('static', filename='js/iban.js') }}"></script>
+{% if 'tags' in filters %}
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+
+        const inputTagsLoop = document.getElementById("filter-tag");
+        {% for t in filters.tags.split(',') %}
+        addTagBullet(inputTagsLoop, "filter-tag-container", "filter-tag-result", "{{t}}");
+        {% endfor %}
+
+    });
+    </script>
+{% endif %}
 
 {% endblock %}

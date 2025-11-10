@@ -30,18 +30,28 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // Tag Chip Bullets
-    const inputField = document.getElementById("add-tag");
+    const inputTagContainers = [
+        [document.getElementById("add-tag"), "add-tag-container"],
+        [document.getElementById("filter-tag"), "filter-tag-container", "filter-tag-result"]
+    ];
 
-    inputField.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-            e.preventDefault();
-            addTagBullet(inputField, "tag-container");
-        }
-    });
-
-    inputField.addEventListener("blur", () => {
-        addTagBullet(inputField, "tag-container");
-    });
+    for (let index = 0; index < inputTagContainers.length; index++) {
+        const inputTag = inputTagContainers[index][0];
+        const tagContainer = inputTagContainers[index][1];
+        const hiddenInput = inputTagContainers[index][2] || null;
+    
+        inputTag.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                addTagBullet(inputTag, tagContainer, hiddenInput);
+            }
+        });
+    
+        inputTag.addEventListener("blur", () => {
+            addTagBullet(inputTag, tagContainer, hiddenInput);
+        });
+        
+    }
 
     // Filter IBAN Button
     document.getElementById('apply-filter').addEventListener('click', () => {
@@ -335,7 +345,6 @@ function loadMore() {
         get_args = '?' + page_args;
 
     }
-    console.log(additional_filters, get_args);
 
     ajax.open('GET', "/" + IBAN + get_args, true);
 	ajax.send();

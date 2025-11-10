@@ -57,7 +57,7 @@ function getFilteredList() {
         arg_concat = '&';
     }
 
-    const tags = document.getElementById('filter-tag').value;
+    const tags = document.getElementById('filter-tag-result').value;
     if (tags) {
         query_args = query_args + arg_concat + 'tags=' + tags;
         arg_concat = '&';
@@ -93,12 +93,19 @@ function getFilteredList() {
  * 
  * @param {string} tagContainerId Id to select the container with tag-chips
  * 
+ * @param {string} hiddenInput (optional) Target id to push new values to instead of global var TAGS
+ * 
  * @param {string} tagvalue (optional) Provide a Tag-Value insted of looking at text-input
  * 
  */
-function addTagBullet(inputField, tagContainerId, tagvalue) {
+function addTagBullet(inputField, tagContainerId, hiddenInput, tagvalue) {
 	const tagConatiner = document.getElementById(tagContainerId);
 	const value = tagvalue || inputField.value.trim();
+	if (hiddenInput) {
+		// Select Elemnt to read and write from Tags
+		hiddenInput = document.getElementById(hiddenInput);
+		TAGS = hiddenInput.value.split(',').filter(t => t != "");
+	}
 	if (value && !TAGS.includes(value)) {
 		TAGS.push(value);
 
@@ -114,6 +121,9 @@ function addTagBullet(inputField, tagContainerId, tagvalue) {
 		tagEl.appendChild(removeBtn);
 		tagConatiner.appendChild(tagEl);
 
+		if (hiddenInput) {
+			hiddenInput.value = TAGS;
+		}
 		inputField.value = "";
 	}
 }

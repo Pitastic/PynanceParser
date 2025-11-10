@@ -78,7 +78,10 @@ document.addEventListener("click", (event) => {
   if (visibleModal === null) return;
   const modalContent = visibleModal.querySelector("article");
   const isClickInside = modalContent.contains(event.target);
-  !isClickInside && closeModal(visibleModal);
+  if (!isClickInside && !event.target.classList.contains('remove')) {
+    // handle removed TagBullets in Modals
+    closeModal(visibleModal);
+  }
 });
 
 // Close with Esc key

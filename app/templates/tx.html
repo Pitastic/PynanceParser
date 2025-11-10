@@ -101,7 +101,7 @@
         const inputField = document.getElementById("tag-input");
     
         {% for tag in tx.tags %}
-            addTagBullet(inputField, "tag-container", "{{tag}}");
+            addTagBullet(inputField, "tag-container", null, "{{tag}}");
         {% endfor %}
     
     });
