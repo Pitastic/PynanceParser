@@ -32,7 +32,7 @@
             <a href="javascrip:void(0)" data-target="cat-popup" onclick="toggleModal(event)">&#128209; Regeln</a>
             -->
             <li>
-                <button data-target="cat-popup" class="secondary" onclick="toggleModal(event)">
+                <button data-target="rule-popup" class="secondary" onclick="toggleModal(event)">
                     &#128209; Regeln
                 </button>
             </li>
@@ -117,14 +117,15 @@
     </article>
 </dialog>
 
-<dialog id="tag-popup">
+<dialog id="rule-popup">
     <article>
         <header>
-            <button aria-label="Close" rel="prev" data-target="tag" onclick="toggleModal(event)"></button>
-            <h2>Tagging</h2>
+            <button aria-label="Close" rel="prev" data-target="rule-popup" onclick="toggleModal(event)"></button>
+            <h2>Regelsätze</h2>
         </header>
-        
-        <p>Es können standardmäßig alle oder nur eine ausgewählte Regel auf alle Transaktionen zum Tagging genutzt werden.</p>
+        <p>Es können standardmäßig alle oder jeweils nur eine ausgewählte Regel auf alle Transaktionen zum Taggen oder Kategorisieren genutzt werden.</p>
+
+        <h3>Tags</h3>
         <p>
             <select id="tag-select">
                 <option value="">Alle Regeln</option>
@@ -138,25 +139,16 @@
                 Dry Run (Es werden keine Transaktionen geändert)
             </label>
         </p>
+
         <p>
-            <textarea type="text" id="custom-tag" placeholder="{&#10;  JSON&#10;}" rows="8"></textarea>
-            <small>Wähle die Regel "Custom", um dieses Textfeld zu nutzen.</small>
+            <details name="custom-tagging">
+            <summary>Eigene Tagging-Regel</summary>
+                <textarea type="text" id="custom-tag" placeholder="{&#10;  JSON&#10;}" rows="8"></textarea>
+                <small>Wähle die Regel "Custom", um dieses Textfeld zu nutzen.</small>
+            </details>
         </p>
-        
-        <footer>
-            <button onclick="tagAndCat('tag')">Tag Transaktionen</button>
-        </footer>
-    </article>
-</dialog>
 
-<dialog id="cat-popup">
-    <article>
-        <header>
-            <button rel="prev" aria-label="Close" data-target="cat-popup" onclick="toggleModal(event)"></button>
-            <h2>Kategoriesierung</h2>
-        </header>
-
-        <p>Es können standardmäßig alle oder nur eine ausgewählte Regel auf alle Transaktionen zum Kategorisieren genutzt werden.</p>
+        <h3>Kategorien</h3>
         <p>
             <select id="cat-select">
                 <option value="">Alle Regeln</option>
@@ -170,14 +162,19 @@
                 Dry Run (Es werden keine Transaktionen geändert)
             </label>
         </p>
+
         <p>
-            <textarea type="text" id="custom-cat" placeholder="{&#10;  JSON&#10;}" rows="10"></textarea>
-            <small>Wähle die Regel "Custom", um dieses Textfeld zu nutzen.</small>
+            <details name="custom-cat">
+            <summary>Eigene Kategorisierungs-Regel</summary>
+                <textarea type="text" id="custom-cat" placeholder="{&#10;  JSON&#10;}" rows="10"></textarea>
+                <small>Wähle die Regel "Custom", um dieses Textfeld zu nutzen.</small>
+            </details>
         </p>
 
         <footer>
-            <button onclick="tagAndCat('cat')">Kategorisieren</button>
-        </footer>        
+            <button class="" onclick="tagAndCat('tag')">Taggen</button>
+            <button class="" onclick="tagAndCat('cat')">Kategorisieren</button>
+        </footer>
     </article>
 </dialog>
 
