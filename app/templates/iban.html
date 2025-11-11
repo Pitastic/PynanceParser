@@ -5,9 +5,19 @@
 
 
 <header class="container">
-    <h1>Kontoübersicht</h1>
     <nav>
         <ul>
+            <li>
+                <hgroup>
+                    <h3>
+                        Kontoumsätze
+                    </h3>
+                    {{IBAN}}
+                </hgroup>
+            </li>
+        </ul>
+        <ul>
+            <!--
             <li>
                 <button id="edit-selected" data-target="massedit-popup" onclick="toggleModal(event)" disabled title="Edit (nichts ausgewählt)">
                     ✏️
@@ -19,11 +29,18 @@
                     Rule Kategorisieren
                 </button>
             </li>
+            <a href="javascrip:void(0)" data-target="cat-popup" onclick="toggleModal(event)">&#128209; Regeln</a>
+            -->
             <li>
-                <a href="/{{IBAN}}/stats" title="Statistiken">&sum;</a>
+                <button data-target="cat-popup" class="secondary" onclick="toggleModal(event)">
+                    &#128209; Regeln
+                </button>
             </li>
             <li>
-                <a href="/logout" title="Logout">🚪</a>
+                &#128202; <a href="/{{IBAN}}/stats" title="Statistiken">Statistik</a>
+            </li>
+            <li>
+                &#128682; <a href="/logout" title="Logout">Logout</a>
             </li>
         </ul>
     </nav>
