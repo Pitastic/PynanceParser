@@ -509,6 +509,28 @@ def test_tag_manual(test_app):
             assert tags == ['Replaced_TAG'], \
                 "Es wurden falsche Tags gespeichert"
 
+            # Check Tag deduplication
+            new_tag = {
+                'tags': ['Replaced_TAG'], # same again !
+                'overwrite': True
+            }
+            r = client.put(
+                "/api/setManualTag/DE89370400440532013000/6884802db5e07ee68a68e2c64f9c0cdd",
+                json=new_tag
+            )
+            assert r.status_code == 200, \
+                "Der Statuscode war nicht wie erwartet"
+
+            # Check if new values correct stored (just one time)
+            r = client.get(
+                '/api/DE89370400440532013000/6884802db5e07ee68a68e2c64f9c0cdd'
+            )
+            r = r.json
+            assert isinstance(r.get('tags'), list), "Tags wurde nicht als Liste gespeichert"
+            tags = r.get('tags')
+            assert tags == ['Replaced_TAG'], \
+                "Es wurden falsche Tags gespeichert"
+
 
 def test_categorize_manual(test_app):
     """Testet das Kategorisieren über den API Endpunkt:
@@ -652,7 +674,7 @@ def test_iban_filtering(test_app):
                 f"Es wurden {len(rows)} Einträge gefunden, statt der erwarteten 1"
 
             # Betrag Filter
-            result = client.get("/DE89370400440532013000?betrag=-200&betrag_mode=%3C")
+            result = client.get("/DE89370400440532013000?betrag_max=-200")
             soup = BeautifulSoup(result.text, features="html.parser")
             rows = soup.css.select('table.transactions tr[name] td input.row-checkbox')
             assert result.status_code == 200, \
