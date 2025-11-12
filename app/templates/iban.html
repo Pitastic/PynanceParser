@@ -17,27 +17,13 @@
             </li>
         </ul>
         <ul>
-            <!--
-            <li>
-                <button id="edit-selected" data-target="massedit-popup" onclick="toggleModal(event)" disabled title="Edit (nichts ausgewählt)">
-                    ✏️
-                </button>
-                <button data-target="tag-popup" onclick="toggleModal(event)">
-                    Rule Tagging
-                </button>
-                <button data-target="cat-popup" onclick="toggleModal(event)">
-                    Rule Kategorisieren
-                </button>
-            </li>
-            <a href="javascrip:void(0)" data-target="cat-popup" onclick="toggleModal(event)">&#128209; Regeln</a>
-            -->
             <li>
                 <button data-target="rule-popup" class="secondary" onclick="toggleModal(event)">
                     &#128209; Regeln
                 </button>
             </li>
             <li>
-                &#128202; <a href="/{{IBAN}}/stats" title="Statistiken">Statistik</a>
+                &#128202; <a href="/{{IBAN}}/stats?{{ request.query_string.decode('utf-8')|safe }}" title="Statistiken">Statistik</a>
             </li>
             <li>
                 &#128682; <a href="/logout" title="Logout">Logout</a>
@@ -52,9 +38,9 @@
             <thead>
                 <tr>
                     <th><input type="checkbox" id="select-all"></th>
-                    <th>Date</th>
-                    <th>Text</th>
-                    <th>Category</th>
+                    <th>Datum<br><small class="secondary">(Valuta)</small></th>
+                    <th>Buchungstext</th>
+                    <th>Kategorie</th>
                     <th>Tags</th>
                     <th>Betrag</th>
                     <th>&nbsp;</th>
@@ -244,103 +230,9 @@
     </article>
 </dialog>
 
-<dialog id="filter-popup">
-    <article>
-        <header>
-            <button rel="prev" aria-label="Close" data-target="filter-popup" onclick="toggleModal(event)"></button>
-            <h2>Transaktions Details</h2>
-        </header>
-
-        <label>
-            Datum
-            <div class="grid">
-                <input type="date" id="filter-range-start" placeholder="Start Date: d.m.Y"
-                    {% if 'startDate' in filters %}
-                        value="{{filters.startDate}}" aria-invalid="false"
-                    {% else %}
-                        value=""
-                    {% endif %}
-                />
-                <input type="date" id="filter-range-end" placeholder="End Date: d.m.Y"
-                    {% if 'endDate' in filters %}
-                        value="{{filters.endDate}}" aria-invalid="false"
-                    {% else %}
-                        value=""
-                    {% endif %}
-                />
-            </div>
-        </label>
-        <label>
-            Überweisungstext
-            <input type="text" id="filter-text" placeholder="RegEx Textfilter"
-                {% if 'text' in filters %}
-                    value="{{filters.text}}" aria-invalid="false"
-                {% else %}
-                    value=""
-                {% endif %}
-            />
-        </label>
-        <label>
-            Kategorien
-            <input type="text" id="filter-cat" list="cat-list" placeholder="Kategorie"
-                {% if 'category' in filters %}
-                    value="{{filters.category}}" aria-invalid="false"
-                {% else %}
-                    value=""
-                {% endif %}
-            />
-        </label>
-        <label>
-            Tags
-            <div id="filter-tag-container"></div>
-            <input type="hidden" id="filter-tag-result" value="">
-            <div class="grid">
-                <input type="text" id="filter-tag" list="tag-list" placeholder="weiteres Tag (Enter)" />
-                <select id="filter-tag-mode" {% if 'tags' in filters %} aria-invalid="false" {% endif %}/>
-                    <option value="in" {{"selected" if filters.tag_mode and filters.tag_mode == 'in'}}>eines davon</option>
-                    <option value="all" {{"selected" if filters.tag_mode and filters.tag_mode == 'all'}}>alle davon</option>
-                    <option value="notin" {{"selected" if filters.tag_mode and filters.tag_mode == 'notin'}}>keine davon</option>
-                </select>
-            </div>
-        </label>
-        <label>
-            Betrag
-            <div class="grid">
-                <input type="number" step="0.01" id="filter-betrag-min" placeholder="Betrag (min)"
-                    {% if "betrag_min" in filters %}
-                        value="{{filters['betrag_min']}}" aria-invalid="false" />
-                    {% else %}
-                        value="" />
-                    {% endif %}
-                <input type="number" step="0.01" id="filter-betrag-max" placeholder="Betrag (max)"
-                    {% if "betrag_max" in filters %}
-                        value="{{filters['betrag_max']}}" aria-invalid="false" />
-                    {% else %}
-                        value="" />
-                    {% endif %}
-            </div>
-        </label>
-
-        <footer>
-            <button class="contrast" id="reset-filter">Reset</button>
-            <button id="apply-filter">Apply</button>
-        </footer>
-
-    </article>
-</dialog>
+{% from 'macros.html' import filterDialog %}
+{{ filterDialog(filters) }}
 
 <script src="{{ url_for('static', filename='js/iban.js') }}"></script>
-{% if 'tags' in filters %}
-    <script>
-    document.addEventListener('DOMContentLoaded', function () {
-
-        const inputTagsLoop = document.getElementById("filter-tag");
-        {% for t in filters.tags.split(',') %}
-        addTagBullet(inputTagsLoop, "filter-tag-container", "filter-tag-result", "{{t}}");
-        {% endfor %}
-
-    });
-    </script>
-{% endif %}
 
 {% endblock %}

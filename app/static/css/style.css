@@ -29,6 +29,21 @@ main {
 /* Hide an Element */
 .hide {display: none !important;}
 
+/* Color classes */
+.delete {
+    color: white;
+    border-color: var(--pico-color-red-600);
+    background-color: var(--pico-color-red-600);
+}
+    .outline.delete {
+        color: var(--pico-color-red-500);
+        border-color: var(--pico-color-red-500);
+        background-color: transparent;
+    }
+small.secondary, strong.secondary, i.secondary {
+    color: var(--pico-secondary);
+}
+
 /* float bottom righth Button/Container */
 .bottom-fixed {
     position: fixed;
@@ -51,18 +66,6 @@ main {
     background: var(--pico-color-red-600);
     color: white;
 }
-
-/* Buttons */
-.delete {
-    color: white;
-    border-color: var(--pico-color-red-600);
-    background-color: var(--pico-color-red-600);
-}
-    .outline.delete {
-        color: var(--pico-color-red-500);
-        border-color: var(--pico-color-red-500);
-        background-color: transparent;
-    }
 
 /* File Upload Area */
 #file-drop-area, #settings-drop-area {
