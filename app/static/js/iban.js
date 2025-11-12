@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     ROW_CHECKBOXES.forEach(checkbox => {
+        checkbox.checked = false;
         checkbox.addEventListener('change', function () {
         if (!this.checked) {
             selectAllCheckbox.checked = false;
@@ -123,10 +124,18 @@ function fillTxDetails(result) {
 function updateEditButtonState() {
 	const anyChecked = Array.from(ROW_CHECKBOXES).some(cb => cb.checked);
     const editButton = document.getElementById('edit-selected');
+    const badge = editButton.parentNode.querySelector('.badge');
     editButton.disabled = !anyChecked;
-	editButton.title = anyChecked
-	? `Edit (${Array.from(ROW_CHECKBOXES).filter(cb => cb.checked).length} selected)`
-	: 'Edit (nichts ausgewählt)';
+    if (anyChecked) {
+        const selectedCount = Array.from(ROW_CHECKBOXES).filter(cb => cb.checked).length;
+        editButton.className = "primary";
+        editButton.classList.remove('hide');
+        badge.innerHTML = selectedCount;
+    } else {
+        editButton.className = "secondary outline";
+        editButton.classList.add('hide');
+        badge.innerHTML = "0";
+    }
 }
 
 function listTxElements() {

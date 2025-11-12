@@ -1,3 +1,9 @@
+/* Colors */
+:host,:root{
+    --pico-color-red-500: rgb(217, 53, 38);
+    --pico-color-red-600: rgb(175, 41, 29);
+}
+
 /* Full Page Layout */
 body {
     display: flex;
@@ -24,25 +30,37 @@ main {
 .hide {display: none !important;}
 
 /* float bottom righth Button/Container */
-.bottom-right {
+.bottom-fixed {
     position: fixed;
     bottom: 1em;
-    right: 1em;
     z-index: 1000;
 }
-    .bottom-right > button {
+    .bottom-fixed.right {right: 1em;}
+    .bottom-fixed.left {left: 1em;}
+    .bottom-fixed > button {
         border-radius: 2em;
     }
+
+/* Number indicator on Buttons */
+.badge {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    padding: 2.5px 0.5em;
+    border-radius: 50%;
+    background: var(--pico-color-red-600);
+    color: white;
+}
 
 /* Buttons */
 .delete {
     color: white;
-    border-color: rgb(175, 41, 29);
-    background-color: rgb(175, 41, 29);
+    border-color: var(--pico-color-red-600);
+    background-color: var(--pico-color-red-600);
 }
     .outline.delete {
-        color: rgb(217, 53, 38);
-        border-color: rgb(217, 53, 38);
+        color: var(--pico-color-red-500);
+        border-color: var(--pico-color-red-500);
         background-color: transparent;
     }
 
@@ -67,19 +85,6 @@ main {
     text-align: right;
 }
 
-/* Tag Steuerung
-.tag-chip {
-    margin-right: 0.2em;
-    padding: 0.2em;
-    background-color: #4ab477;
-    color: black;
-    border-radius: 0.2em;
-}
-    .tag-chip.parsed {
-        display: inline-block;
-        background-color: blueviolet;
-    }
-*/
 .tag-chip {
     display: inline-block;
     padding: .375rem;
@@ -89,13 +94,15 @@ main {
     background-color: var(--pico-code-kbd-background-color);
     border-radius: var(--pico-border-radius);
     color: var(--pico-code-kbd-color);
-    vertical-align: baseline;
     font-weight: bolder;
     font-size: .875em;
     font-family: var(--pico-font-family);
     line-height: initial;
     text-decoration: none;
 }
+    .tag-chip:last-child {
+        margin-bottom: 1em;
+    }
     .tag-chip:hover, .tag-chip a, .tag-chip a:hover {
         text-decoration: none;
         color: initial;

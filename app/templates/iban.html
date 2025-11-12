@@ -76,8 +76,14 @@
 </main>
 
 <footer>
-    <section class="bottom-right">
+    <section class="bottom-fixed right">
         <button class="{% if filters.keys() %}primary{%else%}secondary outline{%endif%}" data-target="filter-popup" onclick="toggleModal(event)">&#128207;</button>
+    </section>
+    <section class="bottom-fixed left">
+        <button id="edit-selected" class="secondary outline hide" data-target="massedit-popup" onclick="toggleModal(event)" disabled title="Edit (nichts ausgewählt)">
+        ✏️
+        <span class="badge"></span>
+        </button>
     </section>
 </footer>
 
@@ -95,16 +101,20 @@
             </ul>
         </details>
 
-        <div id="add-tag-container">
-            <input type="text" id="add-tag" list="tag-list" placeholder="Tag hinzufügen" value="">
-            <datalist id="tag-list">
-                {% for t in tags %}
-                <option>{{ t }}</option>
-                {% endfor %}
-            </datalist>
-            <button onclick="addTag()">Tag hinzufügen</button>
+        <div id="add-tag-container"></div>
+        <input type="text" id="add-tag" list="tag-list" placeholder="weiteres Tag (Enter)" value="">
+        <datalist id="tag-list">
+            {% for t in tags %}
+            <option>{{ t }}</option>
+            {% endfor %}
+        </datalist>
+
+        <p>
             <button onclick="removeTags()" class="delete outline">Tags entfernen</button>
-        </div>
+            <button onclick="addTag()">Tag hinzufügen</button>
+        </p>
+
+        <hr />
 
         <input type="text" id="add-cat" list="cat-list" placeholder="Kategorie" value="">
         <datalist id="cat-list">
@@ -112,8 +122,8 @@
             <option>{{ c }}</option>
             {% endfor %}
         </datalist>
+        <button onclick="removeCats()" class="delete outline">Kategorie entfernen</button>
         <button onclick="addCat()">Kategorie setzen</button>
-        <button onclick="removeCats()">Kategorie entfernen</button>
     </article>
 </dialog>
 
@@ -281,7 +291,7 @@
             <div id="filter-tag-container"></div>
             <input type="hidden" id="filter-tag-result" value="">
             <div class="grid">
-                <input type="text" id="filter-tag" list="tag-list" placeholder="Tag (mehrere mit Enter)" />
+                <input type="text" id="filter-tag" list="tag-list" placeholder="weiteres Tag (Enter)" />
                 <select id="filter-tag-mode" {% if 'tags' in filters %} aria-invalid="false" {% endif %}/>
                     <option value="in" {{"selected" if filters.tag_mode and filters.tag_mode == 'in'}}>eines davon</option>
                     <option value="all" {{"selected" if filters.tag_mode and filters.tag_mode == 'all'}}>alle davon</option>
