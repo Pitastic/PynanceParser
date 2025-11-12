@@ -176,7 +176,7 @@ class TinyDbHandler(BaseDb):
             for doc in docs_to_update:
                 existing_tags = doc.get('tags') or []
                 update_data = copy.deepcopy(data)
-                update_data['tags'] = existing_tags + new_tags
+                update_data['tags'] = list(set(existing_tags + new_tags))
                 update_result += collection.update(update_data, query)
 
         else:

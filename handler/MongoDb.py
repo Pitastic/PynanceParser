@@ -152,7 +152,7 @@ class MongoDbHandler(BaseDb):
             # Define Operation
             update_op = {
                 '$set': data,
-                '$push': {'tags': {'$each': new_tags}}
+                '$addToSet': {'tags': {'$each': new_tags}}
             }
 
         else:
