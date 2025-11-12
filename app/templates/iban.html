@@ -92,7 +92,7 @@
     <article>
         <header>
             <button aria-label="Close" rel="prev" data-target="massedit-popup" onclick="toggleModal(event)"></button>
-            <h2>Mass Edit</h2>
+            <h2>Stapel bearbeiten</h2>
         </header>
 
         <details name="tx_list">
@@ -100,6 +100,8 @@
             <ul id="tx-select-list">
             </ul>
         </details>
+
+        <hr />
 
         <div id="add-tag-container"></div>
         <input type="text" id="add-tag" list="tag-list" placeholder="weiteres Tag (Enter)" value="">
@@ -109,9 +111,9 @@
             {% endfor %}
         </datalist>
 
-        <p>
-            <button onclick="removeTags()" class="delete outline">Tags entfernen</button>
-            <button onclick="addTag()">Tag hinzufügen</button>
+        <p dir="rtl">
+            <button onclick="addTag()">hinzufügen</button>
+            <button onclick="removeTags()" class="delete outline">entfernen</button>
         </p>
 
         <hr />
@@ -122,8 +124,10 @@
             <option>{{ c }}</option>
             {% endfor %}
         </datalist>
-        <button onclick="removeCats()" class="delete outline">Kategorie entfernen</button>
-        <button onclick="addCat()">Kategorie setzen</button>
+        <p dir="rtl">
+            <button onclick="addCat()">hinzufügen</button>
+            <button onclick="removeCats()" class="delete outline">entfernen</button>
+        </p>
     </article>
 </dialog>
 

@@ -89,7 +89,7 @@ main {
     display: inline-block;
     padding: .375rem;
     margin: 0.33em 0;
-    margin-right: 0.33em;
+    margin-right: 0.33em; /* Add spaces between Tags */
     background: var(--pico-code-background-color);
     background-color: var(--pico-code-kbd-background-color);
     border-radius: var(--pico-border-radius);
@@ -99,13 +99,18 @@ main {
     font-family: var(--pico-font-family);
     line-height: initial;
     text-decoration: none;
+    white-space: nowrap;
 }
-    .tag-chip:last-child {
+    #filter-tag-container .tag-chip:last-child, #add-tag-container .tag-chip:last-child {
+        /* Push following input */
         margin-bottom: 1em;
     }
     .tag-chip:hover, .tag-chip a, .tag-chip a:hover {
         text-decoration: none;
         color: initial;
+    }
+    .tag-chip.category {
+        background-color: cornflowerblue;
     }
     .tag-chip.parsed {
         background-color: blueviolet;

@@ -8,7 +8,9 @@
         <td>{{ transaction.text_tx }}</td>
         <td>
             {% if transaction.category %}
-            <span title="{{ transaction.category }}">🔖</span>
+            <a class="tag-chip category" href="?category={{transaction.category}}">
+                &#128193; {{ transaction.category }}
+            </a>
             {% else %}
             &nbsp;
             {% endif %}

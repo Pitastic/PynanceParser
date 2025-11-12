@@ -77,7 +77,6 @@ function resetDetails() {
     all_td.forEach(td => {
         td.innerHTML = "";
     });
-    const tx_link = document.querySelector('#details-popup footer a').href = "";
 }
 
 
@@ -97,8 +96,19 @@ function fillTxDetails(result) {
                 continue;
             }
 
-            if (key == 'date_tx' || key == "valuta"){
+            if (key == 'date_tx' || key == "valuta") {
+                // Dateformat
                 td.innerHTML = formatUnixToDate(r[key]);
+
+            } else if ((key == 'category' || key == "tags") && r[key]) {
+                // Tag Chips
+                const row = Array.isArray(r[key]) ? r[key] : [r[key]];
+                for (let index = 0; index < row.length; index++) {
+                    const span = document.createElement('span');
+                    span.innerHTML = row[index];
+                    span.className = 'tag-chip ' + key;
+                    td.appendChild(span)
+                }
 
             } else {
                 td.innerHTML = r[key];

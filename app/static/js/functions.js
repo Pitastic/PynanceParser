@@ -93,17 +93,17 @@ function getFilteredList() {
  * 
  * @param {string} tagContainerId Id to select the container with tag-chips
  * 
- * @param {string} hiddenInput (optional) Target id to push new values to instead of global var TAGS
+ * @param {string} hiddenInputId (optional) Target id to push new values to instead of global var TAGS
  * 
  * @param {string} tagvalue (optional) Provide a Tag-Value insted of looking at text-input
  * 
  */
-function addTagBullet(inputField, tagContainerId, hiddenInput, tagvalue) {
+function addTagBullet(inputField, tagContainerId, hiddenInputId, tagvalue) {
 	const tagConatiner = document.getElementById(tagContainerId);
 	const value = tagvalue || inputField.value.trim();
-	if (hiddenInput) {
+	if (hiddenInputId) {
 		// Select Elemnt to read and write from Tags
-		hiddenInput = document.getElementById(hiddenInput);
+		var hiddenInput = document.getElementById(hiddenInputId);
 		TAGS = hiddenInput.value.split(',').filter(t => t != "");
 	}
 	if (value && !TAGS.includes(value)) {
@@ -117,24 +117,40 @@ function addTagBullet(inputField, tagContainerId, hiddenInput, tagvalue) {
 		removeBtn.className = "remove";
 		removeBtn.innerHTML = "&times;";
 		removeBtn.href = "javascript:void(0)";
-		removeBtn.addEventListener("click", () => removeTagBullet(tagEl));
+
+		if (hiddenInputId) {
+			// Care about the Input and pass it to the removal method
+			hiddenInput.value = TAGS;
+			removeBtn.addEventListener("click", () => removeTagBullet(tagEl, hiddenInputId));
+
+		} else {
+			removeBtn.addEventListener("click", () => removeTagBullet(tagEl));
+		}
+
 		tagEl.appendChild(removeBtn);
 		tagConatiner.appendChild(tagEl);
 
-		if (hiddenInput) {
-			hiddenInput.value = TAGS;
-		}
 		inputField.value = "";
 	}
 }
 
 /**
  * Dynamic Bullet list
- * Deletes a dynamic Tag-Bullet
+ * Deletes a dynamic Tag-Bullet from the global variable and the DOM
+ * 
+ * @param {DOMElement} element The Tagelement to remove
+ * 
+ * @param {string} hiddenInputId (optional) Target id to push new values to instead of global var TAGS
  */
-function removeTagBullet(element) {
-    TAGS = TAGS.filter(t => t !== element.firstChild.textContent);
-    element.remove();
+function removeTagBullet(element, hiddenInputId) {
+	TAGS = TAGS.filter(t => t !== element.firstChild.textContent);
+	element.remove();
+
+	if (hiddenInputId) {
+		const hiddenInput = document.getElementById(hiddenInputId);
+		hiddenInput.value = TAGS;
+	}
+
 }
 
 // ----------------------------------------------------------------------------
