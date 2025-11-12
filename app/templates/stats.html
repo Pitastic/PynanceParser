@@ -17,7 +17,7 @@
         </ul>
         <ul>
             <li>
-                &larrhk; <a href="/{{IBAN}}">zurück</a>
+                &larrhk; <a href="/{{IBAN}}?{{ request.query_string.decode('utf-8')|safe }}">zurück</a>
             </li>
         </ul>
     </nav>
