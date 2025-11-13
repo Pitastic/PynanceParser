@@ -25,10 +25,11 @@
 
 <main class="container">
 
-    <section>
+    <h4>Top Beträge</h4>
+    <section class="grid s-12 m-6-6 l-4-4-4">
 
         <article>
-            <h2>Top Kategorie (Beträge)</h2>
+            <h5>Kategorien</h5>
             <table class="ranking">
                 <tbody>
                     {% for c, betrag in sums.categories.items() %}
@@ -42,7 +43,7 @@
         </article>
 
         <article>
-            <h2>Top Tags (Beträge)</h2>
+            <h5>Tags</h5>
             <table class="ranking">
                 <tbody>
                     {% for t, betrag in sums.tags.items() %}

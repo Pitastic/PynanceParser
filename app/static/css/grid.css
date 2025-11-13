@@ -1,64 +1,26 @@
-/* Card Containers */
-.card-grid {
-    display: grid;
-    grid-template-columns: repeat(1, 1fr);
-    grid-template-rows: 1fr;
-    grid-column-gap: auto;
-    grid-row-gap: 15px;
-}
+/* Grid Patterns (12 Columns) */
+.grid {row-gap: 0;}
+.grid.margin {row-gap: 1rem;}
 
+/* S (default: s-12) */
+.grid.s-6-6 {grid-template-columns: 1fr 1fr;}
+
+/* M */
 @media (min-width: 768px) {
-    .card-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        grid-template-rows: 1fr;
-        grid-column-gap: 25px;
-        grid-row-gap: 20px;
-    }
+    .grid.m-12 {grid-template-columns: 1fr;}
+    .grid.m-6-6 {grid-template-columns: 1fr 1fr;}
 }
 
+/* L */
 @media (min-width: 1280px) {
-    .card-grid {
-        display: grid;
-        grid-template-columns: repeat(1, 1fr);
-        grid-template-rows: 1fr;
-        grid-column-gap: auto;
-        grid-row-gap: 15px;
-    }
+    .grid.l-12 {grid-template-columns: 1fr;}
+    .grid.l-6-6 {grid-template-columns: 1fr 1fr;}
+    .grid.l-4-4-4 {grid-template-columns: 1fr 1fr 1fr;}
 }
 
+/* XL */
 @media (min-width: 1536px) {
-    .card-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        grid-template-rows: 1fr;
-        grid-column-gap: 30px;
-        grid-row-gap: 25px;
-    }
-        .card-grid.no-large {
-            grid-template-columns: repeat(1, 1fr);
-        }
-}
-
-/* Parent Containers */
-.outer-card-grid {
-    display: grid;
-    grid-template-columns: repeat(1, 1fr);
-    grid-template-rows: 1fr;
-    grid-column-gap: auto;
-    grid-row-gap: 15px;
-}
-@media (min-width: 1280px) {
-    .outer-card-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        grid-template-rows: 1fr;
-        grid-column-gap: 30px;
-        grid-row-gap: 25px;
-    }
-}
-@media (min-width: 1536px) {
-    .outer-card-grid {
-        grid-template-columns: 66% 34%;
-    }
+    .grid.xl-12 {grid-template-columns: 1fr;}
+    .grid.xl-6-6 {grid-template-columns: 1fr 1fr;}
+    .grid.xl-8-4 {grid-template-columns: 8fr 4fr;}
 }

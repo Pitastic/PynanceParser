@@ -13,13 +13,13 @@
         Importiere neue Kontoumsätze oder wähle die Übersicht aus, an der du weiterarbeiten möchtest. Das Konto wird bei einem Import automatisch erstellt.
     </p>
 
-    <section class="outer-card-grid">
+    <section class="grid m-12 l-6-6 xl-8-4 margin">
 
         <article>
             <header>
                 <strong>Konten</strong>
             </header>
-            <div class="card-grid">
+            <div class="grid m-6-6 l-12 xl-6-6 margin">
                 {% if ibans %}
                 {% for iban in ibans %}
                 <button class="outline contrast" data-target="add-iban" data-iban="{{iban}}" onclick="toggleModal(event)">&#128212; {{iban}}</button>
@@ -33,7 +33,7 @@
             <header>
                 <strong>Gruppen</strong>
             </header>
-            <div class="card-grid no-large">
+            <div class="grid m-6-6 l-12 margin">
                 {% if groups %}
                 {% for group in groups %}
                 <button class="outline contrast" data-target="add-group" data-group="{{group}}" onclick="toggleModal(event)">&#128218; {{group}}</button>
