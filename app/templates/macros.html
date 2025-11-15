@@ -12,7 +12,7 @@
         <td>
             {% if transaction.category %}
             <a class="tag-chip category" href="?category={{transaction.category}}">
-                &#128193; {{ transaction.category }}
+                {{ transaction.category }}
             </a>
             {% else %}
             &nbsp;
@@ -25,10 +25,13 @@
             </a>
             {% endfor %}
         </td>
-        <td class="betrag">{{ transaction.currency }} {{ "%.2f"|format(transaction.betrag|round(2)) }}</td>
+        <td class="betrag" dir="ltr">
+            {{ "%.2f"|format(transaction.betrag|round(2)) }}
+            <small class="secondary">{{ transaction.currency }}</small>
+        </td>
         <td>
-            <button class="outline secondary" title="Show details" data-target="details-popup" data-tx="{{ transaction.uuid }}"
-                onclick="toggleModal(event)">ℹ️</button>
+            <button class="secondary info" title="Show details" data-target="details-popup" data-tx="{{ transaction.uuid }}"
+                onclick="toggleModal(event)">&#8599;</button>
         </td>
     </tr>
 

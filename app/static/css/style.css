@@ -44,6 +44,7 @@ small.secondary, strong.secondary, i.secondary {
     color: var(--pico-secondary);
 }
 
+/* Buttons */
 /* float bottom righth Button/Container */
 .bottom-fixed {
     position: fixed;
@@ -55,6 +56,11 @@ small.secondary, strong.secondary, i.secondary {
     .bottom-fixed > button {
         border-radius: 2em;
     }
+/* Info TX button */
+button.info {
+    padding: 1em;
+    line-height: 0em;
+}
 
 /* Number indicator on Buttons */
 .badge {
@@ -82,9 +88,9 @@ small.secondary, strong.secondary, i.secondary {
     cursor: pointer;
 }
 
-/* Details-Table */
-#dynamic-results th {
-    font-weight: bold;
+/* Tables */
+.transactions td.betrag {
+    white-space: nowrap;
     text-align: right;
 }
 
@@ -104,7 +110,9 @@ small.secondary, strong.secondary, i.secondary {
     text-decoration: none;
     white-space: nowrap;
 }
-    #filter-tag-container .tag-chip:last-child, #add-tag-container .tag-chip:last-child {
+    #filter-tag-container .tag-chip:last-child,
+    #add-tag-container .tag-chip:last-child,
+    #tag-container .tag-chip:last-child {
         /* Push following input */
         margin-bottom: 1em;
     }

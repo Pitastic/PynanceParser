@@ -88,7 +88,7 @@ def test_upload_csv_commerzbank(test_app):
             f"Es wurden {len(row1)} rows für das erste Beispiel gefunden"
 
         content = row1[0].css.filter('.betrag')[0].contents[0]
-        assert content == 'EUR -11.63', \
+        assert '-11.63' in content, \
             f"Der Content von {tx_hash} ist anders als erwartet: '{content}'"
 
         # 2. Example
@@ -98,7 +98,7 @@ def test_upload_csv_commerzbank(test_app):
             f"Es wurden {len(row2)} rows für das zweite Beispiel gefunden"
 
         content = row2[0].css.filter('.betrag')[0].contents[0]
-        assert content == 'EUR -221.98', \
+        assert '-221.98' in content, \
             f"Der Content von {tx_hash} / 'betrag' ist anders als erwartet: '{content}'"
 
 

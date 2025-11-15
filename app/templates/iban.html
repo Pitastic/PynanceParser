@@ -63,7 +63,9 @@
 
 <footer>
     <section class="bottom-fixed right">
-        <button class="{% if filters.keys() %}primary{%else%}secondary outline{%endif%}" data-target="filter-popup" onclick="toggleModal(event)">&#128207;</button>
+        <button class="{% if filters.keys() %}primary{%else%}secondary outline{%endif%}" data-target="filter-popup" onclick="toggleModal(event)">
+            &#128269;
+        </button>
     </section>
     <section class="bottom-fixed left">
         <button id="edit-selected" class="secondary outline hide" data-target="massedit-popup" onclick="toggleModal(event)" disabled title="Edit (nichts ausgewählt)">
@@ -90,30 +92,32 @@
         <hr />
 
         <div id="add-tag-container"></div>
-        <input type="text" id="add-tag" list="tag-list" placeholder="weiteres Tag (Enter)" value="">
+        <div role="group">
+            <input type="text" id="add-tag" list="tag-list" placeholder="weiteres Tag (Enter)" value="">
+            <button onclick="addTag()">hinzufügen</button>
+        </div>
         <datalist id="tag-list">
             {% for t in tags %}
             <option>{{ t }}</option>
             {% endfor %}
         </datalist>
 
-        <p dir="rtl">
-            <button onclick="addTag()">hinzufügen</button>
-            <button onclick="removeTags()" class="delete outline">entfernen</button>
-        </p>
-
-        <hr />
-
-        <input type="text" id="add-cat" list="cat-list" placeholder="Kategorie" value="">
+        <div role="group">
+            <input type="text" id="add-cat" list="cat-list" placeholder="Kategorie" value="">
+            <button onclick="addCat()">hinzufügen</button>
+        </div>
         <datalist id="cat-list">
             {% for c in categories %}
             <option>{{ c }}</option>
             {% endfor %}
         </datalist>
-        <p dir="rtl">
-            <button onclick="addCat()">hinzufügen</button>
-            <button onclick="removeCats()" class="delete outline">entfernen</button>
+
+        <hr />
+        <p class="center">
+            <button onclick="removeTags()" class="delete outline">Tags entfernen</button>
+            <button onclick="removeCats()" class="delete outline">Kategorie entfernen</button>
         </p>
+        
     </article>
 </dialog>
 
