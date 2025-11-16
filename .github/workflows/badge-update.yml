@@ -86,7 +86,7 @@ jobs:
         #
         # -- Push SHA to VERSION file
         #
-        echo "$GITHUB_SHA $(date +'(%d.%m.%Y)')" > VERSION
+        echo "${GITHUB_SHA:0:7} $(date +'(%d.%m.%Y)')" > VERSION
 
     # Auto-Commit Badge Changes
     - uses: stefanzweifel/git-auto-commit-action@v4
