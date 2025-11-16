@@ -55,7 +55,7 @@ function removeCats(uuid) {
 }
 
 /**
- * Tags this one entrie in the database in a direct manner
+ * Tags this one entry in the database in a direct manner
  * @param {string} uuid - The unique identifier associated with the request.
  */
 function manualTagTx(uuid) {

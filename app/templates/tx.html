@@ -2,27 +2,36 @@
 
 {% block content %}
 
-<h1>Transaktionsdetails</h1>
-
-<header>
+<header class="container">
     <nav>
         <ul>
             <li>
-                <button onclick="removeTags('{{tx.uuid}}')">Tags entfernen</button>
+                <hgroup>
+                    <h3>
+                        Transaktionsdetails
+                    </h3>
+                    {{tx.uuid}}
+                </hgroup>
             </li>
+        </ul>
+        <ul>
             <li>
-                <button onclick="removeCats('{{tx.uuid}}')">Kategorie entfernen</button>
+                <button class="secondary" onclick="window.close()">
+                    &times; schließen
+                </button>
             </li>
         </ul>
     </nav>
 </header>
 
-<main>
+<main class="container">
+
+    <section>
 
     <table class="transactions">
         <thead>
             <tr>
-                <th colspan="2">Info</td>
+                <th colspan="2">Umsatzdetails</td>
             </tr>
         </thead>
         <tbody>
@@ -49,46 +58,72 @@
         </tbody>
     </table>
 
-<hr />
+    </section>
+    <section>
 
     <table class="transactions">
         <thead>
             <tr>
-                <th>Kategorie</th>
-                <th>Tags</th>
-                <th>Parsed</th>
+                <th colspan="2">Erweiterte Informationen</th>
             </tr>
         </thead>
         <tbody>
             <tr>
+                <td>Parsed</td>
                 <td>
-                    <input type="text" id="cat-input" list="cat-list" placeholder="Kategorie" value="{{tx.category if tx.category else ''}}">
+                    {% for key, value in tx.parsed.items() %}
+                    <div class="tag-chip parsed">
+                        <b>{{ key }}:</b> {{ value }}
+                    </div>
+                    {% endfor %}
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    Kategorie
+                </td>
+                <td>
+                    <div role="group">
+                        <input type="text" id="cat-input" list="cat-list" placeholder="Kategorie" value="{{tx.category if tx.category else ''}}">
+                        <button onclick="manualCatTx('{{tx.uuid}}')">Speichern</button>
+                    </div>
                     <datalist id="cat-list">
                         {% for c in cats %}
                         <option>{{ c }}</option>
                         {% endfor %}
                     </datalist>
-                    <button onclick="manualCatTx('{{tx.uuid}}')">Speichern</button>
                 </td>
-                <td id="tag-container">
-                    <input type="text" id="tag-input" list="tag-list" placeholder="Neues Tag" value="">
+            </tr>
+            <tr>
+                <td>Tags</td>
+                <td>
+                    <div id="tag-container"></div>
+                    <div role="group">
+                        <input type="text" id="tag-input" list="tag-list" placeholder="Neues Tag" value="">
+                        <button onclick="manualTagTx('{{tx.uuid}}')">Speichern</button>
+                    </div>
                     <datalist id="tag-list">
                         {% for t in tags %}
                         <option>{{ t }}</option>
                         {% endfor %}
                     </datalist>
-                    <button onclick="manualTagTx('{{tx.uuid}}')">Speichern</button>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    &nbsp;
                 </td>
                 <td>
-                    {% for key, value in tx.parsed.items() %}
-                    <div class="tag-chip parsed">
-                        <b>{{ key }}</b><br>{{ value }}
+                    <div role="group">
+                        <button class="delete outline" onclick="removeCats('{{tx.uuid}}')">Kategorie entfernen</button>
+                        <button class="delete outline" onclick="removeTags('{{tx.uuid}}')">Tags entfernen</button>
                     </div>
-                    {% endfor %}
                 </td>
             </tr>
         </tbody>
     </table>
+
+    </section>
 
 </main>
 
@@ -101,7 +136,7 @@
         const inputField = document.getElementById("tag-input");
     
         {% for tag in tx.tags %}
-            addTagBullet(inputField, "tag-container", "{{tag}}");
+            addTagBullet(inputField, "tag-container", null, "{{tag}}");
         {% endfor %}
     
     });

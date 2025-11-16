@@ -18,7 +18,7 @@ def test_read_from_csv(test_app):
     with test_app.app_context():
         uri = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
-            'commerzbank.csv'
+            'generic.csv'
         )
         transaction_list = Generic().from_csv(uri)
 

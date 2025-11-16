@@ -1,0 +1,7 @@
+{% from 'macros.html' import createTxRow %}
+
+{% for row in transactions %}
+
+    {{ createTxRow(row) }}
+
+{% endfor %}

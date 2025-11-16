@@ -2,17 +2,6 @@
 
 document.addEventListener('DOMContentLoaded', function () {
 
-    // PopUps
-    document.getElementById('add-iban-btn').addEventListener('click', function () {
-        openPopup('add-iban');
-    });
-    document.getElementById('add-group-btn').addEventListener('click', function () {
-        openPopup('add-group');
-    });
-    document.getElementById('settings-button').addEventListener('click', function () {
-        openPopup('settings-popup');
-    });
-
     // Import Input
     const fileInput = document.getElementById('file-input');
     const fileLabel = document.getElementById('file-label');
@@ -52,6 +41,69 @@ document.addEventListener('DOMContentLoaded', function () {
 // ----------------------------------------------------------------------------
 // -- DOM Functions -----------------------------------------------------------
 // ----------------------------------------------------------------------------
+
+/**
+ * Prepares and configures a modal dialog for adding or editing data based on the provided mode.
+ * This function handles both "group" and "IBAN" modes, dynamically loading data and updating the modal's content.
+ *
+ * @param {string} modal_id - The ID of the modal element to be prepared.
+ * @param {Event} event - The event object triggered by the user interaction.
+ * @param {string} [force_id] - Optional parameter to force a specific mode or ID, overriding the event's dataset.
+ *
+ * @returns {void}
+ */
+function prepareAddModal(modal_id, event, force_id) {
+    const mode = modal_id.split('-')[1];
+    const text_input = document.getElementById(mode + "-input");
+    const link_open = document.querySelector("#" + modal_id + " footer a");
+    const iban_stats = document.getElementById('iban-stats');
+    
+    if (force_id || (event && event.currentTarget.dataset[mode])) {
+        // Load and fill
+        const id = force_id || event.currentTarget.dataset[mode];
+        text_input.value = id;
+        link_open.href = '/' + encodeURIComponent(id);
+        link_open.classList.remove('hide');
+
+        if (mode == "group") {
+            // Get Group Info; Activate Checkboxes for Ibans in Group
+            const iban_checkboxes = document.querySelectorAll("#" + modal_id + " fieldset input");
+            apiGet("getMeta/" + id, {}, function (responseText, error) {
+                const ibans = JSON.parse(responseText)['ibans'] || [];
+                iban_checkboxes.forEach(box => {
+                    if (ibans.includes(box.value)) {
+                        // Activate IBAN as Groupmember
+                        box.checked = true;
+                    }
+                });
+            });
+
+            return;
+        }
+
+        // Modal is Add-IBAN
+        const stat_points = iban_stats.getElementsByTagName('b');
+        apiGet('stats/' + id, {}, function (responseText, error) {
+            // Get basic Stats
+            if (error) {
+                alert(error);
+                return;
+            }
+            const r = JSON.parse(responseText);
+            stat_points[0].innerHTML = r.count;
+            stat_points[1].innerHTML = formatUnixToDate(r.min);
+            stat_points[2].innerHTML = formatUnixToDate(r.max);
+            iban_stats.classList.remove('hide');
+        })
+
+        return;
+    }
+
+    // Clean
+    text_input.value = "";
+    link_open.classList.add('hide');
+    iban_stats.classList.add('hide');
+}
 
 /**
  * Gets a value for a Metadate into a textarea.
@@ -174,6 +226,8 @@ function uploadFile() {
         } else {
             if (confirm('File uploaded successfully!' + responseText + '\nKonto aufrufen?')) {
                 window.location.href = '/' + iban;
+            } else {
+                prepareAddModal('add-iban', null, iban);
             }
         }
     }, true);
@@ -187,7 +241,7 @@ function uploadFile() {
  * If the operation is successful, the page is reloaded; otherwise, an error message is displayed.
  */
 function saveGroup() {
-    const groupname = document.getElementById("groupname-input").value;
+    const groupname = document.getElementById("group-input").value;
     if (!groupname) {
         alert("Keine Gruppe angegeben!");
         return;
@@ -217,7 +271,7 @@ function saveGroup() {
 function deleteDB(delete_group) {
     let collection;
     if (delete_group) {
-        collection = document.getElementById('groupname-input').value;
+        collection = document.getElementById('group-input').value;
     } else {
         collection = document.getElementById('iban-input').value;
     }

@@ -1,26 +1,28 @@
 "use strict";
 
-let rowCheckboxes = null;
+let ROW_CHECKBOXES = null;
+let PAGE = 1;
 
 document.addEventListener('DOMContentLoaded', function () {
 
     // enabling/disabling the edit button based on checkbox selection
     const selectAllCheckbox = document.getElementById('select-all');
-    rowCheckboxes = document.querySelectorAll('.row-checkbox');
+    ROW_CHECKBOXES = document.querySelectorAll('.row-checkbox');
 
     selectAllCheckbox.addEventListener('change', function () {
-        rowCheckboxes.forEach(checkbox => {
+        ROW_CHECKBOXES.forEach(checkbox => {
         checkbox.checked = selectAllCheckbox.checked;
         });
         updateEditButtonState();
         listTxElements();
     });
 
-    rowCheckboxes.forEach(checkbox => {
+    ROW_CHECKBOXES.forEach(checkbox => {
+        checkbox.checked = false;
         checkbox.addEventListener('change', function () {
         if (!this.checked) {
             selectAllCheckbox.checked = false;
-        } else if (Array.from(rowCheckboxes).every(cb => cb.checked)) {
+        } else if (Array.from(ROW_CHECKBOXES).every(cb => cb.checked)) {
             selectAllCheckbox.checked = true;
         }
         updateEditButtonState();
@@ -29,18 +31,28 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // Tag Chip Bullets
-    const inputField = document.getElementById("add-tag");
+    const inputTagContainers = [
+        [document.getElementById("add-tag"), "add-tag-container"],
+        [document.getElementById("filter-tag"), "filter-tag-container", "filter-tag-result"]
+    ];
 
-    inputField.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-            e.preventDefault();
-            addTagBullet(inputField, "tag-container");
-        }
-    });
-
-    inputField.addEventListener("blur", () => {
-        addTagBullet(inputField, "tag-container");
-    });
+    for (let index = 0; index < inputTagContainers.length; index++) {
+        const inputTag = inputTagContainers[index][0];
+        const tagContainer = inputTagContainers[index][1];
+        const hiddenInput = inputTagContainers[index][2] || null;
+    
+        inputTag.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                addTagBullet(inputTag, tagContainer, hiddenInput);
+            }
+        });
+    
+        inputTag.addEventListener("blur", () => {
+            addTagBullet(inputTag, tagContainer, hiddenInput);
+        });
+        
+    }
 
     // Filter IBAN Button
     document.getElementById('apply-filter').addEventListener('click', () => {
@@ -56,50 +68,57 @@ document.addEventListener('DOMContentLoaded', function () {
 // -- DOM Functions -----------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-
-/**
- * Opens a popup to display details for a specific element and optionally fetches transaction details.
- *
- * @param {string} id - The ID of the HTML element to display as a popup.
- * @param {string|null} [tx_hash=null] - Optional transaction hash to fetch additional details for.
- */
-function openDetailsPopup(id, tx_hash = null) {
-	if (tx_hash) {
-		// Use AJAX to fetch and populate details for the transaction with the given ID
-		console.log('Fetching details for transaction hash: ' + tx_hash);
-        resetDetails();
-        getInfo(tx_hash, fillTxDetails);
-        openPopup(id);
-
-    } else {
-        if (['cat-popup', 'tag-popup'].includes(id)) {
-            document.getElementById('custom-tag').value = "";
-            document.getElementById('custom-cat').value = "";
-        }
-        openPopup(id);
-		
-	}
-}
-
-
 /**
  * Clears information from a result Box
 *
 */
 function resetDetails() {
-    const box = document.getElementById('result-text');
-    box.innerHTML = "";
+    const all_td = document.querySelectorAll('#dynamic-results td');
+    all_td.forEach(td => {
+        td.innerHTML = "";
+    });
 }
 
 
 /**
  * Shows a given Result in the Result-Box.
  *
- * @param {string} result - The text to be shwon.
+ * @param {string} result - The text to be shwon as JSON string.
  */
-function fillTxDetails(result){
-    const box = document.getElementById('result-text');
-    box.innerHTML = result;
+function fillTxDetails(result) {
+    const r = JSON.parse(result);
+    const selector = "#dynamic-results td.";
+    for (const key in r) {
+        if (r.hasOwnProperty(key)) {
+            const value = r[key];
+            let td = document.querySelector(selector + key);
+            if (!td) {
+                continue;
+            }
+
+            if (key == 'date_tx' || key == "valuta") {
+                // Dateformat
+                td.innerHTML = formatUnixToDate(r[key]);
+
+            } else if ((key == 'category' || key == "tags") && r[key]) {
+                // Tag Chips
+                const row = Array.isArray(r[key]) ? r[key] : [r[key]];
+                for (let index = 0; index < row.length; index++) {
+                    const span = document.createElement('span');
+                    span.innerHTML = row[index];
+                    span.className = 'tag-chip ' + key;
+                    td.appendChild(span)
+                }
+
+            } else {
+                td.innerHTML = r[key];
+
+            }
+        }
+    }
+
+    const tx_link = document.querySelector('#details-popup footer a');
+    tx_link.href = '/' + IBAN + '/' + r['uuid'];
 }
 
 /**
@@ -109,16 +128,24 @@ function fillTxDetails(result){
  * the "Edit Selected" button accordingly. It also updates the button's title to
  * reflect the number of selected checkboxes.
  * 
- * Assumes that `rowCheckboxes` is a collection of checkbox elements and that
+ * Assumes that `ROW_CHECKBOXES` is a collection of checkbox elements and that
  * there is a button with the ID `edit-selected` in the DOM.
  */
 function updateEditButtonState() {
-	const anyChecked = Array.from(rowCheckboxes).some(cb => cb.checked);
+	const anyChecked = Array.from(ROW_CHECKBOXES).some(cb => cb.checked);
     const editButton = document.getElementById('edit-selected');
+    const badge = editButton.parentNode.querySelector('.badge');
     editButton.disabled = !anyChecked;
-	editButton.title = anyChecked
-	? `Edit (${Array.from(rowCheckboxes).filter(cb => cb.checked).length} selected)`
-	: 'Edit (nichts ausgewählt)';
+    if (anyChecked) {
+        const selectedCount = Array.from(ROW_CHECKBOXES).filter(cb => cb.checked).length;
+        editButton.className = "primary";
+        editButton.classList.remove('hide');
+        badge.innerHTML = selectedCount;
+    } else {
+        editButton.className = "secondary outline";
+        editButton.classList.add('hide');
+        badge.innerHTML = "0";
+    }
 }
 
 function listTxElements() {
@@ -134,12 +161,12 @@ function listTxElements() {
     // Clean and rewrite TX List
     const result_list = document.getElementById('tx-select-list');
     result_list.innerHTML = '';
-    rowCheckboxes.forEach(checkbox => {
+    ROW_CHECKBOXES.forEach(checkbox => {
         if (checkbox.checked) {
             const li = document.createElement('li');
-            li.textContent = checkbox.dataset.txdate;
+            li.textContent = formatUnixToDate(checkbox.dataset.txdate) + " ";
             const a = document.createElement('a');
-            a.textContent = "(" + checkbox.dataset.txuuid + ")";
+            a.textContent = "(" + checkbox.dataset.txuuid.substring(0, 8) + ")";
             a.href = "/" + IBAN + "/" + checkbox.dataset.txuuid;
             a.target = "_blank";
             li.appendChild(a);
@@ -210,7 +237,7 @@ function tagAndCat(operation) {
  * Clear Tags from selected transactions
  */
 function removeTags() {
-    const t_ids = Array.from(rowCheckboxes)
+    const t_ids = Array.from(ROW_CHECKBOXES)
         .filter(cb => cb.checked)
         .map(cb => cb.getAttribute('name'));
 
@@ -240,7 +267,7 @@ function removeTags() {
  * Clear Category from selected transactions
  */
 function removeCats() {
-    const t_ids = Array.from(rowCheckboxes)
+    const t_ids = Array.from(ROW_CHECKBOXES)
         .filter(cb => cb.checked)
         .map(cb => cb.getAttribute('name'));
 
@@ -269,10 +296,10 @@ function removeCats() {
 /**
  * Add one or more Tags to a Transaction withput overwriting existing ones.
  * Tags will be loaded from the global TAGS variable. Transaktion will
- * be taken from rowCheckboxes.
+ * be taken from ROW_CHECKBOXES.
  */
 function addTag() {
-    const t_ids = Array.from(rowCheckboxes)
+    const t_ids = Array.from(ROW_CHECKBOXES)
         .filter(cb => cb.checked)
         .map(cb => cb.getAttribute('name'));
     return manualTag(t_ids, TAGS, false);
@@ -280,10 +307,10 @@ function addTag() {
 
 /**
  * Set a categorie for a set of Transactions.
- * Transaction will be taken from rowCheckboxes.
+ * Transaction will be taken from ROW_CHECKBOXES.
  */
 function addCat() {
-    const t_ids = Array.from(rowCheckboxes)
+    const t_ids = Array.from(ROW_CHECKBOXES)
         .filter(cb => cb.checked)
         .map(cb => cb.getAttribute('name'));
     const cat = document.getElementById('add-cat').value;
@@ -309,22 +336,35 @@ function getInfo(uuid, callback = alert) {
 }
 
 
-function saveMeta() {
-    const meta_type = document.getElementById('select_meta').value;
-    const fileInput = document.getElementById('input-json');
-    if (fileInput.files.length === 0) {
-        alert('Please select a file to upload.');
-        return;
+function loadMore() {
+    // Increment global
+    PAGE += 1;
+    // Get Page Content with a custom ajax call
+    const ajax = createAjax(function (responseText, error) {
+        if (error) {
+            // No more Pages could be loaded
+            document.querySelector('.transactions + footer a').classList.add('hide');
+            return;
+        }
+
+        // Append new Rows
+        document.querySelector('.transactions tbody').innerHTML += responseText;
+    });
+
+    // Call URI
+    let get_args = '';
+    const page_args = concatURI({ 'page': PAGE });
+
+    // -- Add Filter args if any
+    const additional_filters = getFilteredList();
+    if (additional_filters) {
+        get_args = additional_filters + '&' + page_args;
+
+    } else {
+        get_args = '?' + page_args;
+
     }
 
-    const params = { file: 'input_file' }; // The key 'file' corresponds to the input element's ID
-    apiSubmit('upload/metadata/'+meta_type, params, function (responseText, error) {
-        if (error) {
-            alert('Rule saving failed: ' + '(' + error + ')' + responseText);
-
-        } else {
-            alert('Rule saved successfully!' + responseText);
-
-        }
-    }, true);
+    ajax.open('GET', "/" + IBAN + get_args, true);
+	ajax.send();
 }

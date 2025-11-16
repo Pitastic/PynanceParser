@@ -152,7 +152,7 @@ class MongoDbHandler(BaseDb):
             # Define Operation
             update_op = {
                 '$set': data,
-                '$push': {'tags': {'$each': new_tags}}
+                '$addToSet': {'tags': {'$each': new_tags}}
             }
 
         else:
@@ -364,3 +364,38 @@ class MongoDbHandler(BaseDb):
             list: A list of collection names.
         """
         return self.connection.list_collection_names()
+
+    def min_max_collection(self, collection: str, key: str):
+        """
+        Bestimmt den minimalen und maximalen Wert eines Keys in einer Collection
+        sowie die Anzahl der Einträge.
+
+        Args:
+            collection (str): Name der Collection.
+            key (str): Key, für den min/max/count bestimmt werden soll.
+        Returns:
+            dict:
+                - min, any: Minimaler Wert
+                - max, any: Maximaler Wert
+                - count, int: Anzahl der Einträge
+        """
+        col = self.connection[collection]
+
+        pipeline = [
+            {
+                '$group': {
+                    '_id': None,
+                    'minValue': {'$min': f'${key}'},
+                    'maxValue': {'$max': f'${key}'},
+                    'count': {'$sum': 1}
+                }
+            }
+        ]
+
+        result = list(col.aggregate(pipeline)) or [{}]
+
+        return {
+            'min': result[0].get('minValue'),
+            'max': result[0].get('maxValue'),
+            'count': result[0].get('count', 0)
+        }

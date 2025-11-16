@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>{{ title | default("PynanceParser") }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pico.jade.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/grid.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
@@ -13,10 +15,11 @@
     <!-- Page-specific content will be injected here -->
     {% endblock %}
 
-    <footer>
-        <p>&copy; {{ current_year }} PynanceParser. All rights reserved.</p>
+    <footer class="container center">
+        <small>Version {{version}}</small>
     </footer>
 
     <script src="{{ url_for('static', filename='js/functions.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/modal.js') }}"></script>
 </body>
 </html>

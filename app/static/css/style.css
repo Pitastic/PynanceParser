@@ -1,75 +1,132 @@
-html, body {
-    background-color: rgb(51, 61, 56);
+/* Colors */
+:host,:root{
+    --pico-color-red-500: rgb(217, 53, 38);
+    --pico-color-red-600: rgb(175, 41, 29);
+}
+
+/* Full Page Layout */
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+main {
+  flex: 1;
+}
+
+/* Pico Tooltip Feature with newlines*/
+.long-tooltip:before {
+    white-space: wrap;
+    width: 200px;
+}
+
+/* full width block with right aligned Elements */
+.center {
+    text-align: center;
+}
+
+/* Hide an Element */
+.hide {display: none !important;}
+
+/* Color classes */
+.delete {
+    color: white;
+    border-color: var(--pico-color-red-600);
+    background-color: var(--pico-color-red-600);
+}
+    .outline.delete {
+        color: var(--pico-color-red-500);
+        border-color: var(--pico-color-red-500);
+        background-color: transparent;
+    }
+small.secondary, strong.secondary, i.secondary {
+    color: var(--pico-secondary);
+}
+
+/* Buttons */
+/* float bottom righth Button/Container */
+.bottom-fixed {
+    position: fixed;
+    bottom: 1em;
+    z-index: 1000;
+}
+    .bottom-fixed.right {right: 1em;}
+    .bottom-fixed.left {left: 1em;}
+    .bottom-fixed > button {
+        border-radius: 2em;
+    }
+/* Info TX button */
+button.info {
+    padding: 1em;
+    line-height: 0em;
+}
+
+/* Number indicator on Buttons */
+.badge {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    padding: 2.5px 0.5em;
+    border-radius: 50%;
+    background: var(--pico-color-red-600);
     color: white;
 }
 
-hr {
-    margin-top: 3em;
-    margin-bottom: 3em;
-}
-
-nav ul {
-    display: flex;
-    padding: 0;
-    justify-content: space-between;
-    list-style: none;
-}
-
-.my-buttons {
-    display: inline-block;
-    cursor: pointer;
-    padding: 1em;
-    margin: 1em;
-    background-color: silver;
-}
-
-.popup {
-    border: 1px solid silver;
-    display: inline-block;
-}
-
+/* File Upload Area */
 #file-drop-area, #settings-drop-area {
-    border: 2px dashed #ccc;
-    padding: 20px;
+    padding: 0.5em;
+    max-width: 80%;
+    line-height: 1.5em;
+    border-width: 2px 0 2px 2px;
+    border-style: dashed;
+    border-color: #ccc;
     text-align: center;
+    text-overflow: ellipsis;
+    overflow-x: hidden;
+    white-space: nowrap;
     cursor: pointer;
-    position: relative;
 }
 
-#result-text {
-    display: block;
-    background-color: green;
-    padding: 1em;
-    margin: 1em;
+/* Tables */
+.transactions td.betrag {
+    white-space: nowrap;
+    text-align: right;
 }
-
-table.transactions {
-    width: 100%;
-    border-collapse: collapse;
-}
-    table.transactions th, table.transactions td {
-        border: 1px solid #ddd;
-        padding: 8px;
-    }
-    table.transactions th {
-        background-color: rgb(0, 0, 0);
-        text-align: left;
-    }
-    table.transactions tr:nth-child(even) {
-        background-color: rgb(70, 70, 70);
-    }
-    table.transactions tr:hover {
-        background-color: #374d3a;
-    }
 
 .tag-chip {
-    margin-right: 0.2em;
-    padding: 0.2em;
-    background-color: #4ab477;
-    color: black;
-    border-radius: 0.2em;
+    display: inline-block;
+    padding: .375rem;
+    margin: 0.33em 0;
+    margin-right: 0.33em; /* Add spaces between Tags */
+    background: var(--pico-code-background-color);
+    background-color: var(--pico-code-kbd-background-color);
+    border-radius: var(--pico-border-radius);
+    color: var(--pico-code-kbd-color);
+    font-weight: bolder;
+    font-size: .875em;
+    font-family: var(--pico-font-family);
+    line-height: initial;
+    text-decoration: none;
+    white-space: nowrap;
 }
+    #filter-tag-container .tag-chip:last-child,
+    #add-tag-container .tag-chip:last-child,
+    #tag-container .tag-chip:last-child {
+        /* Push following input */
+        margin-bottom: 1em;
+    }
+    .tag-chip:hover, .tag-chip a, .tag-chip a:hover {
+        text-decoration: none;
+        color: initial;
+    }
+    .tag-chip.category {
+        background-color: cornflowerblue;
+    }
     .tag-chip.parsed {
-        display: inline-block;
         background-color: blueviolet;
+    }
+    .tag-chip a {
+        margin-left: 0.33em;
+        color: var(--pico-secondary);
     }

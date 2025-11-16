@@ -176,7 +176,7 @@ class TinyDbHandler(BaseDb):
             for doc in docs_to_update:
                 existing_tags = doc.get('tags') or []
                 update_data = copy.deepcopy(data)
-                update_data['tags'] = existing_tags + new_tags
+                update_data['tags'] = list(set(existing_tags + new_tags))
                 update_result += collection.update(update_data, query)
 
         else:
@@ -420,3 +420,25 @@ class TinyDbHandler(BaseDb):
             list: A list of table names.
         """
         return self.connection.tables()
+
+    def min_max_collection(self, collection: str, key: str):
+        """
+        Bestimmt den minimalen und maximalen Wert eines Keys in einer Collection
+        sowie die Anzahl der Einträge.
+
+        Args:
+            collection (str): Name der Collection.
+            key (str): Key, für den min/max/count bestimmt werden soll.
+        Returns:
+            dict:
+                - min, any: Minimaler Wert
+                - max, any: Maximaler Wert
+                - count, int: Anzahl der Einträge
+        """
+        all_entries = self.select(collection)
+        all_values = [entry.get(key) for entry in all_entries if entry.get(key) is not None]
+        return {
+            'min': min(all_values),
+            'max': max(all_values),
+            'count': len(all_entries)
+        }

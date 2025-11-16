@@ -7,23 +7,21 @@ let TAGS = [];
 // -- DOM Functions ----------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-
 /**
- * Opens a popup to display details
+ * Converts a Unix timestamp (in seconds) to a formatted date string.
  *
- * @param {string} id - The ID of the HTML element to display as a popup.
+ * @param {number} unixSeconds - The Unix timestamp in seconds.
+ * @returns {string} - The formatted date string in the format "%Y.%m.%d".
  */
-function openPopup(id) {
-    document.getElementById(id).style.display = 'block';
-}
-
-/**
- * Closes a popup by setting its display style to 'none'.
- *
- * @param {string} popupId - The ID of the popup element to be closed.
- */
-function closePopup(popupId) {
-	document.getElementById(popupId).style.display = 'none';
+function formatUnixToDate(unixSeconds) {
+	if (!unixSeconds) {
+		return "";
+	}
+	const date = new Date(unixSeconds * 1000); // Convert seconds to milliseconds
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+	const day = String(date.getDate()).padStart(2, '0');
+	return `${day}.${month}.${year}`;
 }
 
 /**
@@ -59,7 +57,7 @@ function getFilteredList() {
         arg_concat = '&';
     }
 
-    const tags = document.getElementById('filter-tag').value;
+    const tags = document.getElementById('filter-tag-result').value;
     if (tags) {
         query_args = query_args + arg_concat + 'tags=' + tags;
         arg_concat = '&';
@@ -70,16 +68,18 @@ function getFilteredList() {
         }
     }
 
-    let betrag = document.getElementById('filter-betrag').value;
-    if (betrag) {
-        betrag = betrag.replace(',', '.');
-        query_args = query_args + arg_concat + 'betrag=' + betrag;
+    let betrag_min = document.getElementById('filter-betrag-min').value;
+    if (betrag_min) {
+        betrag_min = betrag_min.replace(',', '.');
+        query_args = query_args + arg_concat + 'betrag_min=' + betrag_min;
         arg_concat = '&';
-        const betrag_mode = document.getElementById('filter-betrag-mode').value;
-        if (betrag_mode) {
-            query_args = query_args + arg_concat + 'betrag_mode=' + betrag_mode;
-            arg_concat = '&';
-        }
+    }
+
+    let betrag_max = document.getElementById('filter-betrag-max').value;
+    if (betrag_max) {
+        betrag_max = betrag_max.replace(',', '.');
+        query_args = query_args + arg_concat + 'betrag_max=' + betrag_max;
+        arg_concat = '&';
     }
 
 	return query_args;
@@ -93,12 +93,19 @@ function getFilteredList() {
  * 
  * @param {string} tagContainerId Id to select the container with tag-chips
  * 
+ * @param {string} hiddenInputId (optional) Target id to push new values to instead of global var TAGS
+ * 
  * @param {string} tagvalue (optional) Provide a Tag-Value insted of looking at text-input
  * 
  */
-function addTagBullet(inputField, tagContainerId, tagvalue) {
+function addTagBullet(inputField, tagContainerId, hiddenInputId, tagvalue) {
 	const tagConatiner = document.getElementById(tagContainerId);
 	const value = tagvalue || inputField.value.trim();
+	if (hiddenInputId) {
+		// Select Elemnt to read and write from Tags
+		var hiddenInput = document.getElementById(hiddenInputId);
+		TAGS = hiddenInput.value.split(',').filter(t => t != "");
+	}
 	if (value && !TAGS.includes(value)) {
 		TAGS.push(value);
 
@@ -110,7 +117,16 @@ function addTagBullet(inputField, tagContainerId, tagvalue) {
 		removeBtn.className = "remove";
 		removeBtn.innerHTML = "&times;";
 		removeBtn.href = "javascript:void(0)";
-		removeBtn.addEventListener("click", () => removeTagBullet(tagEl));
+
+		if (hiddenInputId) {
+			// Care about the Input and pass it to the removal method
+			hiddenInput.value = TAGS;
+			removeBtn.addEventListener("click", () => removeTagBullet(tagEl, hiddenInputId));
+
+		} else {
+			removeBtn.addEventListener("click", () => removeTagBullet(tagEl));
+		}
+
 		tagEl.appendChild(removeBtn);
 		tagConatiner.appendChild(tagEl);
 
@@ -120,11 +136,21 @@ function addTagBullet(inputField, tagContainerId, tagvalue) {
 
 /**
  * Dynamic Bullet list
- * Deletes a dynamic Tag-Bullet
+ * Deletes a dynamic Tag-Bullet from the global variable and the DOM
+ * 
+ * @param {DOMElement} element The Tagelement to remove
+ * 
+ * @param {string} hiddenInputId (optional) Target id to push new values to instead of global var TAGS
  */
-function removeTagBullet(element) {
-    TAGS = TAGS.filter(t => t !== element.firstChild.textContent);
-    element.remove();
+function removeTagBullet(element, hiddenInputId) {
+	TAGS = TAGS.filter(t => t !== element.firstChild.textContent);
+	element.remove();
+
+	if (hiddenInputId) {
+		const hiddenInput = document.getElementById(hiddenInputId);
+		hiddenInput.value = TAGS;
+	}
+
 }
 
 // ----------------------------------------------------------------------------

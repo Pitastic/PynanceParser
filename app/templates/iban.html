@@ -3,190 +3,239 @@
 
 {% block content %}
 
-<h1>Kontoübersicht</h1>
 
-
-<header>
+<header class="container">
     <nav>
         <ul>
             <li>
-                <button id="edit-selected" onclick="openDetailsPopup('massedit-popup')" disabled title="Edit (nichts ausgewählt)">
-                    ✏️
-                </button>
-                <button onclick="openDetailsPopup('tag-popup')">
-                    Rule Tagging
-                </button>
-                <button onclick="openDetailsPopup('cat-popup')">
-                    Rule Kategorisieren
+                <hgroup>
+                    <h3>
+                        Kontoumsätze
+                    </h3>
+                    {{IBAN}}
+                </hgroup>
+            </li>
+        </ul>
+        <ul>
+            <li>
+                <button data-target="rule-popup" class="secondary" onclick="toggleModal(event)">
+                    &#128209; Regeln
                 </button>
             </li>
             <li>
-                <input type="text" id="filter-range-start" placeholder="Start Date: d.m.Y" value="{{filters.startDate|ctime if filters.startDate}}">
-                <input type="text" id="filter-range-end" placeholder="End Date: d.m.Y" value="{{filters.endDate|ctime if filters.endDate}}">
-                <input type="text" id="filter-text" placeholder="RegEx Textfilter" value="{{filters.text}}">
-                <input type="text" id="filter-cat" list="cat-list" placeholder="Kategorie" value="{{filters.category}}">
-                <input type="text" id="filter-tag" list="tag-list" placeholder="Tag (, getrennt)" value="{{filters.tags}}">
-                <select id="filter-tag-mode">
-                    <option value="in" {{"selected" if filters.tag_mode and filters.tag_mode == 'in'}}>eines davon</option>
-                    <option value="all" {{"selected" if filters.tag_mode and filters.tag_mode == 'all'}}>alle davon</option>
-                    <option value="notin" {{"selected" if filters.tag_mode and filters.tag_mode == 'notin'}}>keine davon</option>
-                </select>
-                <input type="text" id="filter-betrag" placeholder="Betrag" value="{{filters.betrag if filters.betrag}}">
-                <select id="filter-betrag-mode">
-                    <option value="==" {{"selected" if filters.betrag_mode and filters.betrag_mode == '=='}}>gleich</option>
-                    <option value="<=" {{"selected" if filters.betrag_mode and filters.betrag_mode == '<='}}>kleiner gleich</option>
-                    <option value="<" {{"selected" if filters.betrag_mode and filters.betrag_mode == '<'}}>kleiner als</option>
-                    <option value=">" {{"selected" if filters.betrag_mode and filters.betrag_mode == '>'}}>größer als</option>
-                    <option value=">=" {{"selected" if filters.betrag_mode and filters.betrag_mode == '>='}}>größer gleich</option>
-                </select>
-                <button id="apply-filter">Apply</button>
-                <button id="reset-filter">Reset</button>
+                &#128202; <a href="/{{IBAN}}/stats?{{ request.query_string.decode('utf-8')|safe }}" title="Statistiken">Statistik</a>
             </li>
             <li>
-                <a href="/{{IBAN}}/stats" title="Logout">&sum;</a>
-            </li>
-            <li>
-                <a href="/logout" title="Logout">🚪</a>
+                &#128682; <a href="/logout" title="Logout">Logout</a>
             </li>
         </ul>
     </nav>
 </header>
 
-<main>
+<main class="container">
+    <section>
+        <table class="transactions">
+            <thead>
+                <tr>
+                    <th><input type="checkbox" id="select-all"></th>
+                    <th>Datum<br><small class="secondary">(Valuta)</small></th>
+                    <th>Buchungstext</th>
+                    <th>Kategorie</th>
+                    <th>Tags</th>
+                    <th>Betrag</th>
+                    <th>&nbsp;</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% from 'macros.html' import createTxRow %}
+                {% for transaction in transactions %}
 
-    <table class="transactions">
-        <thead>
-            <tr>
-                <th><input type="checkbox" id="select-all"></th>
-                <th>Date</th>
-                <th>Text</th>
-                <th>Category</th>
-                <th>Tags</th>
-                <th>Betrag</th>
-                <th>&nbsp;</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for transaction in transactions %}
-            <tr id="tr-{{ transaction.uuid }}">
-                <td><input type="checkbox" class="row-checkbox" name="{{ transaction.uuid }}"
-                    data-txuuid="{{transaction.uuid}}" data-txdate="{{transaction.date_tx}}"></td>
-                <td class="td-date_tx">{{ transaction.date_tx | ctime }}</td>
-                <td class="td-text_tx">{{ transaction.text_tx }}</td>
-                <td>
-                    {% if transaction.category %}
-                    <span title="{{ transaction.category }}" style="cursor: help;">🔖</span>
-                    {% else %}
-                    &nbsp;
-                    {% endif %}
-                </td>
-                <td>
-                    {% for tag in transaction.tags %}
-                    <span class="tag-chip">
-                        {{ tag }}
-                    </span>
-                    {% endfor %}
-                </td>
-                <td class="td-betrag">{{ transaction.currency }} {{ transaction.betrag }}</td>
-                <td>
-                    <button class="details-button" title="Show details" onclick="openDetailsPopup('details-popup', '{{ transaction.uuid }}')" style="cursor: pointer;">ℹ️</button>
-                    <a href="/{{IBAN}}/{{transaction.uuid}}" target="_blank">🔎</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                    {{ createTxRow(transaction) }}
+
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <footer class="center"><a href='javascript:loadMore()' class="secondary">mehr laden</a></footer>
+    </section>
+
 </main>
 
+<footer>
+    <section class="bottom-fixed right">
+        <button class="{% if filters.keys() %}primary{%else%}secondary outline{%endif%}" data-target="filter-popup" onclick="toggleModal(event)">
+            &#128269;
+        </button>
+    </section>
+    <section class="bottom-fixed left">
+        <button id="edit-selected" class="secondary outline hide" data-target="massedit-popup" onclick="toggleModal(event)" disabled title="Edit (nichts ausgewählt)">
+        ✏️
+        <span class="badge"></span>
+        </button>
+    </section>
+</footer>
+
 <!-- Popups -->
-<div id="massedit-popup" style="display: none;" class="popup">
-    <h2>Mass Edit</h2>
-    <p>Aktion auf die ausgewählten Transaktionen anwenden:</p>
-    <ul id="tx-select-list">
-    </ul>
-    <hr />
-    <div id="tag-container">
-        <input type="text" id="add-tag" list="tag-list" placeholder="Tag hinzufügen" value="">
+<dialog id="massedit-popup">
+    <article>
+        <header>
+            <button aria-label="Close" rel="prev" data-target="massedit-popup" onclick="toggleModal(event)"></button>
+            <h2>Stapel bearbeiten</h2>
+        </header>
+
+        <details name="tx_list">
+            <summary>Liste der Transaktionen, die bearbeitet werden:</summary>
+            <ul id="tx-select-list">
+            </ul>
+        </details>
+
+        <hr />
+
+        <div id="add-tag-container"></div>
+        <div role="group">
+            <input type="text" id="add-tag" list="tag-list" placeholder="weiteres Tag (Enter)" value="">
+            <button onclick="addTag()">hinzufügen</button>
+        </div>
         <datalist id="tag-list">
             {% for t in tags %}
             <option>{{ t }}</option>
             {% endfor %}
         </datalist>
-        <button onclick="addTag()">Tag hinzufügen</button>
-    </div>
-    <hr />
-    <input type="text" id="add-cat" list="cat-list" placeholder="Kategorie" value="">
-    <datalist id="cat-list">
-        {% for c in categories %}
-        <option>{{ c }}</option>
-        {% endfor %}
-    </datalist>
-    <button onclick="addCat()">Kategorie setzen</button>
-    <hr />
-    <button onclick="removeTags()">Tags entfernen</button>
-    <button onclick="removeCats()">Kategorie entfernen</button>
-    <button onclick="closePopup('massedit-popup')">Close</button>
-</div>
 
-<div id="tag-popup" style="display: none;" class="popup">
-    <h2>Tag</h2>
-    <p>Es können standardmäßig alle oder nur eine ausgewählte Regel auf alle Transaktionen zum Tagging genutzt werden.</p>
-    <p>Die "Custom" Regel nutzt das Eingabefeld zur Entwicklung neuer Regeln.</p>
-    <p>
-        <select id="tag-select">
-            <option value="">Alle Regeln</option>
-            {% for r in rules %}
-            <option>{{r}}</option>
-            {% endfor %}
-            <option value="ui_selected_custom">Custom</option>
-        </select>
-    </p>
-    <p>
-        <label>
-        <input type="checkbox" id="tag-dry">
-        Dry Run
-        </label>
-    </p>
-    <p>
-        <textarea type="text" id="custom-tag" placeholder="{&#10;  JSON&#10;}" rows="10"></textarea>
-    </p>
-    <button onclick="tagAndCat('tag')">Tag</button>
-    <button onclick="closePopup('tag-popup')">Close</button>
-</div>
-
-<div id="cat-popup" style="display: none;" class="popup">
-    <h2>Kategorie</h2>
-    <p>Es können standardmäßig alle oder nur eine ausgewählte Regel auf alle Transaktionen zum Kategorisieren genutzt werden.</p>
-    <p>Die "Custom" Regel nutzt das Eingabefeld zur Entwicklung neuer Regeln.</p>
-    <p>
-        <select id="cat-select">
-            <option value="">Alle Regeln</option>
+        <div role="group">
+            <input type="text" id="add-cat" list="cat-list" placeholder="Kategorie" value="">
+            <button onclick="addCat()">hinzufügen</button>
+        </div>
+        <datalist id="cat-list">
             {% for c in categories %}
-            <option>{{c}}</option>
+            <option>{{ c }}</option>
             {% endfor %}
-            <option value="ui_selected_custom">Custom</option>
-        </select>
-    </p>
-    <p>
-        <label>
-            <input type="checkbox" id="cat-dry">
-            Dry Run
-        </label>
-    </p>
-    <p>
-        <textarea type="text" id="custom-cat" placeholder="{&#10;  JSON&#10;}" rows="10"></textarea>
-    </p>
-    <button onclick="tagAndCat('cat')">Kategorisieren</button>
-    <button onclick="closePopup('cat-popup')">Close</button>
-</div>
+        </datalist>
 
-<div id="details-popup" style="display: none;" class="popup">
-    <h2>Transaction Details</h2>
-    <code id="result-text">
-        ...
-    </code>
-    <button onclick="closePopup('details-popup')">Close</button>
-</div>
+        <hr />
+        <p class="center">
+            <button onclick="removeTags()" class="delete outline">Tags entfernen</button>
+            <button onclick="removeCats()" class="delete outline">Kategorie entfernen</button>
+        </p>
+        
+    </article>
+</dialog>
+
+<dialog id="rule-popup">
+    <article>
+        <header>
+            <button aria-label="Close" rel="prev" data-target="rule-popup" onclick="toggleModal(event)"></button>
+            <h2>Regelsätze</h2>
+        </header>
+        <p>Es können standardmäßig alle oder jeweils nur eine ausgewählte Regel auf alle Transaktionen zum Taggen oder Kategorisieren genutzt werden.</p>
+
+        <h3>Tags</h3>
+        <p>
+            <select id="tag-select">
+                <option value="">Alle Regeln</option>
+                {% for r in rules %}
+                <option>{{r}}</option>
+                {% endfor %}
+                <option value="ui_selected_custom">Custom</option>
+            </select>
+            <label>
+                <input type="checkbox" id="tag-dry">
+                Dry Run (Es werden keine Transaktionen geändert)
+            </label>
+        </p>
+
+        <p>
+            <details name="custom-tagging">
+            <summary>Eigene Tagging-Regel</summary>
+                <textarea type="text" id="custom-tag" placeholder="{&#10;  JSON&#10;}" rows="8"></textarea>
+                <small>Wähle die Regel "Custom", um dieses Textfeld zu nutzen.</small>
+            </details>
+        </p>
+
+        <h3>Kategorien</h3>
+        <p>
+            <select id="cat-select">
+                <option value="">Alle Regeln</option>
+                {% for c in categories %}
+                <option>{{c}}</option>
+                {% endfor %}
+                <option value="ui_selected_custom">Custom</option>
+            </select>
+            <label>
+                <input type="checkbox" id="cat-dry">
+                Dry Run (Es werden keine Transaktionen geändert)
+            </label>
+        </p>
+
+        <p>
+            <details name="custom-cat">
+            <summary>Eigene Kategorisierungs-Regel</summary>
+                <textarea type="text" id="custom-cat" placeholder="{&#10;  JSON&#10;}" rows="10"></textarea>
+                <small>Wähle die Regel "Custom", um dieses Textfeld zu nutzen.</small>
+            </details>
+        </p>
+
+        <footer>
+            <button class="" onclick="tagAndCat('tag')">Taggen</button>
+            <button class="" onclick="tagAndCat('cat')">Kategorisieren</button>
+        </footer>
+    </article>
+</dialog>
+
+<dialog id="details-popup">
+    <article>
+        <header>
+            <button rel="prev" aria-label="Close" data-target="details-popup" onclick="toggleModal(event)"></button>
+            <h2>Transaktions Details</h2>
+        </header>
+        <table id="dynamic-results">
+            <tbody>
+                <tr>
+                    <th>Buchungsdatum:</th>
+                    <td class="date_tx"></td>
+                </tr>
+                <tr>
+                    <th>Wertstellung:</th>
+                    <td class="valuta"></td>
+                </tr>
+                <tr>
+                    <th>Art:</th>
+                    <td class="art"></td>
+                </tr>
+                <tr>
+                    <th>Gegenkonto:</th>
+                    <td class="gegenkonto"></td>
+                </tr>
+                <tr>
+                    <th>Betrag</th>
+                    <td class="betrag"></td>
+                </tr>
+                <tr>
+                    <th>Währung:</th>
+                    <td class="currency"></td>
+                </tr>
+                <tr>
+                    <th>Kategorie:</th>
+                    <td class="category"></td>
+                </tr>
+                <tr>
+                    <th>Tags:</th>
+                    <td class="tags"></td>
+                </tr>
+                <tr>
+                    <th>Buchungstext:</th>
+                    <td class="text_tx"></td>
+                </tr>
+            </tbody>
+        </table>
+        <footer>
+            <a role="button" class="secondary" target="_blank" href="">mehr Details</a>
+        </footer>
+    </article>
+</dialog>
+
+{% from 'macros.html' import filterDialog %}
+{{ filterDialog(filters) }}
 
 <script src="{{ url_for('static', filename='js/iban.js') }}"></script>
 

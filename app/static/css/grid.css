@@ -1,0 +1,26 @@
+/* Grid Patterns (12 Columns) */
+.grid {row-gap: 0;}
+.grid.margin {row-gap: 1rem;}
+
+/* S (default: s-12) */
+.grid.s-6-6 {grid-template-columns: 1fr 1fr;}
+
+/* M */
+@media (min-width: 768px) {
+    .grid.m-12 {grid-template-columns: 1fr;}
+    .grid.m-6-6 {grid-template-columns: 1fr 1fr;}
+}
+
+/* L */
+@media (min-width: 1280px) {
+    .grid.l-12 {grid-template-columns: 1fr;}
+    .grid.l-6-6 {grid-template-columns: 1fr 1fr;}
+    .grid.l-4-4-4 {grid-template-columns: 1fr 1fr 1fr;}
+}
+
+/* XL */
+@media (min-width: 1536px) {
+    .grid.xl-12 {grid-template-columns: 1fr;}
+    .grid.xl-6-6 {grid-template-columns: 1fr 1fr;}
+    .grid.xl-8-4 {grid-template-columns: 8fr 4fr;}
+}

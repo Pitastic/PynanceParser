@@ -17,6 +17,12 @@ class Routes:
             def timectime(s):
                 return datetime.fromtimestamp(s).strftime('%d.%m.%Y')
 
+            @current_app.context_processor
+            def version_string():
+                return {
+                    'version': current_app.config.get('VERSION', 'unknown')
+                }
+
             @current_app.route('/', methods=['GET'])
             def welcome() -> str:
                 """
@@ -41,8 +47,9 @@ class Routes:
                     category, str (query):  Kategorie-Filter
                     tag, str (query):       Tag-Filter, einzelner Eintrag oder kommagetrennte Liste
                     tag_mode, str (query):  Vergleichsmodus für Tag-Filter (siehe Models.md)
-                    betrag, float (query):  Betragsfilter
-                    betrag_mode, str (query): Vergleichsmodus für Betragsfilter (siehe Models.md)
+                    betrag_min, float (query):  Betragsfilter (größer gleich betrag_min)
+                    betrag_max, float (query):  Betragsfilter (kleiner gleich betrag_max)
+                    page, int (query):      Seite für die Paginierung (default: 1)
                 Returns:
                     html: Startseite mit Navigation
                 """
@@ -55,6 +62,19 @@ class Routes:
                 # Table with Transactions
                 current_app.logger.debug(f"Using condition filter: {condition}")
                 rows = parent.db_handler.select(iban, condition)
+
+                # If pagination is requested, do not serve the whole page and all metadata
+                entries_per_page = 50
+                if 'page' in request.args:
+                    page = int(request.args.get('page'))
+                    start = (page - 1) * entries_per_page
+                    end = start + entries_per_page
+                    if start >= len(rows):
+                        return "", 404  # Return 404 if no more pages can be served
+                    return render_template('iban_page.html', transactions=rows[start:end])
+
+                # All distinct Rule Names
+                # (must be filtered on our own because TinyDB doesn't support 'distinct' queries)
                 rulenames = parent.db_handler.filter_metadata({'key':'metatype', 'value': 'rule'})
                 rulenames = [r.get('name') for r in rulenames if r.get('name')]
 
@@ -76,9 +96,9 @@ class Routes:
                     if c and c not in cats:
                         cats.append(c)
 
-                return render_template('iban.html', transactions=rows, IBAN=iban,
-                                       rules=rulenames, tags=tags, categories=cats,
-                                       filters=frontend_filters)
+                return render_template('iban.html', transactions=rows[:entries_per_page],
+                                       IBAN=iban, tags=tags, categories=cats,
+                                       rules=rulenames, filters=frontend_filters)
 
             @current_app.route('/<iban>/<t_id>', methods=['GET'])
             def showTx(iban, t_id):
@@ -132,8 +152,8 @@ class Routes:
                     category, str (query):  Kategorie-Filter
                     tag, str (query):       Tag-Filter, einzelner Eintrag oder kommagetrennte Liste
                     tag_mode, str (query):  Vergleichsmodus für Tag-Filter (siehe Models.md)
-                    betrag, float (query):  Betragsfilter
-                    betrag_mode, str (query): Vergleichsmodus für Betragsfilter (siehe Models.md)
+                    betrag_min, float (query):  Betragsfilter (größer gleich betrag_min)
+                    betrag_max, float (query):  Betragsfilter (kleiner gleich betrag_max)
                 Returns:
                     html: Seite mit Grafiken und Statistiken über die slektierten Einträge
                     (IBAN und optional Query)
@@ -646,3 +666,22 @@ class Routes:
                     updated_entries['updated'] += updated.get('updated')
 
                 return updated_entries
+
+            @current_app.route('/api/stats/<iban>', methods=['GET'])
+            def statsIban(iban):
+                """
+                Liefert Statistiken zur IBAN zurück.
+
+                Args (uri):
+                    iban, str:  IBAN zu der die Statistiken angezeigt werden sollen.
+                Returns:
+                    json: Statistiken zur IBAN
+                        - min_date, str: Datum der ältesten Transaktion
+                        - max_date, str: Datum der jüngsten Transaktion
+                        - number_tx, int: Anzahl der Transaktionen
+                """
+                if not parent.check_requested_iban(iban):
+                    return "", 404
+
+                stats = parent.db_handler.min_max_collection(iban, 'date_tx')
+                return stats, 200

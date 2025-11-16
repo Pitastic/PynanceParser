@@ -41,18 +41,21 @@ def test_upload_csv_commerzbank(test_app):
         with test_app.test_client() as client:
             # Cleared DB ?
             result = client.get("/DE89370400440532013000")
-            assert "<td class=" not in result.text, \
+            assert '<td><input type="checkbox"' not in result.text, \
                 "Die Datenbank war zum Start des Tests nicht leer"
 
             # Visit Form
             result = client.get('/')
             assert result.status_code == 200, "Der Statuscode der Startseite war falsch"
-            assert 'All rights reserved.' in result.text, \
+            assert '<title>PynanceParser</title>' in result.text, \
                 "Special Heading not found in the response"
 
             # Prepare File
             content = get_testfile_contents(EXAMPLE_CSV, binary=True)
-            files = {'file-input': (io.BytesIO(content), 'commerzbank.csv')}
+            files = {
+                'file-input': (io.BytesIO(content), 'commerzbank.csv'),
+                'bank': 'Commerzbank'
+            }
             # Post File
             result = client.post(
                 "/api/upload/DE89370400440532013000",
@@ -80,22 +83,22 @@ def test_upload_csv_commerzbank(test_app):
 
         # 1. Example
         tx_hash = 'cf1fb4e6c131570e4f3b2ac857dead40'
-        row1 = soup.css.select(f'#tr-{tx_hash}')
+        row1 = soup.css.select(f'tr[name="{tx_hash}"]')
         assert len(row1) == 1, \
             f"Es wurden {len(row1)} rows für das erste Beispiel gefunden"
 
-        content = row1[0].css.filter('.td-betrag')[0].contents[0]
-        assert content == 'EUR -11.63', \
+        content = row1[0].css.filter('.betrag')[0].contents[0]
+        assert '-11.63' in content, \
             f"Der Content von {tx_hash} ist anders als erwartet: '{content}'"
 
         # 2. Example
         tx_hash = '786e1d4e16832aa321a0176c854fe087'
-        row2 = soup.css.select(f'#tr-{tx_hash}')
+        row2 = soup.css.select(f'tr[name="{tx_hash}"]')
         assert len(row2) == 1, \
             f"Es wurden {len(row2)} rows für das zweite Beispiel gefunden"
 
-        content = row2[0].css.filter('.td-betrag')[0].contents[0]
-        assert content == 'EUR -221.98', \
+        content = row2[0].css.filter('.betrag')[0].contents[0]
+        assert '-221.98' in content, \
             f"Der Content von {tx_hash} / 'betrag' ist anders als erwartet: '{content}'"
 
 
@@ -128,12 +131,15 @@ def test_double_upload(test_app):
         with test_app.test_client() as client:
             # Cleared DB ?
             result = client.get("/DE89370400440532013000")
-            assert "<td class=" not in result.text, \
+            assert '<td><input type="checkbox"' not in result.text, \
                 "Die Datenbank war zum Start des Tests nicht leer"
 
             # Prepare File
             content = get_testfile_contents(EXAMPLE_CSV, binary=True)
-            files = {'file-input': (io.BytesIO(content), 'commerzbank.csv')}
+            files = {
+                'file-input': (io.BytesIO(content), 'commerzbank.csv'),
+                'bank': 'Commerzbank'
+            }
             # Post File 1
             result = client.post(
                 "/api/upload/DE89370400440532013000",
@@ -147,7 +153,10 @@ def test_double_upload(test_app):
                 "Angaben zum Upload wurden nicht gefunden"
 
             # Post File 2
-            files = {'file-input': (io.BytesIO(content), 'commerzbank.csv')}
+            files = {
+                'file-input': (io.BytesIO(content), 'commerzbank.csv'),
+                'bank': 'Commerzbank'
+            }
             result = client.post(
                 "/api/upload/DE89370400440532013000",
                 data=files, content_type='multipart/form-data'
@@ -162,7 +171,7 @@ def test_double_upload(test_app):
             result = client.get("/DE89370400440532013000")
 
             soup = BeautifulSoup(result.text, features="html.parser")
-            rows = soup.css.select('table .td-date_tx')
+            rows = soup.css.select('table td input.row-checkbox')
 
             assert len(rows) == 5, f"Es wurden zu viele Einträge ({len(rows)}) angelegt"
 
@@ -193,7 +202,10 @@ def test_save_meta(test_app):
                 'regex': '[0-5]]{4}'
             }
             parameters = json.dumps(parameters).encode('utf-8')
-            files = {'file-input': (io.BytesIO(parameters), 'commerzbank.csv')}
+            files = {
+                'file-input': (io.BytesIO(parameters), 'commerzbank.csv'),
+                'bank': 'Commerzbank'
+            }
             result = client.post(
                 "/api/upload/metadata/parser",
                 data=files, content_type='multipart/form-data'
@@ -497,6 +509,28 @@ def test_tag_manual(test_app):
             assert tags == ['Replaced_TAG'], \
                 "Es wurden falsche Tags gespeichert"
 
+            # Check Tag deduplication
+            new_tag = {
+                'tags': ['Replaced_TAG'], # same again !
+                'overwrite': True
+            }
+            r = client.put(
+                "/api/setManualTag/DE89370400440532013000/6884802db5e07ee68a68e2c64f9c0cdd",
+                json=new_tag
+            )
+            assert r.status_code == 200, \
+                "Der Statuscode war nicht wie erwartet"
+
+            # Check if new values correct stored (just one time)
+            r = client.get(
+                '/api/DE89370400440532013000/6884802db5e07ee68a68e2c64f9c0cdd'
+            )
+            r = r.json
+            assert isinstance(r.get('tags'), list), "Tags wurde nicht als Liste gespeichert"
+            tags = r.get('tags')
+            assert tags == ['Replaced_TAG'], \
+                "Es wurden falsche Tags gespeichert"
+
 
 def test_categorize_manual(test_app):
     """Testet das Kategorisieren über den API Endpunkt:
@@ -598,7 +632,7 @@ def test_iban_filtering(test_app):
             # Date Range Filter
             result = client.get("/DE89370400440532013000?startDate=02.01.2023&endDate=03.01.2023")
             soup = BeautifulSoup(result.text, features="html.parser")
-            rows = soup.css.select('table.transactions tr[id] td input.row-checkbox')
+            rows = soup.css.select('table.transactions tr[name] td input.row-checkbox')
             assert result.status_code == 200, \
                 "Die Ergebnisseite mit den Transaktionen ist nicht (richtig) erreichbar"
             assert len(rows) == 2, \
@@ -607,7 +641,7 @@ def test_iban_filtering(test_app):
             # Category Filter
             result = client.get(r"/DE89370400440532013000?category=Force%20Overwrite")
             soup = BeautifulSoup(result.text, features="html.parser")
-            rows = soup.css.select('table.transactions tr[id] td input.row-checkbox')
+            rows = soup.css.select('table.transactions tr[name] td input.row-checkbox')
             assert result.status_code == 200, \
                 "Die Ergebnisseite mit den Transaktionen ist nicht (richtig) erreichbar"
             assert len(rows) == 1, \
@@ -616,7 +650,7 @@ def test_iban_filtering(test_app):
             # Tag Filter
             result = client.get(r"/DE89370400440532013000?tags=Supermarkt%2CStadt&tag_mode=in")
             soup = BeautifulSoup(result.text, features="html.parser")
-            rows = soup.css.select('table.transactions tr[id] td input.row-checkbox')
+            rows = soup.css.select('table.transactions tr[name] td input.row-checkbox')
             assert result.status_code == 200, \
                 "Die Ergebnisseite mit den Transaktionen ist nicht (richtig) erreichbar"
             assert len(rows) == 2, \
@@ -624,7 +658,7 @@ def test_iban_filtering(test_app):
 
             result = client.get(r"/DE89370400440532013000?tags=Supermarkt%2CStadt&tag_mode=notin")
             soup = BeautifulSoup(result.text, features="html.parser")
-            rows = soup.css.select('table.transactions tr[id] td input.row-checkbox')
+            rows = soup.css.select('table.transactions tr[name] td input.row-checkbox')
             assert result.status_code == 200, \
                 "Die Ergebnisseite mit den Transaktionen ist nicht (richtig) erreichbar"
             assert len(rows) == 3, \
@@ -633,20 +667,42 @@ def test_iban_filtering(test_app):
             result = client.get(
                 r"/DE89370400440532013000?tags=Test_SECONDARY_2%2CReplaced_TAG&tag_mode=all")
             soup = BeautifulSoup(result.text, features="html.parser")
-            rows = soup.css.select('table.transactions tr[id] td input.row-checkbox')
+            rows = soup.css.select('table.transactions tr[name] td input.row-checkbox')
             assert result.status_code == 200, \
                 "Die Ergebnisseite mit den Transaktionen ist nicht (richtig) erreichbar"
             assert len(rows) == 1, \
                 f"Es wurden {len(rows)} Einträge gefunden, statt der erwarteten 1"
 
             # Betrag Filter
-            result = client.get("/DE89370400440532013000?betrag=-200&betrag_mode=%3C")
+            result = client.get("/DE89370400440532013000?betrag_max=-200")
             soup = BeautifulSoup(result.text, features="html.parser")
-            rows = soup.css.select('table.transactions tr[id] td input.row-checkbox')
+            rows = soup.css.select('table.transactions tr[name] td input.row-checkbox')
             assert result.status_code == 200, \
                 "Die Ergebnisseite mit den Transaktionen ist nicht (richtig) erreichbar"
             assert len(rows) == 1, \
                 f"Es wurden {len(rows)} Einträge gefunden, statt der erwarteten 1"
+
+
+def test_statsapi(test_app):
+    """Testet den API-Endpoint für die Statistiken"""
+    with test_app.app_context():
+
+        with test_app.test_client() as client:
+            # Basic Stats
+            result = client.get("/api/stats/DE89370400440532013000")
+            assert result.status_code == 200, \
+                "Der Statistik-API-Endpoint ist nicht (richtig) erreichbar"
+            result = result.json
+            assert 'count' in result, \
+                "Die Statistik-Antwort ist unvollständig"
+            assert result.get('count') == 5, \
+                "Die Statistik-Antwort ist fehlerhaft"
+            assert "min" in result, \
+                "Die Statistik-Antwort ist unvollständig"
+            assert result.get('min') == 1672531200.0, \
+                "Die Statistik-Antwort ist fehlerhaft"
+            assert "max" in result, \
+                "Die Statistik-Antwort ist unvollständig"
 
 
 def test_statspage(test_app):
