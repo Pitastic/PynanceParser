@@ -83,6 +83,11 @@ jobs:
         fi
         sed -i -E s"|(\[pylint\]).*$|\1($lint_badge)|" README.md
 
+        #
+        # -- Push SHA to VERSION file
+        #
+        echo "$GITHUB_SHA $(date +' (%d.%m.%Y)')" > VERSION
+
     # Auto-Commit Badge Changes
     - uses: stefanzweifel/git-auto-commit-action@v4
       with:
