@@ -15,6 +15,10 @@ main {
   flex: 1;
 }
 
+.container.hero {
+    margin-top: 10%;
+}
+
 /* Pico Tooltip Feature with newlines*/
 .long-tooltip:before {
     white-space: wrap;
@@ -118,7 +122,10 @@ button.info {
     }
     .tag-chip:hover, .tag-chip a, .tag-chip a:hover {
         text-decoration: none;
-        color: initial;
+        color: var(--pico-code-kbd-color);
+    }
+    .tag-chip a.remove:hover{
+        color: var(--pico-color-red-500);
     }
     .tag-chip.category {
         background-color: cornflowerblue;
@@ -126,6 +133,7 @@ button.info {
     .tag-chip.parsed {
         background-color: blueviolet;
     }
+
     .tag-chip a {
         margin-left: 0.33em;
         color: var(--pico-secondary);

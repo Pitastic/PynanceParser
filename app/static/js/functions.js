@@ -305,10 +305,12 @@ function manualTag(t_ids, tags, overwrite) {
 
     apiSubmit(api_function, tagging, function (responseText, error) {
         if (error) {
-            alert('Tagging failed: ' + '(' + error + ')' + responseText);
+            alert('Tagging fehlgeschlagen: ' + '(' + error + ')');
 
         } else {
-            alert('Entries tagged successfully!' + responseText);
+			const success_msg = JSON.parse(responseText);
+			const counts = success_msg.updated != 1 ? success_msg.updated + ' Einträge' : success_msg.updated + ' Eintrag';
+			alert(counts + ' getaggt');
             window.location.reload();
 
         }
@@ -365,7 +367,9 @@ function manualCat(t_ids, cat) {
             alert('Tagging failed: ' + '(' + error + ')' + responseText);
 
         } else {
-            alert('Entries tagged successfully!' + responseText);
+			const success_msg = JSON.parse(responseText);
+			const counts = success_msg.updated != 1 ? success_msg.updated + ' Einträge' : success_msg.updated + ' Eintrag';
+			alert(counts + ' kategorisiert');
             window.location.reload();
 
         }

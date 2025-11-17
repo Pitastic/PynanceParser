@@ -214,17 +214,22 @@ function uploadFile() {
 
     const fileInput = document.getElementById('file-input');
     if (fileInput.files.length === 0) {
-        alert('Please select a file to upload.');
+        alert('Es wurde keine Datei ausgewählt.');
         return;
     }
 
     const params = { file: 'file-input', 'bank':  bank_id}; // The value of 'file' corresponds to the input element's ID
     apiSubmit('upload/' + iban, params, function (responseText, error) {
         if (error) {
-            alert('File upload failed: ' + '(' + error + ')' + responseText);
+            //const error_msg = JSON.parse(responseText) || "unbekannter Fehler";
+            //alert('Datei Upload fehlgeschlagen ' + '(' + error + '): ' + error_msg);
+            alert('Datei Upload fehlgeschlagen ' + '(' + error + ')');
 
         } else {
-            if (confirm('File uploaded successfully!' + responseText + '\nKonto aufrufen?')) {
+            let success_msg = JSON.parse(responseText);
+            success_msg = 'Es wurden ' + success_msg.inserted + ' Transaktionen aus der ' + success_msg.size +
+                          ' Byte großen Datei importiert.\n\nMöchtest du das Konto jetzt aufrufen?'
+            if (confirm(success_msg)) {
                 window.location.href = '/' + iban;
             } else {
                 prepareAddModal('add-iban', null, iban);
