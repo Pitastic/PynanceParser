@@ -26,6 +26,7 @@ def test_read_input_csv(test_app):
         assert r.get('inserted') == 5, \
             "Es wurden nicht alle Einträge in die DB eingefügt."
 
+
 @pytest.mark.skip(reason="Currently not implemented yet")
 def test_read_input_pdf():
     """
@@ -34,6 +35,7 @@ def test_read_input_pdf():
     wird bei 'None' belassen, um auch das Erraten des Formats zu testen.
     """
     return
+
 
 @pytest.mark.skip(reason="Currently not implemented yet")
 def test_read_input_html():
@@ -70,10 +72,12 @@ def test_set_manual_tag(test_app):
             'Test_Second' in rows[0].get('tags'), \
             f'Der Tag wurde nicht gesetzt: {rows[0]}'
 
+
 @pytest.mark.skip(reason="Currently not implemented yet")
 def test_create_user():
     """Testet das Anlegen eines Users"""
     return
+
 
 def test_load_ruleset_all(test_app):
     """Testet das Laden aller Regeln für den anfragenden Benutzer"""
@@ -84,6 +88,7 @@ def test_load_ruleset_all(test_app):
         # Fake Rules sind 'Supermarkets' und 'City Tax'
         assert rules.get('Supermarkets'), "Die Regel 'Supermarkets' wurde nicht gefunden"
         assert rules.get('City Tax'), "Die Regel 'City Tax' wurde nicht gefunden"
+
 
 def test_load_ruleset_one(test_app):
     """Testet das Laden einer bestimmten Regeln für den anfragenden Benutzer"""

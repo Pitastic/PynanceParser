@@ -221,9 +221,8 @@ function uploadFile() {
     const params = { file: 'file-input', 'bank':  bank_id}; // The value of 'file' corresponds to the input element's ID
     apiSubmit('upload/' + iban, params, function (responseText, error) {
         if (error) {
-            //const error_msg = JSON.parse(responseText) || "unbekannter Fehler";
-            //alert('Datei Upload fehlgeschlagen ' + '(' + error + '): ' + error_msg);
-            alert('Datei Upload fehlgeschlagen ' + '(' + error + ')');
+            const error_msg = JSON.parse(responseText).error || "unbekannter Fehler";
+            alert('Fehler ' + error + ': ' + error_msg);
 
         } else {
             let success_msg = JSON.parse(responseText);

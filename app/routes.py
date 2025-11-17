@@ -2,9 +2,10 @@
 """Routen für das User Interface."""
 
 import os
+import json
 from datetime import datetime
 from flask import request, current_app, render_template, redirect, \
-                  make_response, send_from_directory
+                  make_response, send_from_directory, abort
 
 
 class Routes:
@@ -343,15 +344,20 @@ class Routes:
                     path = f'{path}.pdf'
 
                 # Read Input and Parse the contents
-                parsed_data = parent.read_input(
-                    path, bank=request.form.get('bank', 'Generic'),
-                    data_format=content_format
-                )
+                try:
+                    parsed_data = parent.read_input(
+                        path, bank=request.form.get('bank', 'Generic'),
+                        data_format=content_format
+                    )
 
-                # Verarbeitete Kontiumsätze in die DB speichern
-                # und vom Objekt und Dateisystem löschen
-                insert_result = parent.db_handler.insert(parsed_data, iban)
-                inserted = insert_result.get('inserted')
+                    # Verarbeitete Kontiumsätze in die DB speichern
+                    # und vom Objekt und Dateisystem löschen
+                    insert_result = parent.db_handler.insert(parsed_data, iban)
+                    inserted = insert_result.get('inserted')
+
+                except (KeyError, ValueError, NotImplementedError) as _:
+                    abort(406)
+
                 os.remove(path)
 
                 return_code = 201 if inserted else 200
@@ -685,3 +691,19 @@ class Routes:
 
                 stats = parent.db_handler.min_max_collection(iban, 'date_tx')
                 return stats, 200
+
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            # - Error Handling  - - - - - - - - - - - - - - - - - - -
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+            @current_app.errorhandler(406)
+            def wrong_api_usage(e):
+                # Only Handle API
+                if not request.path.startswith('/api/'):
+                    return e
+
+                # replace the body with JSON
+                return {
+                    "error": ("Die hochgeladene Datei konnte nicht verarbeitet werden, "
+                              "da das Format unvollständig ist oder nicht erwartet wurde.")
+                }, 406
