@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', function () {
 
-    // Import Input
+    // Import Input (IBAN)
     const fileInput = document.getElementById('file-input');
     const fileLabel = document.getElementById('file-label');
     const fileDropArea = document.getElementById('file-drop-area');
@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (fileInput.files.length > 0) {
             fileLabel.textContent = fileInput.files[0].name;
         } else {
-            fileLabel.textContent = 'Datei hier ablegen oder auswählen (PDF / CSV / HTML)';
+            fileLabel.textContent = '.csv,.pdf,.html';
         }
     });
 
@@ -29,6 +29,36 @@ document.addEventListener('DOMContentLoaded', function () {
         if (files.length > 0) {
             fileInput.files = files;
             fileLabel.textContent = files[0].name;
+        }
+    });
+
+    // Import Input (Settings)
+    const settingsInput = document.getElementById('settings-input');
+    const settingsLabel = document.getElementById('settings-label');
+    const settingsDropArea = document.getElementById('settings-drop-area');
+
+    settingsDropArea.addEventListener('click', () => {
+        settingsInput.click();
+    });
+
+    settingsInput.addEventListener('change', () => {
+        if (settingsInput.files.length > 0) {
+            settingsLabel.textContent = settingsInput.files[0].name;
+        } else {
+            settingsLabel.textContent = '.json';
+        }
+    });
+
+    settingsDropArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+    });
+
+    settingsDropArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            settingsInput.files = files;
+            settingsLabel.textContent = files[0].name;
         }
     });
 
@@ -186,7 +216,7 @@ function importSettings() {
         return;
     }
 
-    const params = { file: 'file-input' }; // The value of 'file' corresponds to the input element's ID
+    const params = { file: 'settings-input' }; // The value of 'file' corresponds to the input element's ID
     apiSubmit('upload/metadata/' + settings_type, params, function (responseText, error) {
         if (error) {
             showAjaxError(error, responseText);
@@ -194,7 +224,7 @@ function importSettings() {
         } else {
             let success_msg = JSON.parse(responseText);
             alert('Es wurden ' + success_msg.inserted + ' Einträge aus der Datei importiert.');
-            window.location.href = '/' + settings_type;
+            window.location.href = '/';
 
         }
     }, true);

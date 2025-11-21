@@ -2,10 +2,9 @@
 """Routen für das User Interface."""
 
 import os
-import json
 from datetime import datetime
 from flask import request, current_app, render_template, redirect, \
-                  make_response, send_from_directory, abort
+                  make_response, send_from_directory
 
 
 class Routes:
@@ -324,7 +323,7 @@ class Routes:
                 """
                 input_file = request.files.get('file-input')
                 if not input_file:
-                    return {'error': 'No file provided'}, 400
+                    return {'error': 'Es wurde keine Datei übermittelt.'}, 400
 
                 # Store Upload file to tmp
                 path = '/tmp/transactions.tmp'
@@ -385,9 +384,10 @@ class Routes:
                 Returns:
                     json: Informationen zur Datei und Ergebnis der Untersuchung.
                 """
-                input_file = request.files.get('file-input')
+                print(request.files)
+                input_file = request.files.get('settings-input')
                 if not input_file:
-                    return {'error': 'No file provided'}, 400
+                    return {'error': 'Es wurde keine Datei übermittelt.'}, 400
 
                 # Store Upload file to tmp
                 path = f'/tmp/{metadata}.tmp'
