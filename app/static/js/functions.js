@@ -305,10 +305,12 @@ function manualTag(t_ids, tags, overwrite) {
 
     apiSubmit(api_function, tagging, function (responseText, error) {
         if (error) {
-            alert('Tagging failed: ' + '(' + error + ')' + responseText);
+            alert('Tagging fehlgeschlagen: ' + '(' + error + ')');
 
         } else {
-            alert('Entries tagged successfully!' + responseText);
+			const success_msg = JSON.parse(responseText);
+			const counts = success_msg.updated != 1 ? success_msg.updated + ' Einträge' : success_msg.updated + ' Eintrag';
+			alert(counts + ' getaggt');
             window.location.reload();
 
         }
@@ -365,9 +367,32 @@ function manualCat(t_ids, cat) {
             alert('Tagging failed: ' + '(' + error + ')' + responseText);
 
         } else {
-            alert('Entries tagged successfully!' + responseText);
+			const success_msg = JSON.parse(responseText);
+			const counts = success_msg.updated != 1 ? success_msg.updated + ' Einträge' : success_msg.updated + ' Eintrag';
+			alert(counts + ' kategorisiert');
             window.location.reload();
 
         }
     }, false);
+}
+
+
+/* Formats an Error Responses from an AJAX Call
+*
+* @param {number} error_code The HTTP status code from the AJAX call
+* @param {string} responseText The response text from the AJAX call
+*
+*/
+function showAjaxError(error_code, responseText) {
+	const error_msg = JSON.parse(responseText).error || "unbekannter Fehler";
+	alert('Fehler ' + error_code + ': ' + error_msg);
+}
+
+/* Formats a Result from an AJAX Call (JSON as Text)
+*
+* @param {string} responseText The response text from the AJAX call
+*
+*/
+function formatResultText(responseText) {
+	return JSON.stringify(JSON.parse(responseText), null, 4);
 }
