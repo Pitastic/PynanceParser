@@ -120,10 +120,10 @@ function loadSetting() {
 
     apiGet('getMeta/' + setting_uuid, {}, function (responseText, error) {
         if (error) {
-            alert('Settings not loaded: ' + '(' + error + ')' + responseText);
+            showAjaxError(error, responseText);
 
         } else {
-            result_text.value = responseText;
+            result_text.value = formatResultText(responseText);
 
         }
     });
@@ -158,10 +158,10 @@ function saveSetting() {
 
     apiSubmit('saveMeta/' + meta_type, payload, function (responseText, error) {
         if (error) {
-            alert('Settings not saved: ' + '(' + error + ')' + responseText);
+            showAjaxError(error, responseText);
 
         } else {
-            alert('Settings saved: ' + responseText)
+            alert('Einstellungen gespeichert' + responseText)
             result_text.value = '';
 
         }
@@ -189,10 +189,11 @@ function importSettings() {
     const params = { file: 'file-input' }; // The value of 'file' corresponds to the input element's ID
     apiSubmit('upload/metadata/' + settings_type, params, function (responseText, error) {
         if (error) {
-            alert('File upload failed: ' + '(' + error + ')' + responseText);
+            showAjaxError(error, responseText);
 
         } else {
-            alert('File uploaded successfully!' + responseText);
+            let success_msg = JSON.parse(responseText);
+            alert('Es wurden ' + success_msg.inserted + ' Einträge aus der Datei importiert.');
             window.location.href = '/' + settings_type;
 
         }
@@ -221,13 +222,13 @@ function uploadFile() {
     const params = { file: 'file-input', 'bank':  bank_id}; // The value of 'file' corresponds to the input element's ID
     apiSubmit('upload/' + iban, params, function (responseText, error) {
         if (error) {
-            const error_msg = JSON.parse(responseText).error || "unbekannter Fehler";
-            alert('Fehler ' + error + ': ' + error_msg);
+            showAjaxError(error, responseText);
 
         } else {
             let success_msg = JSON.parse(responseText);
-            success_msg = 'Es wurden ' + success_msg.inserted + ' Transaktionen aus der ' + success_msg.size +
-                          ' Byte großen Datei importiert.\n\nMöchtest du das Konto jetzt aufrufen?'
+            success_msg = 'Es wurden ' + success_msg.inserted + ' Transaktionen aus der ' +
+                            Math.round(success_msg.size / 1024 * 100) / 100 +
+                          ' KB großen Datei importiert.\n\nMöchtest du das Konto jetzt aufrufen?'
             if (confirm(success_msg)) {
                 window.location.href = '/' + iban;
             } else {
@@ -257,10 +258,10 @@ function saveGroup() {
 
     apiSubmit('addgroup/' + groupname, params, function (responseText, error) {
         if (error) {
-            alert('Gruppe nicht angelegt: ' + '(' + error + ')' + responseText);
+            showAjaxError(error, responseText);
 
         } else {
-            alert('Gruppe gespeichert!' + responseText);
+            alert('Gruppe gespeichert!');
             window.location.reload();
 
         }
@@ -287,10 +288,11 @@ function deleteDB(delete_group) {
 
     apiGet('deleteDatabase/'+ collection, {}, function (responseText, error) {
         if (error) {
-            alert('Delete failed: ' + '(' + error + ')' + responseText);
+            showAjaxError(error, responseText);
 
         } else {
-            alert('DB deleted successfully!' + responseText);
+            let success_msg = JSON.parse(responseText);
+            alert(success_msg.deleted + ' IBAN(s) / Gruppe(n) gelöscht');
             window.location.reload();
 
         }

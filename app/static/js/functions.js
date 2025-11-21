@@ -375,3 +375,24 @@ function manualCat(t_ids, cat) {
         }
     }, false);
 }
+
+
+/* Formats an Error Responses from an AJAX Call
+*
+* @param {number} error_code The HTTP status code from the AJAX call
+* @param {string} responseText The response text from the AJAX call
+*
+*/
+function showAjaxError(error_code, responseText) {
+	const error_msg = JSON.parse(responseText).error || "unbekannter Fehler";
+	alert('Fehler ' + error_code + ': ' + error_msg);
+}
+
+/* Formats a Result from an AJAX Call (JSON as Text)
+*
+* @param {string} responseText The response text from the AJAX call
+*
+*/
+function formatResultText(responseText) {
+	return JSON.stringify(JSON.parse(responseText), null, 4);
+}

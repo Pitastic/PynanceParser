@@ -238,7 +238,7 @@ class Routes:
                 assert ibans is not None, 'No IBANs provided'
                 r = parent.db_handler.add_iban_group(groupname, ibans)
                 if not r.get('inserted'):
-                    return {'error': 'No Group added', 'reason': r.get('error')}, 400
+                    return {'error': f'Keine Gruppe angelegt: {r.get("error")}'}, 400
 
                 return r, 201
 
@@ -281,7 +281,7 @@ class Routes:
                 r = parent.db_handler.set_metadata(entry, overwrite=True)
 
                 if not r.get('inserted'):
-                    return {'error': 'No data inserted', 'reason': r.get('error')}, 400
+                    return {'error': f'No data inserted: {r.get("error")}'}, 400
 
                 return r, 201
 
@@ -355,8 +355,14 @@ class Routes:
                     insert_result = parent.db_handler.insert(parsed_data, iban)
                     inserted = insert_result.get('inserted')
 
-                except (KeyError, ValueError, NotImplementedError) as _:
-                    abort(406)
+                except (KeyError, ValueError, NotImplementedError) as ex:
+                    return {
+                        "error": (
+                            "Die hochgeladene Datei konnte nicht verarbeitet werden, "
+                            "da das Format unvollständig ist oder nicht erwartet wurde: "
+                            + ex.__class__.__name__ + " " + str(ex)
+                        )
+                    }, 406
 
                 os.remove(path)
 
@@ -402,8 +408,7 @@ class Routes:
                 Returns:
                     json: Informationen zum Ergebnis des Löschauftrags.
                 """
-                deleted_entries = parent.db_handler.truncate(iban)
-                return {'deleted': deleted_entries}, 200
+                return parent.db_handler.truncate(iban), 200
 
             @current_app.route('/api/tag/<iban>', methods=['PUT'])
             def tag(iban) -> dict:
@@ -691,19 +696,3 @@ class Routes:
 
                 stats = parent.db_handler.min_max_collection(iban, 'date_tx')
                 return stats, 200
-
-            # - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-            # - Error Handling  - - - - - - - - - - - - - - - - - - -
-            # - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-            @current_app.errorhandler(406)
-            def wrong_api_usage(e):
-                # Only Handle API
-                if not request.path.startswith('/api/'):
-                    return e
-
-                # replace the body with JSON
-                return {
-                    "error": ("Die hochgeladene Datei konnte nicht verarbeitet werden, "
-                              "da das Format unvollständig ist oder nicht erwartet wurde.")
-                }, 406
