@@ -202,7 +202,7 @@ function concatURI(value_dict, formData){
  * configured with a callback to handle its response.
  *
  * @param {function} callback - A callback function to handle the response.
- * 								Receives the response text and stsatus code as arguments.
+ * 								Receives the response text and status code as arguments.
  * @returns {XMLHttpRequest} - The newly created XMLHttpRequest object.
  */
 function createAjax(callback) {
