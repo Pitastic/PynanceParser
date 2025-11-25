@@ -17,13 +17,13 @@
         </p>
     </section>
 
-    <section class="grid m-12 l-6-6 xl-8-4 margin">
+    <section class="grid m-12 l-6-6 xxl-8-4 margin">
 
         <article>
             <header>
                 <strong>Konten</strong>
             </header>
-            <div class="grid m-6-6 l-12 xl-6-6 margin">
+            <div class="grid m-6-6 xl-12 xxl-6-6 margin">
                 {% if ibans %}
                 {% for iban in ibans %}
                 <button class="outline contrast" data-target="add-iban" data-iban="{{iban}}" onclick="toggleModal(event)">&#128212; {{iban}}</button>
@@ -37,7 +37,7 @@
             <header>
                 <strong>Gruppen</strong>
             </header>
-            <div class="grid m-6-6 l-12 margin">
+            <div class="grid m-6-6 xl-12 margin">
                 {% if groups %}
                 {% for group in groups %}
                 <button class="outline contrast" data-target="add-group" data-group="{{group}}" onclick="toggleModal(event)">&#128218; {{group}}</button>
