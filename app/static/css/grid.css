@@ -13,14 +13,55 @@
 
 /* L */
 @media (min-width: 1280px) {
-    .grid.l-12 {grid-template-columns: 1fr;}
-    .grid.l-6-6 {grid-template-columns: 1fr 1fr;}
-    .grid.l-4-4-4 {grid-template-columns: 1fr 1fr 1fr;}
-}
-
-/* XL */
-@media (min-width: 1536px) {
     .grid.xl-12 {grid-template-columns: 1fr;}
     .grid.xl-6-6 {grid-template-columns: 1fr 1fr;}
-    .grid.xl-8-4 {grid-template-columns: 8fr 4fr;}
+    .grid.xl-4-4-4 {grid-template-columns: 1fr 1fr 1fr;}
+}
+
+/* XXL */
+@media (min-width: 1536px) {
+    .grid.xxl-12 {grid-template-columns: 1fr;}
+    .grid.xxl-6-6 {grid-template-columns: 1fr 1fr;}
+    .grid.xxl-8-4 {grid-template-columns: 8fr 4fr;}
+}
+
+
+/* ------------------- */
+/* ---- Specials ----- */
+/* ------------------- */
+
+/* Iban: Table and Container */
+
+/* XS & S and smaller */
+@media (max-width: 767px) {
+    /*TODO: No Padding; Stack all*/
+}
+
+/* M and smaller */
+/* (No Padding 'container') */
+/*TODO: Kategorie und Tags floating (drunter?) */
+@media (max-width: 1023px) {
+    .container.flex{
+        width: 100%;
+        max-width: inherit;
+        margin-right: auto;
+        margin-left: auto;
+        padding-right: var(--pico-spacing);
+        padding-left: var(--pico-spacing);
+    }
+}
+
+/* Transaktion: Grouped Buttons */
+
+/* L an greater */
+/* (Re-Align and don't collapse over full width) */
+@media (min-width: 1280px) {
+    .collapse[role="group"] {
+        display: block;
+        text-align: right;
+    }
+    .collapse[role="group"] button {
+        border-radius: var(--pico-border-radius);
+        margin-left: var(--pico-spacing);
+    }
 }

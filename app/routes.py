@@ -237,7 +237,7 @@ class Routes:
                 assert ibans is not None, 'No IBANs provided'
                 r = parent.db_handler.add_iban_group(groupname, ibans)
                 if not r.get('inserted'):
-                    return {'error': 'No Group added', 'reason': r.get('error')}, 400
+                    return {'error': f'Keine Gruppe angelegt: {r.get("error")}'}, 400
 
                 return r, 201
 
@@ -280,7 +280,7 @@ class Routes:
                 r = parent.db_handler.set_metadata(entry, overwrite=True)
 
                 if not r.get('inserted'):
-                    return {'error': 'No data inserted', 'reason': r.get('error')}, 400
+                    return {'error': f'No data inserted: {r.get("error")}'}, 400
 
                 return r, 201
 
@@ -323,7 +323,7 @@ class Routes:
                 """
                 input_file = request.files.get('file-input')
                 if not input_file:
-                    return {'error': 'No file provided'}, 400
+                    return {'error': 'Es wurde keine Datei übermittelt.'}, 400
 
                 # Store Upload file to tmp
                 path = '/tmp/transactions.tmp'
@@ -343,15 +343,26 @@ class Routes:
                     path = f'{path}.pdf'
 
                 # Read Input and Parse the contents
-                parsed_data = parent.read_input(
-                    path, bank=request.form.get('bank', 'Generic'),
-                    data_format=content_format
-                )
+                try:
+                    parsed_data = parent.read_input(
+                        path, bank=request.form.get('bank', 'Generic'),
+                        data_format=content_format
+                    )
 
-                # Verarbeitete Kontiumsätze in die DB speichern
-                # und vom Objekt und Dateisystem löschen
-                insert_result = parent.db_handler.insert(parsed_data, iban)
-                inserted = insert_result.get('inserted')
+                    # Verarbeitete Kontiumsätze in die DB speichern
+                    # und vom Objekt und Dateisystem löschen
+                    insert_result = parent.db_handler.insert(parsed_data, iban)
+                    inserted = insert_result.get('inserted')
+
+                except (KeyError, ValueError, NotImplementedError) as ex:
+                    return {
+                        "error": (
+                            "Die hochgeladene Datei konnte nicht verarbeitet werden, "
+                            "da das Format unvollständig ist oder nicht erwartet wurde: "
+                            + ex.__class__.__name__ + " " + str(ex)
+                        )
+                    }, 406
+
                 os.remove(path)
 
                 return_code = 201 if inserted else 200
@@ -373,9 +384,10 @@ class Routes:
                 Returns:
                     json: Informationen zur Datei und Ergebnis der Untersuchung.
                 """
-                input_file = request.files.get('file-input')
+                print(request.files)
+                input_file = request.files.get('settings-input')
                 if not input_file:
-                    return {'error': 'No file provided'}, 400
+                    return {'error': 'Es wurde keine Datei übermittelt.'}, 400
 
                 # Store Upload file to tmp
                 path = f'/tmp/{metadata}.tmp'
@@ -396,8 +408,7 @@ class Routes:
                 Returns:
                     json: Informationen zum Ergebnis des Löschauftrags.
                 """
-                deleted_entries = parent.db_handler.truncate(iban)
-                return {'deleted': deleted_entries}, 200
+                return parent.db_handler.truncate(iban), 200
 
             @current_app.route('/api/tag/<iban>', methods=['PUT'])
             def tag(iban) -> dict:

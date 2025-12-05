@@ -8,7 +8,7 @@
             {{ transaction.date_tx | ctime }}
             <small class="secondary">({{ transaction.valuta | ctime }})</small>
         </td>
-        <td>{{ transaction.text_tx[:60] }}{% if transaction.text_tx|length > 60 %} ...{%endif%}</td>
+        <td>{{ transaction.text_tx[:75] }}{% if transaction.text_tx|length > 60 %} ...{%endif%}</td>
         <td>
             {% if transaction.category %}
             <a class="tag-chip category" href="?category={{transaction.category}}">

@@ -330,7 +330,7 @@ class UserInterface():
         """
         # Format
         if data_format is None:
-            #TODO: Logik zum Erraten des Datentyps, #10
+            # Fallback to CSV text
             data_format = 'csv'
 
         # Reader
