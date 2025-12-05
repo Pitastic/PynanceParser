@@ -203,7 +203,7 @@ def test_save_meta(test_app):
             }
             parameters = json.dumps(parameters).encode('utf-8')
             files = {
-                'file-input': (io.BytesIO(parameters), 'commerzbank.csv'),
+                'settings-input': (io.BytesIO(parameters), 'commerzbank.csv'),
                 'bank': 'Commerzbank'
             }
             result = client.post(

@@ -39,7 +39,8 @@ def test_upload_file_route(test_app):
             )
 
             # Check Response
-            assert result.status_code == 201, \
+            # (If other test run already, data is til present and duplicates won't be inserted)
+            assert result.status_code in (200, 201), \
                 f"Die Seite hat den Upload nicht wie erwartet verarbeitet: {result.text}"
             assert result.json.get('filename') == 'commerzbank.csv', \
                 "Angaben zum Upload wurden nicht gefunden"
