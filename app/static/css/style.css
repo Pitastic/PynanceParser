@@ -33,9 +33,9 @@ main {
 /* Hide an Element */
 .hide {display: none !important;}
 /* Hide when S */
-@media (max-width: 767px) {.hide-s {display:none;}}
+@media (max-width: 767px) {.hide-s {display:none !important;}}
 /* Hide when M or smaller */
-@media (max-width: 1023px) {.hide-m {display:none;}}
+@media (max-width: 1023px) {.hide-m {display:none !important;}}
 
 /* Color classes */
 .delete {
@@ -106,6 +106,9 @@ button.info {
 @media (max-width: 767px) {
     .transactions th.betrag {
         text-align: center;
+    }
+    .transactions tr {
+        border-bottom: var(--pico-border-width) solid var(--pico-table-border-color);
     }
     .transactions td button {
         padding: 1em 0.5em; margin: 0;

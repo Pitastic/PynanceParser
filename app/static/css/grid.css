@@ -34,12 +34,63 @@
 
 /* XS & S and smaller */
 @media (max-width: 767px) {
-    /*TODO: No Padding; Stack all*/
+    /* Stack nav */
+    nav { display: block; }
+    nav ul {
+        display: block;
+        text-align: center;
+        margin: 0;
+    }
+    main.container.flex { padding-top: 0; }
+
+    /* Stack all table cells */
+    .transactions {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+    .transactions thead {
+        display: none;
+    }
+    .transactions tr {
+        display: grid;
+        grid-template-columns: 1fr 5fr 5fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        gap: 0.25em;
+        grid-template-areas: 
+            "checkbox dates dates betrag"
+            "button betreff betreff betreff";
+        padding: 1em 0;
+    }
+    .transactions td {
+        display: block;
+        border: none;
+        padding-top: 0em;
+        padding-bottom: 0em;
+    }
+
+    /* Naming and Styling Cells */
+    .transactions tr td:nth-child(1){
+        padding-left: 0;
+        grid-area: checkbox;
+    }
+    .transactions tr td:nth-child(2){grid-area: dates;}
+    .transactions tr td:nth-child(3){
+        padding-right: 0;
+        grid-area: betreff;
+    }
+    .transactions tr td:nth-child(6){
+        padding-right: 0;
+        grid-area: betrag;
+    }
+    .transactions tr td:nth-child(7){
+        padding-left: 0;
+        grid-area: button;
+    }
 }
 
 /* M and smaller */
-/* (No Padding 'container') */
 /*TODO: Kategorie und Tags floating (drunter?) */
+/* (No Padding) */
 @media (max-width: 1023px) {
     .container.flex{
         width: 100%;
@@ -49,6 +100,8 @@
         padding-right: var(--pico-spacing);
         padding-left: var(--pico-spacing);
     }
+    .transactions tr td:nth-child(4){grid-area: category;}
+    .transactions tr td:nth-child(5){grid-area: tags;}
 }
 
 /* Transaktion: Grouped Buttons */
