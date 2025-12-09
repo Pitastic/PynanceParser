@@ -102,6 +102,10 @@ button.info {
     text-align: right;
 }
 
+#dynamic-results tr th {
+    font-weight: bold;
+}
+
 /* S : Slim button in transaction table */
 @media (max-width: 767px) {
     .transactions th.betrag {
@@ -114,6 +118,13 @@ button.info {
         padding: 1em 0.5em; margin: 0;
         background-color: transparent; border: 0;
         color: var(--pico-secondary);
+    }
+}
+
+/* M and smaller: TX Details Page */
+@media (max-width: 1023px) {
+    .single-transaction tr td:first-child{
+        font-weight: bold;
     }
 }
 

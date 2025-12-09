@@ -86,6 +86,13 @@
         padding-left: 0;
         grid-area: button;
     }
+
+    /* TODO: # ,TX Details PopUp
+    #dynamic-results tr:last-child th, 
+    #dynamic-results tr:last-child td {
+        display: block;
+    }
+    */
 }
 
 /* M and smaller */
@@ -100,8 +107,8 @@
         padding-right: var(--pico-spacing);
         padding-left: var(--pico-spacing);
     }
-    .transactions tr td:nth-child(4){grid-area: category;}
-    .transactions tr td:nth-child(5){grid-area: tags;}
+    /*.transactions tr td:nth-child(4){grid-area: category;}*/
+    /*.transactions tr td:nth-child(5){grid-area: tags;}*/
 }
 
 /* Transaktion: Grouped Buttons */
