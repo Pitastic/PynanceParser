@@ -32,6 +32,10 @@ main {
 
 /* Hide an Element */
 .hide {display: none !important;}
+/* Hide when S */
+@media (max-width: 767px) {.hide-s {display:none;}}
+/* Hide when M or smaller */
+@media (max-width: 1023px) {.hide-m {display:none;}}
 
 /* Color classes */
 .delete {
@@ -93,9 +97,21 @@ button.info {
 }
 
 /* Tables */
-.transactions td.betrag {
+.transactions .betrag {
     white-space: nowrap;
     text-align: right;
+}
+
+/* S : Slim button in transaction table */
+@media (max-width: 767px) {
+    .transactions th.betrag {
+        text-align: center;
+    }
+    .transactions td button {
+        padding: 1em 0.5em; margin: 0;
+        background-color: transparent; border: 0;
+        color: var(--pico-secondary);
+    }
 }
 
 .tag-chip {

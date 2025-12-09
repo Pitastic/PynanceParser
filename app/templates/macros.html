@@ -9,7 +9,7 @@
             <small class="secondary">({{ transaction.valuta | ctime }})</small>
         </td>
         <td>{{ transaction.text_tx[:75] }}{% if transaction.text_tx|length > 60 %} ...{%endif%}</td>
-        <td>
+        <td class="hide-m">
             {% if transaction.category %}
             <a class="tag-chip category" href="?category={{transaction.category}}">
                 {{ transaction.category }}
@@ -18,7 +18,7 @@
             &nbsp;
             {% endif %}
         </td>
-        <td>
+        <td class="hide-m">
             {% for tag in transaction.tags %}
             <a class="tag-chip" href="?tags={{tag}}">
                 {{ tag }}
