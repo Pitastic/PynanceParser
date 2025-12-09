@@ -89,9 +89,9 @@
         <label>
             Tags
             <div id="filter-tag-container"></div>
-            <input type="hidden" id="filter-tag-result" value="">
+            <input type="hidden" id="filter-tag-result" autocomplete="off" value="">
             <div class="grid">
-                <input type="text" id="filter-tag" list="tag-list" placeholder="weiteres Tag (Enter)" />
+                <input type="text" id="filter-tag" list="tag-list" value="" placeholder="weiteres Tag (Enter)" />
                 <select id="filter-tag-mode" {% if 'tags' in filters %} aria-invalid="false" {% endif %}/>
                     <option value="in" {{"selected" if filters.tag_mode and filters.tag_mode == 'in'}}>eines davon</option>
                     <option value="all" {{"selected" if filters.tag_mode and filters.tag_mode == 'all'}}>alle davon</option>
