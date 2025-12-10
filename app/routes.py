@@ -3,6 +3,7 @@
 
 import os
 from datetime import datetime
+from hashlib import md5
 from flask import request, current_app, render_template, redirect, \
                   make_response, send_from_directory
 
@@ -16,6 +17,14 @@ class Routes:
             @current_app.template_filter('ctime')
             def timectime(s):
                 return datetime.fromtimestamp(s).strftime('%d.%m.%Y')
+
+            @current_app.template_filter('hash')
+            def hash_filter(value):
+                # Verwende hashlib, um einen konsistenten Hashwert zu erzeugen
+                if not value:
+                    return 0
+                hash_object = md5(value.encode())
+                return int(hash_object.hexdigest(), 16)
 
             @current_app.context_processor
             def version_string():

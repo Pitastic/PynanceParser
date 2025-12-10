@@ -152,19 +152,30 @@ button.info {
     }
     .tag-chip:hover, .tag-chip a, .tag-chip a:hover {
         text-decoration: none;
-        color: var(--pico-code-kbd-color);
     }
     .tag-chip a.remove:hover{
         color: var(--pico-color-red-500);
     }
-    .tag-chip.category {
-        background-color: cornflowerblue;
+    .tag-chip a {
+        margin-left: 0.33em;
     }
     .tag-chip.parsed {
         background-color: blueviolet;
     }
 
-    .tag-chip a {
-        margin-left: 0.33em;
-        color: var(--pico-secondary);
-    }
+    /* Generated Color Classes */
+    .tag-chip:hover { filter: brightness(110%); }
+    .gen-color-0 { background-color: #e57373; color: black; }
+    .gen-color-1 { background-color: #f06292; color: white; }
+    .gen-color-2 { background-color: #ba68c8; color: white; }
+    .gen-color-3 { background-color: #9575cd; color: white; }
+    .gen-color-4 { background-color: #7986cb; color: white; }
+    .gen-color-5 { background-color: #64b5f6; color: black; }
+    .gen-color-6 { background-color: #4fc3f7; color: black; }
+    .gen-color-7 { background-color: #4dd0e1; color: black; }
+    .gen-color-8 { background-color: #4db6ac; color: white; }
+    .gen-color-9 { background-color: #81c784; color: black; }
+    .gen-color-10 { background-color: #aed581; color: black; }
+    .gen-color-11 { background-color: #dce775; color: black; }
+    .gen-color-12 { background-color: #fff176; color: black; }
+    .gen-color-13 { background-color: #ffd54f; color: black; }
