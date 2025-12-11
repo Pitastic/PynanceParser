@@ -57,7 +57,7 @@
         grid-template-rows: 1fr 1fr;
         gap: 0.25em;
         grid-template-areas: 
-            "checkbox dates dates betrag"
+            "checkbox dates category betrag"
             "button betreff betreff betreff";
         padding: 1em 0;
     }
@@ -78,6 +78,7 @@
         padding-right: 0;
         grid-area: betreff;
     }
+    .transactions tr td:nth-child(4){grid-area: category;}
     .transactions tr td:nth-child(6){
         padding-right: 0;
         grid-area: betrag;
@@ -96,8 +97,7 @@
 }
 
 /* M and smaller */
-/*TODO: Kategorie und Tags floating (drunter?) */
-/* (No Padding) */
+/* (No Padding, Category Header hide) */
 @media (max-width: 1023px) {
     .container.flex{
         width: 100%;
@@ -107,8 +107,49 @@
         padding-right: var(--pico-spacing);
         padding-left: var(--pico-spacing);
     }
-    /*.transactions tr td:nth-child(4){grid-area: category;}*/
-    /*.transactions tr td:nth-child(5){grid-area: tags;}*/
+
+    .transactions tr th:nth-child(4) {
+        color: transparent;
+        font-size: 0.01em;
+        padding: 0;
+    }
+}
+
+/* M */
+/* (Categories are only cirlces) */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .transactions .tag-chip {
+        display: inline-block;
+        width: 1em;
+        height: 1em;
+        border-radius: 50%;
+        text-indent: -9999px;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+}
+
+/* L and smaller */
+@media (max-width: 1279px) {
+    /* less padding */
+    .container.flex {
+        max-width: 1020px;
+    }
+    /* Tag Chips are only circles */
+    .transactions tr th:nth-child(5) {
+        color: transparent;
+        font-size: 0.01em;
+        padding: 0;
+    }
+    .transactions tr td:nth-child(5) .tag-chip {
+        display: inline-block;
+        width: 1em;
+        height: 1em;
+        border-radius: 50%;
+        text-indent: -9999px;
+        overflow: hidden;
+        white-space: nowrap;
+    }
 }
 
 /* Transaktion: Grouped Buttons */

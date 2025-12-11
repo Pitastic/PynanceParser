@@ -23,7 +23,7 @@
             <header>
                 <strong>Konten</strong>
             </header>
-            <div class="grid m-6-6 xl-12 xxl-6-6 margin">
+            <div class="grid m-6-6 xxl-6-6 margin">
                 {% if ibans %}
                 {% for iban in ibans %}
                 <button class="outline contrast" data-target="add-iban" data-iban="{{iban}}" onclick="toggleModal(event)">&#128212; {{iban}}</button>
