@@ -34,6 +34,32 @@
 
 /* XS & S and smaller */
 @media (max-width: 767px) {
+
+    /* Details PopUp Table */
+    #dynamic-results tr {
+        display: grid;
+        grid-template-columns: 2fr 3fr;
+        gap: 0.1em;
+        grid-template-areas: 
+            ". ."
+            "gegen-head gegen-head"
+            "gegen-val gegen-val"
+            "tx-head tx-head"
+            "tx-val tx-val"
+            ". .";
+    }
+
+    #dynamic-results tr th,
+    #dynamic-results tr td {
+        display: block;
+        text-align: left;
+    }
+
+    #dynamic-results tr:nth-child(4) th { grid-area: gegen-head;}
+    #dynamic-results tr:nth-child(4) td { grid-area: gegen-val;}
+    #dynamic-results tr:nth-child(9) th { grid-area: tx-head;}
+    #dynamic-results tr:nth-child(9) td { grid-area: tx-val;}
+
     /* Stack nav */
     nav { display: block; }
     nav ul {
