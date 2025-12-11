@@ -28,7 +28,7 @@
 
     <section>
 
-    <table class="transactions">
+    <table class="single-transaction">
         <thead>
             <tr>
                 <th colspan="2">Umsatzdetails</td>
@@ -61,7 +61,7 @@
     </section>
     <section>
 
-    <table class="transactions">
+    <table class="single-transaction">
         <thead>
             <tr>
                 <th colspan="2">Erweiterte Informationen</th>
@@ -110,11 +110,8 @@
                 </td>
             </tr>
             <tr>
-                <td>
-                    &nbsp;
-                </td>
-                <td>
-                    <div role="group">
+                <td colspan="2">
+                    <div role="group" class="collapse">
                         <button class="delete outline" onclick="removeCats('{{tx.uuid}}')">Kategorie entfernen</button>
                         <button class="delete outline" onclick="removeTags('{{tx.uuid}}')">Tags entfernen</button>
                     </div>

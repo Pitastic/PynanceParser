@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+</head>
+<body>
+<style>
+/* S : Slim button in transaction table */
+@media (max-width: 767px) {
+    .transactions th.betrag {
+        text-align: center;
+    }
+    .transactions td button {
+        padding: 1em 0.5em; margin: 0;
+        background-color: transparent; border: 0;
+        color: var(--pico-secondary);
+    }
+}
+</style>
+
+
+<table class="transactions">
+
+    <thead>
+        <tr>
+            <th><input type="checkbox" id="select-all"></th>
+            <th>Datum<br><small class="secondary">(Valuta)</small></th>
+            <th>Buchungstext</th>
+            <th class="hide-m">Kategorie</th>
+            <th class="hide-m">Tags</th>
+            <th class="betrag">Betrag</th>
+            <th>&nbsp;</th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+    <tr name="cf1fb4e6c131570e4f3b2ac857dead40">
+        <td><input type="checkbox" class="row-checkbox" name="cf1fb4e6c131570e4f3b2ac857dead40" data-txuuid="cf1fb4e6c131570e4f3b2ac857dead40" data-txdate="1672531200.0"></td>
+        <td>
+            01.01.2023
+            <small class="secondary">(16.05.2023)</small>
+        </td>
+        <td>Wucherpfennig sagt Danke 88//HANNOV 2023-01-01T08:59:42 KFN 9 VJ 7777 Karte ...</td>
+        <td class="hide-m">
+            
+            &nbsp;
+            
+        </td>
+        <td class="hide-m">
+            
+        </td>
+        <td class="betrag" dir="ltr">
+            -11.63
+            <small class="secondary">EUR</small>
+        </td>
+        <td>
+            <button class="secondary info" title="Show details" data-target="details-popup" data-tx="cf1fb4e6c131570e4f3b2ac857dead40" onclick="toggleModal(event)">↗</button>
+        </td>
+    </tr>
+
+    <tr name="6884802db5e07ee68a68e2c64f9c0cdd">
+        <td><input type="checkbox" class="row-checkbox" name="6884802db5e07ee68a68e2c64f9c0cdd" data-txuuid="6884802db5e07ee68a68e2c64f9c0cdd" data-txdate="1672617600.0"></td>
+        <td>
+            02.01.2023
+            <small class="secondary">(15.05.2023)</small>
+        </td>
+        <td>MEIN GARTENCENTER//Berlin 2023-01-02T12:57:02 KFN 9 VJ 7777 Kartenzahlung ...</td>
+        <td class="hide-m">
+            
+            &nbsp;
+            
+        </td>
+        <td class="hide-m">
+            
+        </td>
+        <td class="betrag" dir="ltr">
+            -118.94
+            <small class="secondary">EUR</small>
+        </td>
+        <td>
+            <button class="secondary info" title="Show details" data-target="details-popup" data-tx="6884802db5e07ee68a68e2c64f9c0cdd" onclick="toggleModal(event)">↗</button>
+        </td>
+    </tr>
+
+    </tbody>
+</table>
+        
+</body>
+</html>
