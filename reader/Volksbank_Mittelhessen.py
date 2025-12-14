@@ -3,6 +3,7 @@
 
 import datetime
 import csv
+import camelot
 
 from reader.Generic import Reader as Generic
 
@@ -75,8 +76,19 @@ class Reader(Generic):
             Liste mit Dictonaries, als Standard-Objekt mit allen
             ausgelesenen Kontoumsätzen entspricht.
         """
-        raise NotImplementedError()
-
+        tables = camelot.read_pdf(
+            filepath,
+            pages="all", # End -1
+            flavor="stream",
+            table_areas=["60,567,573,51"],
+            columns=["75,112,440,526"],
+            strip_text='\n', # übernommen von Commerzbank, da ähnliches Layout
+            layout_kwargs={ # übernommen von Commerzbank, da ähnliches Layout
+                "char_margin": 2,
+                "word_margin": 0.5,
+            },
+        )
+ 
     def from_http(self, url):
         """
         Liest Kontoumsätze von einer Internetressource ein.
