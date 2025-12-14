@@ -80,7 +80,7 @@ class Reader(Generic):
             filepath,
             pages="all", # End -1
             flavor="stream",
-            table_areas=["60,567,573,51"],
+            table_areas=["60,629,573,51"],
             columns=["75,112,440,526"],
             strip_text='\n', # übernommen von Commerzbank, da ähnliches Layout
             layout_kwargs={ # übernommen von Commerzbank, da ähnliches Layout
@@ -88,6 +88,8 @@ class Reader(Generic):
                 "word_margin": 0.5,
             },
         )
+        # Begin at: "alter Kontostand vom"
+        # End at: "neuer Kontostand vom"
  
     def from_http(self, url):
         """
