@@ -31,7 +31,7 @@
         </td>
         <td class="hide-m">
             {% for tag in transaction.tags %}
-            <a class="tag-chip {{generate_class(tag)}}" href="?tags={{tag}}">
+            <a class="tag-chip {{generate_class(tag)}}" href="?tags={{tag}}" title="{{tag}}">
                 {{ tag }}
             </a>
             {% endfor %}

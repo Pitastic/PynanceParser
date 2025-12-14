@@ -112,6 +112,7 @@ function addTagBullet(inputField, tagContainerId, hiddenInputId, tagvalue) {
 		const tagEl = document.createElement("span");
 		tagEl.className = "tag-chip " + generateClass(value);
 		tagEl.textContent = value;
+		tagEl.title = value;
 
 		const removeBtn = document.createElement("a");
 		removeBtn.className = "remove";

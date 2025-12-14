@@ -104,10 +104,11 @@ function fillTxDetails(result) {
                 // Tag Chips
                 const row = Array.isArray(r[key]) ? r[key] : [r[key]];
                 for (let index = 0; index < row.length; index++) {
-                    const span = document.createElement('span');
-                    span.innerHTML = row[index];
-                    span.className = 'tag-chip ' + key;
-                    td.appendChild(span)
+                    const a_link = document.createElement('a');
+                    a_link.innerHTML = row[index];
+                    a_link.className = 'tag-chip ' + generateClass(row[index]);
+                    a_link.href = "?tags=" + row[index];
+                    td.appendChild(a_link);
                 }
 
             } else {

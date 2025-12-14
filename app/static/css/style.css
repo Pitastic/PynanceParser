@@ -144,6 +144,7 @@ button.info {
     text-decoration: none;
     white-space: nowrap;
 }
+    .tag-chip a.remove { color: var(--pico-code-kbd-color); }
     #filter-tag-container .tag-chip:last-child,
     #add-tag-container .tag-chip:last-child,
     #tag-container .tag-chip:last-child {
