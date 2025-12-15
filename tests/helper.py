@@ -50,7 +50,7 @@ def check_transaktion_list(tx_list):
         # Buchungsart (optional, aber bei Generic mit dabei)
         buchungs_art = entry.get('art')
         assert isinstance(buchungs_art, str) and len(buchungs_art), \
-            f"'art' wurde nicht oder falsch erkannt: {gegenkonto}"
+            f"'art' wurde nicht oder falsch erkannt: {buchungs_art}"
 
         # Währung (optional, aber bei Generic mit dabei)
         currency = entry.get('currency')

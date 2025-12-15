@@ -45,7 +45,7 @@ Listen und Diagramme zeigen dir, wo eigentlich das Geld geblieben ist :thinking:
 | Comdirect                    | 🟢 Umsatzübersicht | 🟢 Finanzreport |
 | Commerzbank                  | 🟢 Umsatzübersicht | 🟢 Kontoauszug |
 | Sparkasse Hannover           | ⚫ *planned* | ⚫ *planned* |
-| Volksbank Mittelhessen eG    | 🟢 Umsatzübersicht | ⚫ *planned* |
+| Volksbank Mittelhessen eG    | 🟢 Umsatzübersicht | 🟢 Kontoauszug |
 
 ### Workflow (CSV / PDF Imports)
 
@@ -92,13 +92,7 @@ pytest
 
 ## Entwickeln von neuen Readern
 
-- Erstelle einen neuen Test unter `tests/`
-    - (kopiere am besten `tests/test_unit_reader_Comdirect.py`)
-- Erstelle ein neues Skript unter `reader/`
-    - (kopiere am besten `reader/Generic.py`)
-- Passe die Logik im Test so an, dass dieser ausgeführt wird, wenn eine Testdatei vorhanden ist.
-- Entwickle deinen Reader und teste ihn dabei immer wieder mit `pytest -svx tests/test_unit_reader_*.py`
-- Pushe **keine** Testdaten (Kontoumsätze) ins Repo!
+Deine Bank fehlt noch in der Support Tabelle? [So erstellst du einen weiteren Reader](Reader.md).
 
 ## Entwickeln neuer `parser` / `rules`
 
