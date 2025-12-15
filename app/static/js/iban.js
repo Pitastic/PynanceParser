@@ -111,6 +111,9 @@ function fillTxDetails(result) {
                     td.appendChild(a_link);
                 }
 
+            } else if (key == 'betrag') {
+                td.innerHTML = r[key].toFixed(2);
+
             } else {
                 td.innerHTML = r[key];
 
