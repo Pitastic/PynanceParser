@@ -3,9 +3,9 @@
 ![pytest](https://img.shields.io/badge/pytest-passed%20(53/53)-darkgreen)
 ![pylint](https://img.shields.io/badge/pylint-9.75-yellow)
 
-Analyse und Darstellung von Kontoumsätzen bei mehreren Banken.
+*This repo is german but you are welcome to add your language to the frontend.*
 
-**This repo is german but you are welcome to add your language to the frontend.**
+Analyse und Darstellung von Kontoumsätzen bei mehreren Banken.
 
 ## Get Started
 
