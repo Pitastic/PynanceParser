@@ -5,6 +5,8 @@
 
 Analyse und Darstellung von Kontoumsätzen bei mehreren Banken.
 
+**This repo is german but you are welcome to add your language to the frontend.**
+
 ## Get Started
 
 ### Setup
@@ -29,12 +31,30 @@ pip install -r requirements.txt
 
 Die Funktionen des PynanceParsers setzen stark auf Reproduzierbarkeit. Das bedeutet, dass du beliebig oft gleiche Daten löschen und reimportieren kannst und halbautomatisch wieder die gleichen Ergebnisse (einmalige Transaktionen, Tagging, Kategorien, Statistiken) erhälts. Ein manuelles Editieren ist zwar möglich, aber die Ausnahme.
 
-- Keine doppelten Imports *(Datum, Text und Betrag bilden eine einmalige Kombination)*
-- Automatisches Extrahieren von Zusatzinformationen einer Transaktion durch Muster *(RegEx parst Kerninformationen)*
-- Automatisches und/oder manuelles Taggen von Umsätzen *(Regelbasiert: RegEx + Zusatzinformationen)*
-- Automatisches und/oder manuelles Kategorisieren von Umsätzen *(Regelbasiert: RegEx + Tags + Zusatzinformationen)*
-- Übersicht über alle Transaktionen einer oder mehrerer Konten *(Vielseitige Filtermöglichkeiten; Kontogruppen)*
-- Statistische Auswertung auf dem angereicherten Datensatz *(Kontextabhängige Statistken)*
+👉 **Keine doppelten Imports**
+
+  *(Datum, Text und Betrag bilden eine einmalige Kombination)*
+
+👉 **Automatisches Extrahieren von Zusatzinformationen**
+
+  *(RegEx parst Kerninformationen)*
+
+👉 **Automatisches und/oder manuelles Taggen**
+
+  *(Regelbasiert: RegEx + Zusatzinformationen)*
+
+👉 **Automatisches und/oder manuelles Kategorisieren**
+
+  *(Regelbasiert: RegEx + Tags + Zusatzinformationen)*
+
+👉 **Übersicht über alle Transaktionen**
+
+  *(vielseitige Filtermöglichkeiten in einem Konto oder einer Kontogruppe)*
+
+👉 **Statistische Auswertung auf dem angereicherten Datensatz**
+
+  *(Kontextabhängige Statistken)*
+
 
 ### Darstellung
 
