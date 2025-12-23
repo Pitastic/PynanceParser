@@ -50,7 +50,9 @@ class Routes:
                 Startseite in einem Konto.
 
                 Args (uri):
-                    iban, str:  IBAN zu der die Einträge angezeigt werden sollen.
+                    iban, str:              IBAN zu der die Einträge angezeigt werden sollen.
+                    text, str (query):      Volltextsuche im Betreff mit RegEx Support
+                    gegenkonto, str (query): Volltextsuche im Gegenkonto mit RegEx Support
                     startDate, str (query): Startdatum (Y-m-d) für die Anzeige der Einträge
                     endDate, str (query):   Enddatum (Y-m-d) für die Anzeige der Einträge
                     category, str (query):  Kategorie-Filter

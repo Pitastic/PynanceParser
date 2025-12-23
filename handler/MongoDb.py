@@ -262,7 +262,7 @@ class MongoDbHandler(BaseDb):
 
         # Regex Suche
         if condition_method.lower() == 'regex':
-            stmt = re.compile(condition.get('value'))
+            stmt = re.compile(str(condition.get('value')))
 
         # Like Suche
         if condition_method.lower() == 'like':

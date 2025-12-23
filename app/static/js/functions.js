@@ -51,6 +51,12 @@ function getFilteredList() {
 		arg_concat = '&';
 	}
 
+	const peer = document.getElementById('filter-peer').value;
+	if (peer) {
+		query_args = query_args + arg_concat + 'gegenkonto=' + peer;
+		arg_concat = '&';
+	}
+
 	const category = document.getElementById('filter-cat').value;
 	if (category) {
 		query_args = query_args + arg_concat + 'category=' + category;

@@ -186,6 +186,17 @@ class UserInterface():
 
             frontend_filters['text'] = text_search
 
+        # Filter Gegenkonto Search
+        konto_search = get_args.get('gegenkonto')
+        if konto_search is not None:
+            condition.append({
+                'key': 'gegenkonto',
+                'value': konto_search,
+                'compare': 'regex'
+            })
+
+            frontend_filters['gegenkonto'] = konto_search
+
         return condition, frontend_filters
 
     def check_requested_iban(self, iban):

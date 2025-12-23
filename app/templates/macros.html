@@ -19,7 +19,7 @@
             {{ transaction.date_tx | ctime }}
             <small class="secondary">({{ transaction.valuta | ctime }})</small>
         </td>
-        <td>{{ transaction.text_tx[:75] }}{% if transaction.text_tx|length > 60 %} ...{%endif%}</td>
+        <td>{{ transaction.text_tx[:90] }}{% if transaction.text_tx|length > 60 %} ...{%endif%}</td>
         <td>
             {% if transaction.category %}
             <a class="tag-chip category {{generate_class(transaction.category)}}" href="?category={{transaction.category}}">
@@ -87,16 +87,28 @@
                 {% endif %}
             />
         </label>
-        <label>
-            Kategorien
-            <input type="text" id="filter-cat" list="cat-list" placeholder="Kategorie"
-                {% if 'category' in filters %}
-                    value="{{filters.category}}" aria-invalid="false"
-                {% else %}
-                    value=""
-                {% endif %}
-            />
-        </label>
+            <div class="grid">
+                <label>
+                    Kategorien
+                    <input type="text" id="filter-cat" list="cat-list" placeholder="Kategorie"
+                        {% if 'category' in filters %}
+                            value="{{filters.category}}" aria-invalid="false"
+                        {% else %}
+                            value=""
+                        {% endif %}
+                    />
+                </label>
+                <label>
+                    Gegenkonto
+                    <input type="text" id="filter-peer" list="cat-list" placeholder="IBAN / Nummer"
+                        {% if 'gegenkonto' in filters %}
+                            value="{{filters.gegenkonto}}" aria-invalid="false"
+                        {% else %}
+                            value=""
+                        {% endif %}
+                    />
+                </label>
+            </div>
         <label>
             Tags
             <div id="filter-tag-container"></div>
