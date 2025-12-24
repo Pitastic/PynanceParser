@@ -51,7 +51,7 @@ class Reader(Generic):
                     'art': row['Buchungstext'],
                     'text_tx': row['Verwendungszweck'],
                     'betrag': betrag,
-                    'gegenkonto': row['Name Zahlungsbeteiligter'],
+                    'pper': row['Name Zahlungsbeteiligter'],
                     'currency': row['Waehrung'],
                     'parsed': {},
                     'category': None,
@@ -142,7 +142,7 @@ class Reader(Generic):
                 'art': row[2],
                 'text_tx': "",
                 'betrag': float(betrag),
-                'gegenkonto': "",
+                'pper': "",
                 'currency': "EUR",
                 'parsed': {},
                 'category': None,
@@ -160,7 +160,7 @@ class Reader(Generic):
                 prev_line_len = len(row[3])
                 i, row = next(enumerated_table)
                 if not line['text_tx']:
-                    line['gegenkonto'] = row[2]
+                    line['pper'] = row[2]
                     line['text_tx'] = row[2]
                     continue
 

@@ -53,7 +53,7 @@ function getFilteredList() {
 
 	const peer = document.getElementById('filter-peer').value;
 	if (peer) {
-		query_args = query_args + arg_concat + 'gegenkonto=' + peer;
+		query_args = query_args + arg_concat + 'pper=' + peer;
 		arg_concat = '&';
 	}
 
