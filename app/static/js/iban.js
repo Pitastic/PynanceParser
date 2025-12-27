@@ -106,8 +106,11 @@ function fillTxDetails(result) {
                 for (let index = 0; index < row.length; index++) {
                     const a_link = document.createElement('a');
                     a_link.innerHTML = row[index];
-                    a_link.className = 'tag-chip ' + generateClass(row[index]);
                     a_link.href = "?tags=" + row[index];
+                    a_link.className = 'tag-chip ' + generateClass(row[index]);
+                    if (key == 'category') {
+                        a_link.className += ' category';
+                    }
                     td.appendChild(a_link);
                 }
 

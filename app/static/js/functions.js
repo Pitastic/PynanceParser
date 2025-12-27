@@ -413,15 +413,17 @@ function formatResultText(responseText) {
  * @param {string} inputString - The input string to generate the class name from.
  * @returns {string} - The generated class name.
  */
-function generateClass(inputString) {
-	if (! inputString) {
-		return "";
-	}
-	let hash = 0;
-	for (let i = 0; i < inputString.length; i++) {
-		hash = (hash << 5) - hash + inputString.charCodeAt(i);
-		hash |= 0; // Convert to 32bit integer
-	}
-	const className = `gen-color-${Math.abs(hash % 13)}`;
-	return className;
+function generateClass(string) {
+
+    let hash = 0;
+
+    if (string.length == 0) return hash;
+
+    for (let i = 0; i < string.length; i++) {
+        const char = string.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+    }
+
+    return `gen-color-${Math.abs(hash % 13)}`;
 }

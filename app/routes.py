@@ -18,13 +18,27 @@ class Routes:
             def timectime(s):
                 return datetime.fromtimestamp(s).strftime('%d.%m.%Y')
 
+            #@current_app.template_filter('hash')
+            #def hash_filter(value):
+            #    # Verwende hashlib, um einen konsistenten Hashwert zu erzeugen
+            #    if not value:
+            #        return 0
+            #    hash_object = md5(value.encode())
+            #    return int(hash_object.hexdigest(), 16)
+
             @current_app.template_filter('hash')
-            def hash_filter(value):
-                # Verwende hashlib, um einen konsistenten Hashwert zu erzeugen
-                if not value:
-                    return 0
-                hash_object = md5(value.encode())
-                return int(hash_object.hexdigest(), 16)
+            def to_hash(string):
+                hash_value = 0
+
+                if len(string) == 0:
+                    return hash_value
+
+                for char in string:
+                    char_code = ord(char)
+                    hash_value = ((hash_value << 5) - hash_value) + char_code
+                    hash_value = hash_value & 0xFFFFFFFF  # Ensure 32-bit integer
+
+                return hash_value
 
             @current_app.context_processor
             def version_string():
