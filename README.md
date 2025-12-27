@@ -31,6 +31,10 @@ pip install -r requirements.txt
 
 Die Funktionen des PynanceParsers setzen stark auf Reproduzierbarkeit. Das bedeutet, dass du beliebig oft gleiche Daten löschen und reimportieren kannst und halbautomatisch wieder die gleichen Ergebnisse (einmalige Transaktionen, Tagging, Kategorien, Statistiken) erhälts. Ein manuelles Editieren ist zwar möglich, aber die Ausnahme.
 
+👉 **Modernes und responsives Design**
+
+  *(Übersichtlich auf vielen Geräten)*
+
 👉 **Keine doppelten Imports**
 
   *(Datum, Text und Betrag bilden eine einmalige Kombination)*
@@ -58,9 +62,12 @@ Die Funktionen des PynanceParsers setzen stark auf Reproduzierbarkeit. Das bedeu
 
 ### Darstellung
 
+- Kontenverwaltung
 - Kontohistorie
 - Transaktionsdetails
 - Statistiken/Verteilungen/Verläufe
+
+![screenshots](https://github.com/user-attachments/assets/f6201658-eeb0-422c-b1a8-df9cb85cf842)
 
 ### Unterstützte Banken
 
