@@ -58,7 +58,7 @@ class Reader:
                     'art': row['Art'],
                     'text_tx': row['Buchungstext'],
                     'betrag': betrag,
-                    'pper': row.get('Gegenkonto'),
+                    'peer': row.get('Gegenkonto'),
                     'currency': row['Währung'],
                     'parsed': {},
                     'category': None,

@@ -22,7 +22,7 @@
         <td>{{ transaction.text_tx[:90] }}{% if transaction.text_tx|length > 60 %} ...{%endif%}</td>
         <td>
             {% if transaction.category %}
-            <a class="tag-chip category {{generate_class(transaction.category)}}" href="?category={{transaction.category}}">
+            <a class="tag-chip category {{generate_class(transaction.category)}}" href="?category={{transaction.category}}" data-tooltip="Add Filter">
                 {{ transaction.category }}
             </a>
             {% else %}
@@ -31,7 +31,7 @@
         </td>
         <td class="hide-m">
             {% for tag in transaction.tags %}
-            <a class="tag-chip {{generate_class(tag)}}" href="?tags={{tag}}" title="{{tag}}">
+            <a class="tag-chip {{generate_class(tag)}}" href="?tags={{tag}}" data-tooltip="Add Filter '{{tag}}'">
                 {{ tag }}
             </a>
             {% endfor %}
@@ -101,8 +101,8 @@
                 <label>
                     Gegenkonto
                     <input type="text" id="filter-peer" list="cat-list" placeholder="IBAN / Nummer"
-                        {% if 'pper' in filters %}
-                            value="{{filters.pper}}" aria-invalid="false"
+                        {% if 'peer' in filters %}
+                            value="{{filters.peer}}" aria-invalid="false"
                         {% else %}
                             value=""
                         {% endif %}

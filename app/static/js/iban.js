@@ -111,11 +111,22 @@ function fillTxDetails(result) {
                     if (key == 'category') {
                         a_link.className += ' category';
                     }
+                    a_link.dataset.tooltip = "Add Filter";
                     td.appendChild(a_link);
                 }
 
             } else if (key == 'betrag') {
+                // Round
                 td.innerHTML = r[key].toFixed(2);
+
+            } else if (key == 'peer') {
+                // Add Filter link
+                const a_link = document.createElement('a');
+                a_link.innerHTML = r[key];
+                a_link.className = "secondary";
+                a_link.href = "?peer=" + r[key];
+                a_link.dataset.tooltip = "Add Filter";
+                td.appendChild(a_link);
 
             } else {
                 td.innerHTML = r[key];

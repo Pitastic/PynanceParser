@@ -187,15 +187,15 @@ class UserInterface():
             frontend_filters['text'] = text_search
 
         # Filter Gegenkonto Search
-        konto_search = get_args.get('pper')
+        konto_search = get_args.get('peer')
         if konto_search is not None:
             condition.append({
-                'key': 'pper',
+                'key': 'peer',
                 'value': konto_search,
                 'compare': 'regex'
             })
 
-            frontend_filters['pper'] = konto_search
+            frontend_filters['peer'] = konto_search
 
         return condition, frontend_filters
 
