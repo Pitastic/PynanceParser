@@ -108,6 +108,7 @@ class UserInterface():
             for pattern in date_patterns:
                 try:
                     end_date = int(datetime.strptime(end_date, pattern).timestamp())
+                    end_date = end_date + 86399  # Add 23:59:59 to include whole day
                     condition.append({
                         'key': 'date_tx',
                         'value': end_date,
