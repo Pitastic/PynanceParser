@@ -30,57 +30,63 @@ function formatUnixToDate(unixSeconds) {
  * @returns {string} - Returns one GET query args string for all filter inputs
  */
 function getFilteredList() {
-    let query_args = '';
-    let arg_concat = '?';
+	let query_args = '';
+	let arg_concat = '?';
 
-    const startDate = document.getElementById('filter-range-start').value;
-    if (startDate) {
-        query_args = query_args + arg_concat + 'startDate=' + startDate;
-        arg_concat = '&';
-    }
+	const startDate = document.getElementById('filter-range-start').value;
+	if (startDate) {
+		query_args = query_args + arg_concat + 'startDate=' + startDate;
+		arg_concat = '&';
+	}
 
-    const endDate = document.getElementById('filter-range-end').value;
-    if (endDate) {
-        query_args = query_args + arg_concat + 'endDate=' + endDate;
-        arg_concat = '&';
-    }
+	const endDate = document.getElementById('filter-range-end').value;
+	if (endDate) {
+		query_args = query_args + arg_concat + 'endDate=' + endDate;
+		arg_concat = '&';
+	}
 
-    const text_search = document.getElementById('filter-text').value;
-    if (text_search) {
-        query_args = query_args + arg_concat + 'text=' + text_search;
-        arg_concat = '&';
-    }
+	const text_search = document.getElementById('filter-text').value;
+	if (text_search) {
+		query_args = query_args + arg_concat + 'text=' + text_search;
+		arg_concat = '&';
+	}
 
-    const category = document.getElementById('filter-cat').value;
-    if (category) {
-        query_args = query_args + arg_concat + 'category=' + category;
-        arg_concat = '&';
-    }
+	const peer = document.getElementById('filter-peer').value;
+	if (peer) {
+		query_args = query_args + arg_concat + 'peer=' + peer;
+		arg_concat = '&';
+	}
 
-    const tags = document.getElementById('filter-tag-result').value;
-    if (tags) {
-        query_args = query_args + arg_concat + 'tags=' + tags;
-        arg_concat = '&';
-        const tag_mode = document.getElementById('filter-tag-mode').value;
-        if (tag_mode) {
-            query_args = query_args + arg_concat + 'tag_mode=' + tag_mode;
-            arg_concat = '&';
-        }
-    }
+	const category = document.getElementById('filter-cat').value;
+	if (category) {
+		query_args = query_args + arg_concat + 'category=' + category;
+		arg_concat = '&';
+	}
 
-    let betrag_min = document.getElementById('filter-betrag-min').value;
-    if (betrag_min) {
-        betrag_min = betrag_min.replace(',', '.');
-        query_args = query_args + arg_concat + 'betrag_min=' + betrag_min;
-        arg_concat = '&';
-    }
+	const tags = document.getElementById('filter-tag-result').value;
+	if (tags) {
+		query_args = query_args + arg_concat + 'tags=' + tags;
+		arg_concat = '&';
+		const tag_mode = document.getElementById('filter-tag-mode').value;
+		if (tag_mode) {
+			query_args = query_args + arg_concat + 'tag_mode=' + tag_mode;
+			arg_concat = '&';
+		}
+	}
 
-    let betrag_max = document.getElementById('filter-betrag-max').value;
-    if (betrag_max) {
-        betrag_max = betrag_max.replace(',', '.');
-        query_args = query_args + arg_concat + 'betrag_max=' + betrag_max;
-        arg_concat = '&';
-    }
+	let betrag_min = document.getElementById('filter-betrag-min').value;
+	if (betrag_min) {
+		betrag_min = betrag_min.replace(',', '.');
+		query_args = query_args + arg_concat + 'betrag_min=' + betrag_min;
+		arg_concat = '&';
+	}
+
+	let betrag_max = document.getElementById('filter-betrag-max').value;
+	if (betrag_max) {
+		betrag_max = betrag_max.replace(',', '.');
+		query_args = query_args + arg_concat + 'betrag_max=' + betrag_max;
+		arg_concat = '&';
+	}
 
 	return query_args;
 }
@@ -110,8 +116,9 @@ function addTagBullet(inputField, tagContainerId, hiddenInputId, tagvalue) {
 		TAGS.push(value);
 
 		const tagEl = document.createElement("span");
-		tagEl.className = "tag-chip";
+		tagEl.className = "tag-chip " + generateClass(value);
 		tagEl.textContent = value;
+		tagEl.title = value;
 
 		const removeBtn = document.createElement("a");
 		removeBtn.className = "remove";
@@ -166,22 +173,22 @@ function removeTagBullet(element, hiddenInputId) {
  * 								  instead of creating an URI string.
  * @returns {string|FormData} - Returns an URI string or FormData object.
  */
-function concatURI(value_dict, formData){
+function concatURI(value_dict, formData) {
 	let uri = "";
 	for (let key in value_dict) {
 		if (value_dict.hasOwnProperty(key)) {
 			if (typeof formData == 'undefined') {
 				// URI
-				if (key.endsWith("[]")){
+				if (key.endsWith("[]")) {
 					for (let i = 0; i < value_dict[key].length; i++) {
 						const val = encodeURIComponent(value_dict[key][i]);
 						uri += key + "=" + val + "&";
 					}
-				}else{
+				} else {
 					const val = encodeURIComponent(value_dict[key]);
 					uri += key + "=" + val + "&";
 				}
-			}else{
+			} else {
 				// formData
 				let value = value_dict[key];
 				if (key == 'file') {
@@ -193,7 +200,7 @@ function concatURI(value_dict, formData){
 			}
 		}
 	}
-	uri = uri.substring(0, uri.length-1);
+	uri = uri.substring(0, uri.length - 1);
 	return (typeof formData == 'undefined') ? uri : formData;
 }
 
@@ -202,7 +209,7 @@ function concatURI(value_dict, formData){
  * configured with a callback to handle its response.
  *
  * @param {function} callback - A callback function to handle the response.
- * 								Receives the response text and stsatus code as arguments.
+ * 								Receives the response text and status code as arguments.
  * @returns {XMLHttpRequest} - The newly created XMLHttpRequest object.
  */
 function createAjax(callback) {
@@ -262,7 +269,7 @@ function apiSubmit(sub, params, callback, isFile = false) {
 		method = "PUT";
 		request_uri = JSON.stringify(params);
 	}
-	
+
 	ajax.open(method, "/api/" + sub, true);
 
 	if (method != "POST") {
@@ -287,32 +294,34 @@ function manualTag(t_ids, tags, overwrite) {
 		return;
 	}
 
-    let tagging = {
-        'tags': tags
+	let tagging = {
+		'tags': tags
 	}
 
 	if (overwrite) {
 		tagging['overwrite'] = true;
 	}
 
-    let api_function;
-    if (t_ids.length == 1) {
-        api_function = 'setManualTag/'+ IBAN + '/' + t_ids[0];
-    } else {
-        api_function = 'setManualTags/' + IBAN;
-        tagging['t_ids'] = t_ids;
-    };
+	let api_function;
+	if (t_ids.length == 1) {
+		api_function = 'setManualTag/' + IBAN + '/' + t_ids[0];
+	} else {
+		api_function = 'setManualTags/' + IBAN;
+		tagging['t_ids'] = t_ids;
+	};
 
-    apiSubmit(api_function, tagging, function (responseText, error) {
-        if (error) {
-            alert('Tagging failed: ' + '(' + error + ')' + responseText);
+	apiSubmit(api_function, tagging, function (responseText, error) {
+		if (error) {
+			alert('Tagging fehlgeschlagen: ' + '(' + error + ')');
 
-        } else {
-            alert('Entries tagged successfully!' + responseText);
-            window.location.reload();
+		} else {
+			const success_msg = JSON.parse(responseText);
+			const counts = success_msg.updated != 1 ? success_msg.updated + ' Einträge' : success_msg.updated + ' Eintrag';
+			alert(counts + ' getaggt');
+			window.location.reload();
 
-        }
-    }, false);
+		}
+	}, false);
 }
 
 /**
@@ -330,11 +339,11 @@ function manualCat(t_ids, cat) {
 		return;
 	}
 
-    let payload = {
-        'category': cat
-    }
+	let payload = {
+		'category': cat
+	}
 
-    let api_function;
+	let api_function;
 
 	if (!cat) {
 		// Delete Category		
@@ -360,14 +369,61 @@ function manualCat(t_ids, cat) {
 
 	}
 
-    apiSubmit(api_function, payload, function (responseText, error) {
-        if (error) {
-            alert('Tagging failed: ' + '(' + error + ')' + responseText);
+	apiSubmit(api_function, payload, function (responseText, error) {
+		if (error) {
+			alert('Tagging failed: ' + '(' + error + ')' + responseText);
 
-        } else {
-            alert('Entries tagged successfully!' + responseText);
-            window.location.reload();
+		} else {
+			const success_msg = JSON.parse(responseText);
+			const counts = success_msg.updated != 1 ? success_msg.updated + ' Einträge' : success_msg.updated + ' Eintrag';
+			alert(counts + ' kategorisiert');
+			window.location.reload();
 
-        }
-    }, false);
+		}
+	}, false);
+}
+
+
+/* Formats an Error Responses from an AJAX Call
+*
+* @param {number} error_code The HTTP status code from the AJAX call
+* @param {string} responseText The response text from the AJAX call
+*
+*/
+function showAjaxError(error_code, responseText) {
+	const error_msg = JSON.parse(responseText).error || "unbekannter Fehler";
+	alert('Fehler ' + error_code + ': ' + error_msg);
+}
+
+/* Formats a Result from an AJAX Call (JSON as Text)
+*
+* @param {string} responseText The response text from the AJAX call
+*
+*/
+function formatResultText(responseText) {
+	return JSON.stringify(JSON.parse(responseText), null, 4);
+}
+
+
+/**
+ * Generates a CSS class name based on the hash of the input string.
+ * The resulting class name is in the format `gen-color-<number>`, where the number
+ * is the absolute value of the hash modulo 1000, ensuring a short and unique class name.
+ *
+ * @param {string} inputString - The input string to generate the class name from.
+ * @returns {string} - The generated class name.
+ */
+function generateClass(string) {
+
+    let hash = 0;
+
+    if (string.length == 0) return hash;
+
+    for (let i = 0; i < string.length; i++) {
+        const char = string.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+    }
+
+    return `gen-color-${Math.abs(hash % 13)}`;
 }

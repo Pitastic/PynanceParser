@@ -104,11 +104,29 @@ function fillTxDetails(result) {
                 // Tag Chips
                 const row = Array.isArray(r[key]) ? r[key] : [r[key]];
                 for (let index = 0; index < row.length; index++) {
-                    const span = document.createElement('span');
-                    span.innerHTML = row[index];
-                    span.className = 'tag-chip ' + key;
-                    td.appendChild(span)
+                    const a_link = document.createElement('a');
+                    a_link.innerHTML = row[index];
+                    a_link.href = "?tags=" + row[index];
+                    a_link.className = 'tag-chip ' + generateClass(row[index]);
+                    if (key == 'category') {
+                        a_link.className += ' category';
+                    }
+                    a_link.dataset.tooltip = "Add Filter";
+                    td.appendChild(a_link);
                 }
+
+            } else if (key == 'betrag') {
+                // Round
+                td.innerHTML = r[key].toFixed(2);
+
+            } else if (key == 'peer') {
+                // Add Filter link
+                const a_link = document.createElement('a');
+                a_link.innerHTML = r[key];
+                a_link.className = "secondary";
+                a_link.href = "?peer=" + r[key];
+                a_link.dataset.tooltip = "Add Filter";
+                td.appendChild(a_link);
 
             } else {
                 td.innerHTML = r[key];

@@ -27,18 +27,18 @@ def test_read_from_csv(test_app):
         check_transaktion_list(transaction_list)
 
 
-#def test_read_from_pdf(test_app):
-#    """Testet das Einlesen einer PDF Datei mit Kontoumsätzen"""
-#    test_file_pdf = os.path.join('/tmp', 'volksbank-mittelhessen.pdf')
-#    if not os.path.isfile(test_file_pdf):
-#        # Test file not provided (sensitive data is not part of git repo)
-#        pytest.skip("Testfile /tmp/volksbank-mittelhessen.pdf not found....skipping")
-#
-#    with test_app.app_context():
-#        transaction_list = Volksbank_Mittelhessen().from_pdf(test_file_pdf)
-#
-#        # Check Reader Ergebnisse
-#        check_transaktion_list(transaction_list)
+def test_read_from_pdf(test_app):
+    """Testet das Einlesen einer PDF Datei mit Kontoumsätzen"""
+    test_file_pdf = os.path.join('/tmp', 'volksbank-mittelhessen.pdf')
+    if not os.path.isfile(test_file_pdf):
+        # Test file not provided (sensitive data is not part of git repo)
+        pytest.skip("Testfile /tmp/volksbank-mittelhessen.pdf not found....skipping")
+
+    with test_app.app_context():
+        transaction_list = Volksbank_Mittelhessen().from_pdf(test_file_pdf)
+
+        # Check Reader Ergebnisse
+        check_transaktion_list(transaction_list)
 
 
 @pytest.mark.skip(reason="Currently not implemented yet")

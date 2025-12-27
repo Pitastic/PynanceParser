@@ -286,13 +286,6 @@ class TinyDbHandler(BaseDb):
             # All types in query have to be hashable in TinyDB
             condition_val = tuple(condition_val)
 
-        else:
-            try:
-                # Transfer to a number for comparison
-                condition_val = float(condition_val)
-            except (TypeError, ValueError):
-                pass
-
         # Nested or Plain Key
         if isinstance(condition_key, dict):
             for key, val in condition_key.items():
@@ -303,7 +296,7 @@ class TinyDbHandler(BaseDb):
 
         # RegEx Suche
         if condition_method == 'regex':
-            condition_val = re.compile(condition_val)
+            condition_val = re.compile(str(condition_val))
             where_statement = where_statement.search(condition_val)
             return where_statement
 
@@ -315,7 +308,21 @@ class TinyDbHandler(BaseDb):
             where_statement = where_statement.test(test_contains, condition_val)
             return where_statement
 
+        # List Queries
+        if condition_method == 'in':
+            where_statement = where_statement.any(condition_val)
+        if condition_method == 'notin':
+            where_statement = where_statement.test(self._none_of_test, condition_val)
+        if condition_method == 'all':
+            where_statement = where_statement.all(condition_val)
+
         # Standard Query
+        try:
+            # Transfer to a number for comparison
+            condition_val = float(condition_val)
+        except (TypeError, ValueError):
+            pass
+
         if condition_method == '==':
             where_statement = where_statement == condition_val
         if condition_method == '!=':
@@ -328,12 +335,6 @@ class TinyDbHandler(BaseDb):
             where_statement = where_statement > condition_val
         if condition_method == '<':
             where_statement = where_statement < condition_val
-        if condition_method == 'in':
-            where_statement = where_statement.any(condition_val)
-        if condition_method == 'notin':
-            where_statement = where_statement.test(self._none_of_test, condition_val)
-        if condition_method == 'all':
-            where_statement = where_statement.all(condition_val)
 
         return where_statement
 

@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', function () {
 
-    // Import Input
+    // Import Input (IBAN)
     const fileInput = document.getElementById('file-input');
     const fileLabel = document.getElementById('file-label');
     const fileDropArea = document.getElementById('file-drop-area');
@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (fileInput.files.length > 0) {
             fileLabel.textContent = fileInput.files[0].name;
         } else {
-            fileLabel.textContent = 'Datei hier ablegen oder auswählen (PDF / CSV / HTML)';
+            fileLabel.textContent = '.csv,.pdf,.html';
         }
     });
 
@@ -29,6 +29,36 @@ document.addEventListener('DOMContentLoaded', function () {
         if (files.length > 0) {
             fileInput.files = files;
             fileLabel.textContent = files[0].name;
+        }
+    });
+
+    // Import Input (Settings)
+    const settingsInput = document.getElementById('settings-input');
+    const settingsLabel = document.getElementById('settings-label');
+    const settingsDropArea = document.getElementById('settings-drop-area');
+
+    settingsDropArea.addEventListener('click', () => {
+        settingsInput.click();
+    });
+
+    settingsInput.addEventListener('change', () => {
+        if (settingsInput.files.length > 0) {
+            settingsLabel.textContent = settingsInput.files[0].name;
+        } else {
+            settingsLabel.textContent = '.json';
+        }
+    });
+
+    settingsDropArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+    });
+
+    settingsDropArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            settingsInput.files = files;
+            settingsLabel.textContent = files[0].name;
         }
     });
 
@@ -120,10 +150,10 @@ function loadSetting() {
 
     apiGet('getMeta/' + setting_uuid, {}, function (responseText, error) {
         if (error) {
-            alert('Settings not loaded: ' + '(' + error + ')' + responseText);
+            showAjaxError(error, responseText);
 
         } else {
-            result_text.value = responseText;
+            result_text.value = formatResultText(responseText);
 
         }
     });
@@ -158,10 +188,10 @@ function saveSetting() {
 
     apiSubmit('saveMeta/' + meta_type, payload, function (responseText, error) {
         if (error) {
-            alert('Settings not saved: ' + '(' + error + ')' + responseText);
+            showAjaxError(error, responseText);
 
         } else {
-            alert('Settings saved: ' + responseText)
+            alert('Einstellungen gespeichert' + responseText)
             result_text.value = '';
 
         }
@@ -186,14 +216,15 @@ function importSettings() {
         return;
     }
 
-    const params = { file: 'file-input' }; // The value of 'file' corresponds to the input element's ID
+    const params = { file: 'settings-input' }; // The value of 'file' corresponds to the input element's ID
     apiSubmit('upload/metadata/' + settings_type, params, function (responseText, error) {
         if (error) {
-            alert('File upload failed: ' + '(' + error + ')' + responseText);
+            showAjaxError(error, responseText);
 
         } else {
-            alert('File uploaded successfully!' + responseText);
-            window.location.href = '/' + settings_type;
+            let success_msg = JSON.parse(responseText);
+            alert('Es wurden ' + success_msg.inserted + ' Einträge aus der Datei importiert.');
+            window.location.href = '/';
 
         }
     }, true);
@@ -214,17 +245,21 @@ function uploadFile() {
 
     const fileInput = document.getElementById('file-input');
     if (fileInput.files.length === 0) {
-        alert('Please select a file to upload.');
+        alert('Es wurde keine Datei ausgewählt.');
         return;
     }
 
     const params = { file: 'file-input', 'bank':  bank_id}; // The value of 'file' corresponds to the input element's ID
     apiSubmit('upload/' + iban, params, function (responseText, error) {
         if (error) {
-            alert('File upload failed: ' + '(' + error + ')' + responseText);
+            showAjaxError(error, responseText);
 
         } else {
-            if (confirm('File uploaded successfully!' + responseText + '\nKonto aufrufen?')) {
+            let success_msg = JSON.parse(responseText);
+            success_msg = 'Es wurden ' + success_msg.inserted + ' Transaktionen aus der ' +
+                            Math.round(success_msg.size / 1024 * 100) / 100 +
+                          ' KB großen Datei importiert.\n\nMöchtest du das Konto jetzt aufrufen?'
+            if (confirm(success_msg)) {
                 window.location.href = '/' + iban;
             } else {
                 prepareAddModal('add-iban', null, iban);
@@ -253,10 +288,10 @@ function saveGroup() {
 
     apiSubmit('addgroup/' + groupname, params, function (responseText, error) {
         if (error) {
-            alert('Gruppe nicht angelegt: ' + '(' + error + ')' + responseText);
+            showAjaxError(error, responseText);
 
         } else {
-            alert('Gruppe gespeichert!' + responseText);
+            alert('Gruppe gespeichert!');
             window.location.reload();
 
         }
@@ -283,10 +318,11 @@ function deleteDB(delete_group) {
 
     apiGet('deleteDatabase/'+ collection, {}, function (responseText, error) {
         if (error) {
-            alert('Delete failed: ' + '(' + error + ')' + responseText);
+            showAjaxError(error, responseText);
 
         } else {
-            alert('DB deleted successfully!' + responseText);
+            let success_msg = JSON.parse(responseText);
+            alert(success_msg.deleted + ' IBAN(s) / Gruppe(n) gelöscht');
             window.location.reload();
 
         }

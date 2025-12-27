@@ -1,3 +1,14 @@
+{% macro generate_class(input_string) %}
+    {# Berechne einen Hashwert und wandle ihn in eine CSS-kompatible Klasse um #}
+    {% set hash_value = input_string|hash %}
+    {% if hash_value == 0 %}
+        {{ '' }}
+    {% else %}
+        {% set class_name = 'gen-color-' ~ (hash_value % 13) %}
+        {{ class_name }}
+    {% endif %}
+{% endmacro %}
+
 {% macro createTxRow(transaction) -%}
 {# Erstellt eine Zeile der Transaktionsübersicht #}
 
@@ -8,19 +19,19 @@
             {{ transaction.date_tx | ctime }}
             <small class="secondary">({{ transaction.valuta | ctime }})</small>
         </td>
-        <td>{{ transaction.text_tx[:60] }}{% if transaction.text_tx|length > 60 %} ...{%endif%}</td>
+        <td>{{ transaction.text_tx[:90] }}{% if transaction.text_tx|length > 60 %} ...{%endif%}</td>
         <td>
             {% if transaction.category %}
-            <a class="tag-chip category" href="?category={{transaction.category}}">
+            <a class="tag-chip category {{generate_class(transaction.category)}}" href="?category={{transaction.category}}" data-tooltip="Add Filter">
                 {{ transaction.category }}
             </a>
             {% else %}
             &nbsp;
             {% endif %}
         </td>
-        <td>
+        <td class="hide-m">
             {% for tag in transaction.tags %}
-            <a class="tag-chip" href="?tags={{tag}}">
+            <a class="tag-chip {{generate_class(tag)}}" href="?tags={{tag}}" data-tooltip="Add Filter '{{tag}}'">
                 {{ tag }}
             </a>
             {% endfor %}
@@ -76,22 +87,34 @@
                 {% endif %}
             />
         </label>
-        <label>
-            Kategorien
-            <input type="text" id="filter-cat" list="cat-list" placeholder="Kategorie"
-                {% if 'category' in filters %}
-                    value="{{filters.category}}" aria-invalid="false"
-                {% else %}
-                    value=""
-                {% endif %}
-            />
-        </label>
+            <div class="grid">
+                <label>
+                    Kategorien
+                    <input type="text" id="filter-cat" list="cat-list" placeholder="Kategorie"
+                        {% if 'category' in filters %}
+                            value="{{filters.category}}" aria-invalid="false"
+                        {% else %}
+                            value=""
+                        {% endif %}
+                    />
+                </label>
+                <label>
+                    Gegenkonto
+                    <input type="text" id="filter-peer" list="cat-list" placeholder="IBAN / Nummer"
+                        {% if 'peer' in filters %}
+                            value="{{filters.peer}}" aria-invalid="false"
+                        {% else %}
+                            value=""
+                        {% endif %}
+                    />
+                </label>
+            </div>
         <label>
             Tags
             <div id="filter-tag-container"></div>
-            <input type="hidden" id="filter-tag-result" value="">
+            <input type="hidden" id="filter-tag-result" autocomplete="off" value="">
             <div class="grid">
-                <input type="text" id="filter-tag" list="tag-list" placeholder="weiteres Tag (Enter)" />
+                <input type="text" id="filter-tag" list="tag-list" value="" placeholder="weiteres Tag (Enter)" />
                 <select id="filter-tag-mode" {% if 'tags' in filters %} aria-invalid="false" {% endif %}/>
                     <option value="in" {{"selected" if filters.tag_mode and filters.tag_mode == 'in'}}>eines davon</option>
                     <option value="all" {{"selected" if filters.tag_mode and filters.tag_mode == 'all'}}>alle davon</option>

@@ -15,6 +15,10 @@ main {
   flex: 1;
 }
 
+.container.hero {
+    margin-top: 10%;
+}
+
 /* Pico Tooltip Feature with newlines*/
 .long-tooltip:before {
     white-space: wrap;
@@ -28,6 +32,10 @@ main {
 
 /* Hide an Element */
 .hide {display: none !important;}
+/* Hide when S */
+@media (max-width: 767px) {.hide-s {display:none !important;}}
+/* Hide when M or smaller */
+@media (max-width: 1023px) {.hide-m {display:none !important;}}
 
 /* Color classes */
 .delete {
@@ -89,9 +97,35 @@ button.info {
 }
 
 /* Tables */
-.transactions td.betrag {
+.transactions .betrag {
     white-space: nowrap;
     text-align: right;
+}
+
+#dynamic-results tr th {
+    font-weight: bold;
+}
+
+/* S : Slim button in transaction table */
+@media (max-width: 767px) {
+    .transactions th.betrag {
+        text-align: center;
+    }
+    .transactions tr {
+        border-bottom: var(--pico-border-width) solid var(--pico-table-border-color);
+    }
+    .transactions td button {
+        padding: 1em 0.5em; margin: 0;
+        background-color: transparent; border: 0;
+        color: var(--pico-secondary);
+    }
+}
+
+/* M and smaller: TX Details Page */
+@media (max-width: 1023px) {
+    .single-transaction tr td:first-child{
+        font-weight: bold;
+    }
 }
 
 .tag-chip {
@@ -110,6 +144,7 @@ button.info {
     text-decoration: none;
     white-space: nowrap;
 }
+    .tag-chip a.remove { color: var(--pico-code-kbd-color); }
     #filter-tag-container .tag-chip:last-child,
     #add-tag-container .tag-chip:last-child,
     #tag-container .tag-chip:last-child {
@@ -118,15 +153,29 @@ button.info {
     }
     .tag-chip:hover, .tag-chip a, .tag-chip a:hover {
         text-decoration: none;
-        color: initial;
     }
-    .tag-chip.category {
-        background-color: cornflowerblue;
-    }
-    .tag-chip.parsed {
-        background-color: blueviolet;
+    .tag-chip a.remove:hover{
+        color: var(--pico-color-red-500);
     }
     .tag-chip a {
         margin-left: 0.33em;
-        color: var(--pico-secondary);
     }
+
+    .tag-chip.parsed {background-color: blueviolet; color:black;}
+    .tag-chip:hover { filter: brightness(110%); }
+
+    /* Generated Color Classes */
+    .category.gen-color-0 { background-color: #e57373; color: black; }
+    .category.gen-color-1 { background-color: #f06292; color: white; }
+    .category.gen-color-2 { background-color: #ba68c8; color: white; }
+    .category.gen-color-3 { background-color: #9575cd; color: white; }
+    .category.gen-color-4 { background-color: #7986cb; color: white; }
+    .category.gen-color-5 { background-color: #64b5f6; color: black; }
+    .category.gen-color-6 { background-color: #4fc3f7; color: black; }
+    .category.gen-color-7 { background-color: #4dd0e1; color: black; }
+    .category.gen-color-8 { background-color: #4db6ac; color: white; }
+    .category.gen-color-9 { background-color: #81c784; color: black; }
+    .category.gen-color-10 { background-color: #aed581; color: black; }
+    .category.gen-color-11 { background-color: #dce775; color: black; }
+    .category.gen-color-12 { background-color: #fff176; color: black; }
+    .category.gen-color-13 { background-color: #ffd54f; color: black; }

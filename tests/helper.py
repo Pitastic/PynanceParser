@@ -11,7 +11,7 @@ def check_transaktion_list(tx_list):
 
         # Dict Struktur
         required_keys = [
-            'date_tx', 'text_tx', 'betrag', 'gegenkonto',
+            'date_tx', 'text_tx', 'betrag', 'peer',
             'parsed', 'category', 'tags', # Leer aber vorhanden
             'valuta', 'art', 'currency' # optional aber vorhanden
         ]
@@ -36,11 +36,11 @@ def check_transaktion_list(tx_list):
             f"'text_tx' wurde nicht oder falsch erkannt: {text_tx}"
 
         # Gegenkonto
-        gegenkonto = entry.get('gegenkonto')
-        if gegenkonto:
+        peer = entry.get('peer')
+        if peer:
             # Nur prüfen, wenn Wert vorhanden
-            assert isinstance(gegenkonto, str) and len(gegenkonto), \
-                f"'gegenkonto' wurde nicht oder falsch erkannt: {entry}"
+            assert isinstance(peer, str) and len(peer), \
+                f"'peer' wurde nicht oder falsch erkannt: {entry}"
 
         # Wertstellung (optional, aber bei Generic mit dabei)
         assert isinstance(entry.get('valuta'), float), (
@@ -50,7 +50,7 @@ def check_transaktion_list(tx_list):
         # Buchungsart (optional, aber bei Generic mit dabei)
         buchungs_art = entry.get('art')
         assert isinstance(buchungs_art, str) and len(buchungs_art), \
-            f"'art' wurde nicht oder falsch erkannt: {gegenkonto}"
+            f"'art' wurde nicht oder falsch erkannt: {buchungs_art}"
 
         # Währung (optional, aber bei Generic mit dabei)
         currency = entry.get('currency')
