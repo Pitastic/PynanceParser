@@ -3,7 +3,6 @@
 
 import os
 from datetime import datetime
-from hashlib import md5
 from flask import request, current_app, render_template, redirect, \
                   make_response, send_from_directory
 
