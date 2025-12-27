@@ -85,39 +85,39 @@ class UserInterface():
         frontend_filters = {}
 
         # - Filter for Start Date
+        date_patterns = ['%Y-%m-%d', '%d.%m.%Y']
         start_date = get_args.get('startDate')
-        if start_date is not None:
-            # Convert to valid date format
-            try:
-                start_date = int(datetime.strptime(start_date, '%d.%m.%Y').timestamp())
-                condition.append({
-                    'key': 'date_tx',
-                    'value': start_date,
-                    'compare': '>='
-                })
+        if start_date and isinstance(start_date, str):
+            for pattern in date_patterns:
+                try:
+                    start_date = int(datetime.strptime(start_date, pattern).timestamp())
+                    condition.append({
+                        'key': 'date_tx',
+                        'value': start_date,
+                        'compare': '>='
+                    })
+                    frontend_filters['startDate'] = start_date
+                    break
 
-            except (ValueError, TypeError) as e:
-                logging.warning(f"Invalid startDate format '{e}' will be ignored")
-
-            frontend_filters['startDate'] = start_date
+                except ValueError:
+                    continue
 
         # - Filter for End Date
         end_date = get_args.get('endDate')
-        if end_date is not None:
-            # Convert to valid date format
-            try:
-                end_date = int(datetime.strptime(end_date, '%d.%m.%Y').timestamp())
-                end_date = end_date + 86399  # Add 23:59:59 to include whole day
-                condition.append({
-                    'key': 'date_tx',
-                    'value': end_date,
-                    'compare': '<='
-                })
+        if end_date and isinstance(end_date, str):
+            for pattern in date_patterns:
+                try:
+                    end_date = int(datetime.strptime(end_date, pattern).timestamp())
+                    condition.append({
+                        'key': 'date_tx',
+                        'value': end_date,
+                        'compare': '<='
+                    })
+                    frontend_filters['endDate'] = end_date
+                    break
 
-            except (ValueError, TypeError) as e:
-                logging.warning(f"Invalid endDate format '{e}' will be ignored")
-
-            frontend_filters['endDate'] = end_date
+                except ValueError:
+                    continue
 
         # - Filter for Category
         cat_filter = get_args.get('category')
