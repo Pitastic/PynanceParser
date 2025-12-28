@@ -41,11 +41,11 @@
             </tr>
             <tr>
                 <td>Datum (Wertstellnug)</td>
-                <td>{{tx.valuta}}</td>
+                <td>{{ tx.valuta | ctime }}</td>
             </tr>
             <tr>
                 <td>Datum (Transaktion)</td>
-                <td>{{tx.date_tx}}</td>
+                <td>{{ tx.date_tx | ctime }}</td>
             </tr>
             <tr>
                 <td>Betrag</td>
