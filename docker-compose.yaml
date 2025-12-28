@@ -1,0 +1,12 @@
+app:
+  image: pynanceparser:latest
+  ports:
+    - "8000:80"
+  volumes:
+    - ./settings:/app/settings
+  environment:
+    - DOMAIN=my-domain.com
+mongo:
+  image: mongo:6.0.8
+  volumes:
+    - mongo-data:/data/db
