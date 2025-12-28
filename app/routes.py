@@ -63,8 +63,8 @@ class Routes:
                     category, str (query):  Kategorie-Filter
                     tag, str (query):       Tag-Filter, einzelner Eintrag oder kommagetrennte Liste
                     tag_mode, str (query):  Vergleichsmodus für Tag-Filter (siehe Models.md)
-                    betrag_min, float (query):  Betragsfilter (größer gleich betrag_min)
-                    betrag_max, float (query):  Betragsfilter (kleiner gleich betrag_max)
+                    amount_min, float (query):  Betragsfilter (größer gleich amount_min)
+                    amount_max, float (query):  Betragsfilter (kleiner gleich amount_max)
                     page, int (query):      Seite für die Paginierung (default: 1)
                 Returns:
                     html: Startseite mit Navigation
@@ -168,8 +168,8 @@ class Routes:
                     category, str (query):  Kategorie-Filter
                     tag, str (query):       Tag-Filter, einzelner Eintrag oder kommagetrennte Liste
                     tag_mode, str (query):  Vergleichsmodus für Tag-Filter (siehe Models.md)
-                    betrag_min, float (query):  Betragsfilter (größer gleich betrag_min)
-                    betrag_max, float (query):  Betragsfilter (kleiner gleich betrag_max)
+                    amount_min, float (query):  Betragsfilter (größer gleich amount_min)
+                    amount_max, float (query):  Betragsfilter (kleiner gleich amount_max)
                 Returns:
                     html: Seite mit Grafiken und Statistiken über die slektierten Einträge
                     (IBAN und optional Query)
@@ -186,12 +186,12 @@ class Routes:
                 # Calculate TOP categories and tags
                 sums = {'categories': {}, 'tags': {}}
                 for row in rows:
-                    betrag = row.get('betrag', 0.0)
+                    amount = row.get('amount', 0.0)
                     cat = row.get('category', 'unkategorisiert')
                     if cat not in sums['categories']:
                         sums['categories'][cat] = 0.0
 
-                    sums['categories'][cat] += betrag
+                    sums['categories'][cat] += amount
 
                     tags = row.get('tags', [])
                     if not tags:
@@ -200,7 +200,7 @@ class Routes:
                         if tag not in sums['tags']:
                             sums['tags'][tag] = 0.0
 
-                        sums['tags'][tag] += betrag
+                        sums['tags'][tag] += amount
 
                 # Sort Sums
                 sums['categories'] = dict(sorted(sums['categories'].items(),

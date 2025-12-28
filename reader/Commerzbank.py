@@ -31,7 +31,7 @@ class Reader(Generic):
 
             for row in reader:
 
-                betrag = float(row['Betrag'].replace('.', '').replace(',', '.'))
+                amount = float(row['Betrag'].replace('.', '').replace(',', '.'))
                 date_tx = datetime.datetime.strptime(
                             row['Buchungstag'], date_format
                         ).replace(tzinfo=datetime.timezone.utc).timestamp()
@@ -43,7 +43,7 @@ class Reader(Generic):
                     'valuta': valuta,
                     'art': row['Umsatzart'],
                     'text_tx': row['Buchungstext'],
-                    'betrag': betrag,
+                    'amount': amount,
                     'peer': row.get('Auftraggeber', row.get('IBAN Auftraggeberkonto')),
                     'currency': row['Währung'],
                     'parsed': {},
@@ -51,7 +51,7 @@ class Reader(Generic):
                     'tags': None
                 }
 
-                if not line['betrag']:
+                if not line['amount']:
                     continue  # Skip Null-Buchungen
 
                 result.append(line)
@@ -117,7 +117,7 @@ class Reader(Generic):
                 continue  # Skip Header Rows
 
             # negativer Betrag in Spalte "Lasten" oder positiv "zu Gunsten"
-            betrag = f"-{row[2][:-1]}" if row[2] else row[3]
+            amount = f"-{row[2][:-1]}" if row[2] else row[3]
 
             line = {
                 'date_tx': date_tx,
@@ -126,7 +126,7 @@ class Reader(Generic):
                     ).replace(tzinfo=datetime.timezone.utc).timestamp(),
                 'art': "",
                 'text_tx':  row[0],
-                'betrag': float(betrag.replace('.', '').replace(',', '.')),
+                'amount': float(amount.replace('.', '').replace(',', '.')),
                 'peer': row[0],
                 'currency': "EUR",
                 'parsed': {},
@@ -148,7 +148,7 @@ class Reader(Generic):
                     glue = ' ' if prev_line_len < 35 else ''
                     line['text_tx'] += glue + row[0]
 
-            if not line['betrag']:
+            if not line['amount']:
                 continue  # Skip Null-Buchungen
 
             result.append(line)

@@ -97,7 +97,7 @@ button.info {
 }
 
 /* Tables */
-.transactions .betrag {
+.transactions .amount {
     white-space: nowrap;
     text-align: right;
 }
@@ -108,7 +108,7 @@ button.info {
 
 /* S : Slim button in transaction table */
 @media (max-width: 767px) {
-    .transactions th.betrag {
+    .transactions th.amount {
         text-align: center;
     }
     .transactions tr {

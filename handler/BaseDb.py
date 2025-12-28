@@ -366,7 +366,7 @@ class BaseDb():
         md5_hash = hashlib.md5()
 
         combined_string = str(tx_entry.get('date_tx', '')) + \
-                            str(tx_entry.get('betrag', '')) + \
+                            str(tx_entry.get('amount', '')) + \
                             tx_text
         md5_hash.update(combined_string.encode('utf-8'))
 

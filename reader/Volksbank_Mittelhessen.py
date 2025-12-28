@@ -37,7 +37,7 @@ class Reader(Generic):
                     # Skippe offene Buchungen / Hinweise
                     continue
 
-                betrag = float(row['Betrag'].replace(',', '.'))
+                amount = float(row['Betrag'].replace(',', '.'))
                 date_tx = datetime.datetime.strptime(
                             date_tx, date_format
                         ).replace(tzinfo=datetime.timezone.utc).timestamp()
@@ -50,7 +50,7 @@ class Reader(Generic):
                     'valuta': valuta,
                     'art': row['Buchungstext'],
                     'text_tx': row['Verwendungszweck'],
-                    'betrag': betrag,
+                    'amount': amount,
                     'peer': row['Name Zahlungsbeteiligter'],
                     'currency': row['Waehrung'],
                     'parsed': {},
@@ -129,8 +129,8 @@ class Reader(Generic):
                 continue  # Skip Header and unvalid Rows
 
             # Positives 'Haben' oder negatives 'Soll'
-            betrag = f'-{row[3]}' if row[3] else row[4]
-            betrag = betrag[:-2].replace('.', '').replace(',', '.')
+            amount = f'-{row[3]}' if row[3] else row[4]
+            amount = amount[:-2].replace('.', '').replace(',', '.')
 
             line = {
                 'date_tx': datetime.datetime.strptime(
@@ -141,7 +141,7 @@ class Reader(Generic):
                 ).replace(tzinfo=datetime.timezone.utc).timestamp(),
                 'art': row[2],
                 'text_tx': "",
-                'betrag': float(betrag),
+                'amount': float(amount),
                 'peer': "",
                 'currency': "EUR",
                 'parsed': {},
@@ -149,7 +149,7 @@ class Reader(Generic):
                 'tags': None
             }
 
-            if not line['betrag']:
+            if not line['amount']:
                 continue  # Skip Null-Buchungen
 
             # Mehrzeilige Buchungstexte zusammenfügen

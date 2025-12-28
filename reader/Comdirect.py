@@ -41,7 +41,7 @@ class Reader(Generic):
                     # Skippe offene Buchungen
                     continue
 
-                betrag = float(row['Umsatz in EUR'].replace(',', '.'))
+                amount = float(row['Umsatz in EUR'].replace(',', '.'))
                 date_tx = datetime.datetime.strptime(
                             date_tx, date_format
                         ).replace(tzinfo=datetime.timezone.utc).timestamp()
@@ -57,7 +57,7 @@ class Reader(Generic):
                     'valuta': valuta,
                     'art': row['Vorgang'],
                     'text_tx': match.group(2).strip(),
-                    'betrag': betrag,
+                    'amount': amount,
                     'peer': match.group(1).strip(),
                     'currency': "EUR",
                     'parsed': {},
@@ -65,7 +65,7 @@ class Reader(Generic):
                     'tags': None
                 }
 
-                if not line['betrag']:
+                if not line['amount']:
                     continue  # Skip Null-Buchungen
 
                 result.append(line)
@@ -124,7 +124,7 @@ class Reader(Generic):
             if re_datecheck.match(row[0]) is None:
                 continue  # Skip Header and unvalid Rows
 
-            betrag = float(row[4].replace('.', '').replace(',', '.'))
+            amount = float(row[4].replace('.', '').replace(',', '.'))
             date_format = "%d.%m.%Y"
             date_row = row[0].replace('\n', '')
 
@@ -137,7 +137,7 @@ class Reader(Generic):
                     ).replace(tzinfo=datetime.timezone.utc).timestamp(),
                 'art': row[1].replace('\n', '').replace(' ', ''),
                 'text_tx': self._newline_replace(row[3]),
-                'betrag': betrag,
+                'amount': amount,
                 'peer': self._newline_replace(row[2]),
                 'currency': "EUR",
                 'parsed': {},
@@ -153,7 +153,7 @@ class Reader(Generic):
                 i, row = next(enumerated_table)
                 line['text_tx'] += ' ' + self._newline_replace(row[3])
 
-            if not line['betrag']:
+            if not line['amount']:
                 continue  # Skip Null-Buchungen
 
             result.append(line)

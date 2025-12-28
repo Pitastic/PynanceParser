@@ -38,7 +38,7 @@
     'uuid': str,            # (generated)
     'date_tx': int,         # (UTC)
     'text_tx': str,
-    'betrag': float,
+    'amount': float,
     'peer': str,
 
     ----------- optional -----------
@@ -75,7 +75,7 @@ Klassifiziert das Objekt als Regel für das Parsing.
 
 Frei wählbarer Name der Regel.
 
-#### .regex, r-str (optional)
+#### .regex, r-str
 
 Regex String, der auf den Buchungstext angewendet werden soll. Er muss genau eine Matching-Group enthalten. Der Wert dieses Treffers (der Gruppe) wird als Wert mit dem Namen der Regel in der Transaktion als Ergebnis gespeichert.
 
