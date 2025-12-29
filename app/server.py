@@ -18,7 +18,7 @@ def create_app(config_path: str) -> Flask:
     Returns: FlaskApp
     """
     # Logging
-    loglevel = 'DEBUG'
+    loglevel = 'INFO'
     dictConfig({
         'version': 1,
         'formatters': {'default': {
@@ -59,6 +59,6 @@ config = os.path.join(
 )
 application = create_app(config)
 
-if len(sys.argv) > 1 and sys.argv[1] == "--standalone":
-    # Run the application directly
+if __name__ == "__main__":
+    # Run the application directly if executed as a standalone script
     application.run(host='0.0.0.0', port=8000, debug=True)

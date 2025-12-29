@@ -9,7 +9,24 @@ Analyse und Darstellung von Kontoumsätzen bei mehreren Banken.
 
 ## Get Started
 
-### Setup
+Am einfachsten mit Docker:
+
+```
+git clone https://github.com/Pitastic/PynanceParser.git
+cd PynanceParser
+docker compose build
+docker compose up -d
+```
+
+Bei Updates kann das Docker Image neu gebaut und gestartet werden:
+
+```
+git pull
+docker compose build
+docker compose down && docker compose up -d
+```
+
+### Standalone non-Docker Setup
 
 ```
 python3.12 -m venv .venv

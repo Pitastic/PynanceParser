@@ -7,10 +7,10 @@ services:
     volumes:
       - ./settings:/app/settings
     environment:
-      - DOMAIN=my-domain.com
+      - AUTH_PASSWORD=yourpasswordhere
 
   mongo:
-    image: mongo:6.0.8
+    image: mongo:6.0.26
     volumes:
       - mongo-data:/data/db
 
