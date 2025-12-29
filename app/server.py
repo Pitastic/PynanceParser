@@ -53,10 +53,12 @@ def create_app(config_path: str) -> Flask:
 
     return app
 
-if __name__ == '__main__':
-    config = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        'config.py'
-    )
-    application = create_app(config)
+config = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    'config.py'
+)
+application = create_app(config)
+
+if len(sys.argv) > 1 and sys.argv[1] == "--standalone":
+    # Run the application directly
     application.run(host='0.0.0.0', port=8000, debug=True)
