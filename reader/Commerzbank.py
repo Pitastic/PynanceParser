@@ -72,7 +72,8 @@ class Reader(Generic):
             pages='all',
             flavor='stream',
             strip_text='\n',
-            columns=["296,335,454"],
+            split_text=True,
+            columns=["291,335,454"],
             table_areas=["60,567,573,51"],
             layout_kwargs={
                 "char_margin": 2,
