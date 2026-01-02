@@ -63,7 +63,7 @@ def test_insert(test_app):
             f"Es wurden doppelte Datensätze eingefügt: {id_count}"
 
         # Zweite IBAN in der gleichen Gruppe
-        data = generate_fake_data(2, json_path='commerzbank2.json')
+        data = generate_fake_data(2, json_path='input_commerzbank2.json')
         inserted_db = test_app.host.db_handler.insert(data, collection='DE89370400440532011111')
         id_count = inserted_db.get('inserted')
         assert id_count == 2, \

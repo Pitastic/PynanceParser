@@ -25,7 +25,7 @@ def test_parsing_regex(test_app):
         # Fake Daten laden
         path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
-            'commerzbank.json'
+            'input_commerzbank.json'
         )
         with open(path, 'rb') as test_data:
             data = json.load(test_data)

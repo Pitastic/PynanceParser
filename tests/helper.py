@@ -58,7 +58,7 @@ def check_transaktion_list(tx_list):
             f"'currency' wurde nicht oder falsch erkannt: {currency}"
 
 
-def generate_fake_data(count, json_path='commerzbank.json'):
+def generate_fake_data(count, json_path='input_commerzbank.json'):
     """
     Erstellt ausgedachte Transaktionen in gewünschter Anzahl.
     Zunächst auf Grundlage einer Beispieldatei.

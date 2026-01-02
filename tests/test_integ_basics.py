@@ -15,7 +15,7 @@ from helper import get_testfile_contents
 
 EXAMPLE_CSV = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
-    'commerzbank.csv'
+    'input_commerzbank.csv'
 )
 
 
@@ -53,7 +53,7 @@ def test_upload_csv_commerzbank(test_app):
             # Prepare File
             content = get_testfile_contents(EXAMPLE_CSV, binary=True)
             files = {
-                'file-input': (io.BytesIO(content), 'commerzbank.csv'),
+                'file-input': (io.BytesIO(content), 'input_commerzbank.csv'),
                 'bank': 'Commerzbank'
             }
             # Post File
@@ -65,7 +65,7 @@ def test_upload_csv_commerzbank(test_app):
             # Check Response
             assert result.status_code == 201, \
                 f"Die Seite hat den Upload nicht wie erwartet verarbeitet: {result.text}"
-            assert result.json.get('filename') == 'commerzbank.csv', \
+            assert result.json.get('filename') == 'input_commerzbank.csv', \
                 "Angaben zum Upload wurden nicht gefunden"
 
             # Aufruf der Transaktionen
@@ -137,7 +137,7 @@ def test_double_upload(test_app):
             # Prepare File
             content = get_testfile_contents(EXAMPLE_CSV, binary=True)
             files = {
-                'file-input': (io.BytesIO(content), 'commerzbank.csv'),
+                'file-input': (io.BytesIO(content), 'input_commerzbank.csv'),
                 'bank': 'Commerzbank'
             }
             # Post File 1
@@ -149,12 +149,12 @@ def test_double_upload(test_app):
             # Check Response
             assert result.status_code == 201, \
                 f"Die Seite hat den Upload nicht wie erwartet verarbeitet: {result.text}"
-            assert result.json.get('filename') == 'commerzbank.csv', \
+            assert result.json.get('filename') == 'input_commerzbank.csv', \
                 "Angaben zum Upload wurden nicht gefunden"
 
             # Post File 2
             files = {
-                'file-input': (io.BytesIO(content), 'commerzbank.csv'),
+                'file-input': (io.BytesIO(content), 'input_commerzbank.csv'),
                 'bank': 'Commerzbank'
             }
             result = client.post(
@@ -203,7 +203,7 @@ def test_save_meta(test_app):
             }
             parameters = json.dumps(parameters).encode('utf-8')
             files = {
-                'settings-input': (io.BytesIO(parameters), 'commerzbank.csv'),
+                'settings-input': (io.BytesIO(parameters), 'input_commerzbank.csv'),
                 'bank': 'Commerzbank'
             }
             result = client.post(

@@ -419,7 +419,7 @@ class Routes:
                 """
                 Leert die Datenbank zu einer IBAN
                 Args (uri):
-                    iban, str:  (optional) IBAN zu der die Datenbank geleert werden soll.
+                    iban, str:  IBAN zu der die Datenbank geleert werden soll.
                                 (Default: Primäre IBAN aus der Config)
                 Returns:
                     json: Informationen zum Ergebnis des Löschauftrags.
