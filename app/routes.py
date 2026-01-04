@@ -57,7 +57,7 @@ class Routes:
                 Args (uri):
                     iban, str:              IBAN zu der die Einträge angezeigt werden sollen.
                     text, str (query):      Volltextsuche im Betreff mit RegEx Support
-                    peer, str (query): Volltextsuche im Gegenkonto mit RegEx Support
+                    peer, str (query):      Volltextsuche im Gegenkonto mit RegEx Support
                     startDate, str (query): Startdatum (Y-m-d) für die Anzeige der Einträge
                     endDate, str (query):   Enddatum (Y-m-d) für die Anzeige der Einträge
                     category, str (query):  Kategorie-Filter
@@ -66,6 +66,7 @@ class Routes:
                     amount_min, float (query):  Betragsfilter (größer gleich amount_min)
                     amount_max, float (query):  Betragsfilter (kleiner gleich amount_max)
                     page, int (query):      Seite für die Paginierung (default: 1)
+                    ascending, bool (query): Sortierreihenfolge nach Datum (default: False)
                 Returns:
                     html: Startseite mit Navigation
                 """
@@ -77,7 +78,8 @@ class Routes:
 
                 # Table with Transactions
                 current_app.logger.debug(f"Using condition filter: {condition}")
-                rows = parent.db_handler.select(iban, condition)
+                rows = parent.db_handler.select(iban, condition,
+                                                descending=bool(request.args.get('descending', True)))
 
                 # If pagination is requested, do not serve the whole page and all metadata
                 entries_per_page = 50
