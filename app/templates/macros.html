@@ -59,7 +59,7 @@
         </header>
 
         <label>
-            Datum
+            Datum / Reihenfolge
             <div class="grid">
                 <input type="date" id="filter-range-start" placeholder="Start Date: d.m.Y"
                     {% if 'startDate' in filters %}
@@ -75,6 +75,10 @@
                         value=""
                     {% endif %}
                 />
+                <select id="filter-descending">
+                    <option value="true" {{"selected" if not filters.descending or filters.descending == 'true'}}>absteigend</option>
+                    <option value="false" {{"selected" if filters.descending and filters.descending == 'false'}}>aufsteigend</option>
+                </select>
             </div>
         </label>
         <label>

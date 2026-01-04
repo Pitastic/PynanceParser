@@ -120,6 +120,11 @@ class UserInterface():
                 except ValueError:
                     continue
 
+        # - Sort direction
+        sort_desc = get_args.get('descending')
+        if sort_desc is not None:
+            frontend_filters['descending'] = sort_desc
+
         # - Filter for Category
         cat_filter = get_args.get('category')
         if cat_filter is not None:

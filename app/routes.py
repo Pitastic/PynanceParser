@@ -66,7 +66,7 @@ class Routes:
                     amount_min, float (query):  Betragsfilter (größer gleich amount_min)
                     amount_max, float (query):  Betragsfilter (kleiner gleich amount_max)
                     page, int (query):      Seite für die Paginierung (default: 1)
-                    ascending, bool (query): Sortierreihenfolge nach Datum (default: False)
+                    descending, bool (query): Sortierreihenfolge nach Datum (default: True)
                 Returns:
                     html: Startseite mit Navigation
                 """
@@ -78,8 +78,8 @@ class Routes:
 
                 # Table with Transactions
                 current_app.logger.debug(f"Using condition filter: {condition}")
-                rows = parent.db_handler.select(iban, condition,
-                                                descending=bool(request.args.get('descending', True)))
+                sort_order = request.args.get('descending', 'true').lower() == 'true'
+                rows = parent.db_handler.select(iban, condition, descending=sort_order)
 
                 # If pagination is requested, do not serve the whole page and all metadata
                 entries_per_page = 50

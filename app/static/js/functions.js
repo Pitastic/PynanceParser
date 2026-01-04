@@ -88,6 +88,12 @@ function getFilteredList() {
 		arg_concat = '&';
 	}
 
+	let sort_order = document.getElementById('filter-descending').value;
+	if (sort_order) {
+		query_args = query_args + arg_concat + 'descending=' + sort_order;
+		arg_concat = '&';
+	}
+
 	return query_args;
 }
 
