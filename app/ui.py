@@ -120,6 +120,11 @@ class UserInterface():
                 except ValueError:
                     continue
 
+        # - Sort direction
+        sort_desc = get_args.get('descending')
+        if sort_desc is not None:
+            frontend_filters['descending'] = sort_desc
+
         # - Filter for Category
         cat_filter = get_args.get('category')
         if cat_filter is not None:
@@ -145,36 +150,36 @@ class UserInterface():
             frontend_filters['tag_mode'] = get_args.get('tag_mode', 'in')
 
         # Filter for Betrag (min)
-        betrag_filter_min = get_args.get('betrag_min')
-        if betrag_filter_min is not None:
+        amount_filter_min = get_args.get('amount_min')
+        if amount_filter_min is not None:
             try:
-                betrag_filter_min = float(betrag_filter_min)
+                amount_filter_min = float(amount_filter_min)
                 condition.append({
-                    'key': 'betrag',
-                    'value': betrag_filter_min,
+                    'key': 'amount',
+                    'value': amount_filter_min,
                     'compare': '>='
                 })
 
-                frontend_filters['betrag_min'] = betrag_filter_min
+                frontend_filters['amount_min'] = amount_filter_min
 
             except (ValueError, TypeError) as e:
-                logging.warning(f"Invalid betrag format '{e}' will be ignored")
+                logging.warning(f"Invalid amount format '{e}' will be ignored")
 
         # Filter for Betrag (max)
-        betrag_filter_max = get_args.get('betrag_max')
-        if betrag_filter_max is not None:
+        amount_filter_max = get_args.get('amount_max')
+        if amount_filter_max is not None:
             try:
-                betrag_filter_max = float(betrag_filter_max)
+                amount_filter_max = float(amount_filter_max)
                 condition.append({
-                    'key': 'betrag',
-                    'value': betrag_filter_max,
+                    'key': 'amount',
+                    'value': amount_filter_max,
                     'compare': '<='
                 })
 
-                frontend_filters['betrag_max'] = betrag_filter_max
+                frontend_filters['amount_max'] = amount_filter_max
 
             except (ValueError, TypeError) as e:
-                logging.warning(f"Invalid betrag format '{e}' will be ignored")
+                logging.warning(f"Invalid amount format '{e}' will be ignored")
 
         # Filter for Text Search
         text_search = get_args.get('text')

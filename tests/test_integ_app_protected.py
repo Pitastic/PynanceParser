@@ -14,7 +14,7 @@ def test_read_input_csv(test_app):
     with test_app.app_context():
         found_rows = test_app.host.read_input(os.path.join( # pylint: disable=protected-access
             os.path.dirname(os.path.abspath(__file__)),
-            'commerzbank.csv'
+            'input_commerzbank.csv'
         ), bank='Commerzbank', data_format=None)
 
         # Check Return Value

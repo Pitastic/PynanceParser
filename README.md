@@ -9,7 +9,24 @@ Analyse und Darstellung von Kontoumsätzen bei mehreren Banken.
 
 ## Get Started
 
-### Setup
+Am einfachsten mit Docker:
+
+```
+git clone https://github.com/Pitastic/PynanceParser.git
+cd PynanceParser
+docker compose build
+docker compose up -d
+```
+
+Bei Updates kann das Docker Image neu gebaut und gestartet werden:
+
+```
+git pull
+docker compose build
+docker compose down && docker compose up -d
+```
+
+### Standalone non-Docker Setup
 
 ```
 python3.12 -m venv .venv
@@ -111,7 +128,7 @@ Für diesen Zweck gibt es die Möglichkeit im Frontend Regeln auszuprobieren, oh
 
 - Erstelle einen Fork des Repositories
 - Erstelle Testdaten, auf die die neuen Regeln treffen können
-    - (am einfachsten ist eine JSON Datei wie `tests/commerzbank.json`)
+    - (am einfachsten ist eine JSON Datei wie `tests/input_commerzbank.json`)
 - Erstelle einen Test wie in (`test_unit_handler_Tags.py`: `test_parsing_regex()`)
     - Tests helfen beim entwickeln, können aber auch durch die Maintainer während des Pull Request erstellt werden
 - Stelle einen Pull Request

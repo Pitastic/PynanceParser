@@ -83,7 +83,7 @@
         grid-template-rows: 1fr 1fr;
         gap: 0.25em;
         grid-template-areas: 
-            "checkbox dates category betrag"
+            "checkbox dates category amount"
             "button betreff betreff betreff";
         padding: 1em 0;
     }
@@ -107,7 +107,7 @@
     .transactions tr td:nth-child(4){grid-area: category;}
     .transactions tr td:nth-child(6){
         padding-right: 0;
-        grid-area: betrag;
+        grid-area: amount;
     }
     .transactions tr td:nth-child(7){
         padding-left: 0;

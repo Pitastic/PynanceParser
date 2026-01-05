@@ -63,7 +63,7 @@ def test_insert(test_app):
             f"Es wurden doppelte Datensätze eingefügt: {id_count}"
 
         # Zweite IBAN in der gleichen Gruppe
-        data = generate_fake_data(2, json_path='commerzbank2.json')
+        data = generate_fake_data(2, json_path='input_commerzbank2.json')
         inserted_db = test_app.host.db_handler.insert(data, collection='DE89370400440532011111')
         id_count = inserted_db.get('inserted')
         assert id_count == 2, \
@@ -95,7 +95,7 @@ def test_select_filter(test_app):
         assert len(result_filtered) == 1, \
             f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
         for entry in result_filtered:
-            check_entry(entry, key_vals={'date_tx': '02.01.2023', 'betrag': -118.94})
+            check_entry(entry, key_vals={'date_tx': '02.01.2023', 'amount': -118.94})
 
         # Selektieren mit Filter (by Art)
         query = {'key': 'art', 'value': 'Lastschrift'}
@@ -122,7 +122,7 @@ def test_select_like(test_app):
 def test_select_lt(test_app):
     """Testet das Auslesen von Datensätzen mit 'kleiner als'"""
     with test_app.app_context():
-        query = {'key': 'betrag', 'compare': '<', 'value': -100}
+        query = {'key': 'amount', 'compare': '<', 'value': -100}
         result_filtered = test_app.host.db_handler.select("DE89370400440532013000",
                                                 condition=query)
         assert len(result_filtered) == 2, \
@@ -134,7 +134,7 @@ def test_select_lt(test_app):
 def test_select_lt_eq(test_app):
     """Testet das Auslesen von Datensätzen mit 'kleiner als, gleich'"""
     with test_app.app_context():
-        query = {'key': 'betrag', 'compare': '<=', 'value': -71.35}
+        query = {'key': 'amount', 'compare': '<=', 'value': -71.35}
         result_filtered = test_app.host.db_handler.select("DE89370400440532013000", condition=query)
         assert len(result_filtered) == 4, \
             f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
@@ -164,8 +164,8 @@ def test_select_list_filters(test_app):
             f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
         for entry in result_filtered:
             check_entry(entry)
-            assert entry.get('betrag') in [-221.98, -99.58], \
-                f"Es wurde der falsche Eintrag zurückgegeben: {entry.get('betrag')}"
+            assert entry.get('amount') in [-221.98, -99.58], \
+                f"Es wurde der falsche Eintrag zurückgegeben: {entry.get('amount')}"
 
         # NOT IN
         query = {'key': 'tags', 'compare': 'notin', 'value': ['TestTag1']}
@@ -175,8 +175,8 @@ def test_select_list_filters(test_app):
             f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
         for entry in result_filtered:
             check_entry(entry)
-            assert entry.get('betrag') != -221.98, \
-                f"Es wurde der falsche Eintrag zurückgegeben: {entry.get('betrag')}"
+            assert entry.get('amount') != -221.98, \
+                f"Es wurde der falsche Eintrag zurückgegeben: {entry.get('amount')}"
 
         # all
         query = {'key': 'tags', 'compare': 'all', 'value': ['TestTag1', 'TestTag2']}
@@ -186,8 +186,8 @@ def test_select_list_filters(test_app):
             f"Es wurde die falsche Zahl an Datensätzenzurückgegeben: {len(result_filtered)}"
         entry = result_filtered[0]
         check_entry(entry)
-        assert entry.get('betrag') == -221.98, \
-            f"Es wurde der falsche Eintrag zurückgegeben: {entry.get('betrag')}"
+        assert entry.get('amount') == -221.98, \
+            f"Es wurde der falsche Eintrag zurückgegeben: {entry.get('amount')}"
 
 def test_select_regex(test_app):
     """Testet das Auslesen von Datensätzen mit Textfiltern (regex)"""
@@ -206,8 +206,8 @@ def test_select_multi(test_app):
         # Selektieren mit Filter (mehrere Bedingungen - AND)
         query = [
             {'key': 'text_tx', 'compare': 'like', 'value': 'Kartenzahlung'},
-            {'key': 'betrag', 'compare': '>', 'value': -100},
-            {'key': 'betrag', 'compare': '<', 'value': -50},
+            {'key': 'amount', 'compare': '>', 'value': -100},
+            {'key': 'amount', 'compare': '<', 'value': -50},
         ]
         result_filtered = test_app.host.db_handler.select("DE89370400440532013000",
                                                 condition=query,
@@ -370,7 +370,7 @@ def test_select_all_group(test_app):
 def test_select_group_filter(test_app):
     """Selektiert in allen IBANs einer Gruppe Einträge anhand eines Filters"""
     with test_app.app_context():
-        query = {'key': 'betrag', 'compare': '<', 'value': -100}
+        query = {'key': 'amount', 'compare': '<', 'value': -100}
         result_filtered = test_app.host.db_handler.select('testgroup', condition=query)
 
         # 2 aus IBAN 1 + 1 aus IBAN 2
@@ -383,7 +383,7 @@ def test_select_group_filter(test_app):
 def test_min_max_count(test_app):
     """Testet die Min-, Max- und Count-Funktionen"""
     with test_app.app_context():
-        stats = test_app.host.db_handler.min_max_collection('DE89370400440532013000', 'betrag')
+        stats = test_app.host.db_handler.min_max_collection('DE89370400440532013000', 'amount')
         assert stats.get('min') == -221.98, f"Der minimale Betrag ist falsch: {stats.get('min')}"
         assert stats.get('max') == -11.63, f"Der maximale Betrag ist falsch: {stats.get('max')}"
         assert stats.get('count') == 5, f"Die Anzahl der Einträge ist falsch: {stats.get('count')}"

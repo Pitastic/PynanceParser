@@ -25,7 +25,7 @@ def test_parsing_regex(test_app):
         # Fake Daten laden
         path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
-            'commerzbank.json'
+            'input_commerzbank.json'
         )
         with open(path, 'rb') as test_data:
             data = json.load(test_data)
@@ -36,7 +36,7 @@ def test_parsing_regex(test_app):
         # Check if specific entries were tagged
         for i, entry in enumerate(parsed_data):
 
-            if entry.get('date_tx') == 1672876800 and entry.get('betrag') == -221.98:
+            if entry.get('date_tx') == 1672876800 and entry.get('amount') == -221.98:
 
                 # Eintrag mit Gläubiger-ID und Mandatsreferenz
                 assert entry.get('parsed').get('Mandatsreferenz'), \
@@ -93,7 +93,7 @@ def test_tag_or_cat_custom(test_app):
         # Tagging
         mocker_result = tagger.tag_or_cat_custom(
             iban="DE89370400440532013000", tags=['custom_tagging1', 'custom_tagging2'],
-            filters=[{'key': 'betrag', 'compare': '<', 'value': -100}],
+            filters=[{'key': 'amount', 'compare': '<', 'value': -100}],
             parsed_keys=['custom_key1', 'custom_key2'],
             parsed_vals=['custom_val1', 'custom_val2'], multi='AND',
         )
@@ -103,7 +103,7 @@ def test_tag_or_cat_custom(test_app):
         # Categorizing
         mocker_result = tagger.tag_or_cat_custom(
             iban="DE89370400440532013000", category='custom_category',
-            filters=[{'key': 'betrag', 'compare': '<', 'value': -999}],
+            filters=[{'key': 'amount', 'compare': '<', 'value': -999}],
             prio=22, prio_set=33,
             parsed_keys=['custom_key1', 'custom_key2'],
             parsed_vals=['custom_val1', 'custom_val2'], multi='AND',

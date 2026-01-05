@@ -18,7 +18,7 @@ def create_app(config_path: str) -> Flask:
     Returns: FlaskApp
     """
     # Logging
-    loglevel = 'DEBUG'
+    loglevel = 'INFO'
     dictConfig({
         'version': 1,
         'formatters': {'default': {
@@ -53,10 +53,12 @@ def create_app(config_path: str) -> Flask:
 
     return app
 
-if __name__ == '__main__':
-    config = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        'config.py'
-    )
-    application = create_app(config)
-    application.run(host='0.0.0.0', port=8110, debug=True)
+config = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    'config.py'
+)
+application = create_app(config)
+
+if __name__ == "__main__":
+    # Run the application directly if executed as a standalone script
+    application.run(host='0.0.0.0', port=8000, debug=True)

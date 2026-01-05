@@ -46,7 +46,8 @@ class BaseDb():
         }
         return self.set_metadata(new_group, overwrite=True)
 
-    def select(self, collection:str, condition: dict|list[dict]=None, multi: str='AND'):
+    def select(self, collection:str, condition: dict|list[dict]=None, multi: str='AND',
+               descending: bool=True):
         """
         Handler für das Vorbereiten der '_select' Methode, welche Datensätze aus der Datenbank
         selektiert, die die angegebene Bedingung erfüllen.
@@ -64,6 +65,8 @@ class BaseDb():
                     - 'regex'   : value wird als RegEx behandelt
             multi (str) : ['AND' | 'OR'] Wenn 'condition' eine Liste mit conditions ist,
                           werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
+            descending (bool):   Wenn True, werden die Ergebnisse aufsteigend nach Datum sortiert.
+                                 Default: True.
         Returns:
             dict:
                 - result, list: Liste der ausgewählten Datensätze
@@ -86,6 +89,10 @@ class BaseDb():
             collection = [collection]
 
         result_list = self._select(collection, condition, multi)
+
+        # Sort the result by date_tx
+        result_list = sorted(result_list, reverse=descending, key=lambda x: x.get('date_tx', 0))
+
         for r in result_list:
             # Format Datestrings
             if isinstance(r.get('date_tx'), int):
@@ -366,7 +373,7 @@ class BaseDb():
         md5_hash = hashlib.md5()
 
         combined_string = str(tx_entry.get('date_tx', '')) + \
-                            str(tx_entry.get('betrag', '')) + \
+                            str(tx_entry.get('amount', '')) + \
                             tx_text
         md5_hash.update(combined_string.encode('utf-8'))
 

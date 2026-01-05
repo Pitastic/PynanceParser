@@ -115,7 +115,7 @@ function fillTxDetails(result) {
                     td.appendChild(a_link);
                 }
 
-            } else if (key == 'betrag') {
+            } else if (key == 'amount') {
                 // Round
                 td.innerHTML = r[key].toFixed(2);
 

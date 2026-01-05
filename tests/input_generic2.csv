@@ -1,0 +1,6 @@
+Buchungstag;Valuta;Art;Buchungstext;Betrag;Währung;Gegenkonto
+01.01.2023;16.05.2023;Lastschrift;"Dummy Transaction for group tests";-11,63;EUR
+03.01.2023;15.05.2023;Lastschrift;"Dummy Transaction for group tests";-99,58;EUR
+04.01.2023;15.05.2023;Lastschrift;"Dummy Transaction for group tests";-71,35;EUR
+05.01.2023;15.05.2023;Lastschrift;"Dummy Transaction for group tests";-221,98;EUR
+02.01.2023;15.05.2023;Lastschrift;"Dummy Transaction for group tests";-118,94;EUR

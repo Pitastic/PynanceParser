@@ -14,7 +14,7 @@ from helper import get_testfile_contents
 
 EXAMPLE_CSV = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
-    'commerzbank.csv'
+    'input_commerzbank.csv'
 )
 
 
@@ -28,7 +28,7 @@ def test_upload_file_route(test_app):
             # Prepare File
             content = get_testfile_contents(EXAMPLE_CSV, binary=True)
             files = {
-                'file-input': (io.BytesIO(content), 'commerzbank.csv'),
+                'file-input': (io.BytesIO(content), 'input_commerzbank.csv'),
                 'bank': 'Commerzbank'
             }
 
@@ -42,7 +42,7 @@ def test_upload_file_route(test_app):
             # (If other test run already, data is til present and duplicates won't be inserted)
             assert result.status_code in (200, 201), \
                 f"Die Seite hat den Upload nicht wie erwartet verarbeitet: {result.text}"
-            assert result.json.get('filename') == 'commerzbank.csv', \
+            assert result.json.get('filename') == 'input_commerzbank.csv', \
                 "Angaben zum Upload wurden nicht gefunden"
 
 
@@ -65,7 +65,7 @@ def test_get_error_messages(test_app):
             # - Prepare faulty File
             content = get_testfile_contents(EXAMPLE_CSV, binary=True)
             files = {
-                'file-input': (io.BytesIO(content), 'commerzbank.csv')
+                'file-input': (io.BytesIO(content), 'input_commerzbank.csv')
             }
 
             # Post faulty File (missing 'bank' field for Generic importer)

@@ -32,10 +32,10 @@
             <h5>Kategorien</h5>
             <table class="ranking">
                 <tbody>
-                    {% for c, betrag in sums.categories.items() %}
+                    {% for c, amount in sums.categories.items() %}
                     <tr>
                         <td>{{c}}</td>
-                        <td>{{"%.2f"|format(betrag|round(2))}}</td>
+                        <td>{{"%.2f"|format(amount|round(2))}}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -46,10 +46,10 @@
             <h5>Tags</h5>
             <table class="ranking">
                 <tbody>
-                    {% for t, betrag in sums.tags.items() %}
+                    {% for t, amount in sums.tags.items() %}
                     <tr>
                         <td>{{t}}</td>
-                        <td>{{"%.2f"|format(betrag|round(2))}}</td>
+                        <td>{{"%.2f"|format(amount|round(2))}}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

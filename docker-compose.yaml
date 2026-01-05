@@ -1,0 +1,19 @@
+services:
+
+  app:
+    build: .
+    ports:
+      - "8000:80"
+    volumes:
+      - ./settings:/app/settings
+    environment:
+      - AUTH_USER=username
+      - AUTH_PASSWORD=yourpasswordhere
+
+  mongo:
+    image: mongo:6.0.26
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:

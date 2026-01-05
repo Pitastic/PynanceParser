@@ -15,7 +15,7 @@ from helper import get_testfile_contents
 
 EXAMPLE_CSV = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
-    'commerzbank.csv'
+    'input_commerzbank.csv'
 )
 
 
@@ -53,7 +53,7 @@ def test_upload_csv_commerzbank(test_app):
             # Prepare File
             content = get_testfile_contents(EXAMPLE_CSV, binary=True)
             files = {
-                'file-input': (io.BytesIO(content), 'commerzbank.csv'),
+                'file-input': (io.BytesIO(content), 'input_commerzbank.csv'),
                 'bank': 'Commerzbank'
             }
             # Post File
@@ -65,7 +65,7 @@ def test_upload_csv_commerzbank(test_app):
             # Check Response
             assert result.status_code == 201, \
                 f"Die Seite hat den Upload nicht wie erwartet verarbeitet: {result.text}"
-            assert result.json.get('filename') == 'commerzbank.csv', \
+            assert result.json.get('filename') == 'input_commerzbank.csv', \
                 "Angaben zum Upload wurden nicht gefunden"
 
             # Aufruf der Transaktionen
@@ -87,7 +87,7 @@ def test_upload_csv_commerzbank(test_app):
         assert len(row1) == 1, \
             f"Es wurden {len(row1)} rows für das erste Beispiel gefunden"
 
-        content = row1[0].css.filter('.betrag')[0].contents[0]
+        content = row1[0].css.filter('.amount')[0].contents[0]
         assert '-11.63' in content, \
             f"Der Content von {tx_hash} ist anders als erwartet: '{content}'"
 
@@ -97,9 +97,9 @@ def test_upload_csv_commerzbank(test_app):
         assert len(row2) == 1, \
             f"Es wurden {len(row2)} rows für das zweite Beispiel gefunden"
 
-        content = row2[0].css.filter('.betrag')[0].contents[0]
+        content = row2[0].css.filter('.amount')[0].contents[0]
         assert '-221.98' in content, \
-            f"Der Content von {tx_hash} / 'betrag' ist anders als erwartet: '{content}'"
+            f"Der Content von {tx_hash} / 'amount' ist anders als erwartet: '{content}'"
 
 
 def test_reachable_endpoints(test_app):
@@ -137,7 +137,7 @@ def test_double_upload(test_app):
             # Prepare File
             content = get_testfile_contents(EXAMPLE_CSV, binary=True)
             files = {
-                'file-input': (io.BytesIO(content), 'commerzbank.csv'),
+                'file-input': (io.BytesIO(content), 'input_commerzbank.csv'),
                 'bank': 'Commerzbank'
             }
             # Post File 1
@@ -149,12 +149,12 @@ def test_double_upload(test_app):
             # Check Response
             assert result.status_code == 201, \
                 f"Die Seite hat den Upload nicht wie erwartet verarbeitet: {result.text}"
-            assert result.json.get('filename') == 'commerzbank.csv', \
+            assert result.json.get('filename') == 'input_commerzbank.csv', \
                 "Angaben zum Upload wurden nicht gefunden"
 
             # Post File 2
             files = {
-                'file-input': (io.BytesIO(content), 'commerzbank.csv'),
+                'file-input': (io.BytesIO(content), 'input_commerzbank.csv'),
                 'bank': 'Commerzbank'
             }
             result = client.post(
@@ -203,7 +203,7 @@ def test_save_meta(test_app):
             }
             parameters = json.dumps(parameters).encode('utf-8')
             files = {
-                'settings-input': (io.BytesIO(parameters), 'commerzbank.csv'),
+                'settings-input': (io.BytesIO(parameters), 'input_commerzbank.csv'),
                 'bank': 'Commerzbank'
             }
             result = client.post(
@@ -674,7 +674,7 @@ def test_iban_filtering(test_app):
                 f"Es wurden {len(rows)} Einträge gefunden, statt der erwarteten 1"
 
             # Betrag Filter
-            result = client.get("/DE89370400440532013000?betrag_max=-200")
+            result = client.get("/DE89370400440532013000?amount_max=-200")
             soup = BeautifulSoup(result.text, features="html.parser")
             rows = soup.css.select('table.transactions tr[name] td input.row-checkbox')
             assert result.status_code == 200, \

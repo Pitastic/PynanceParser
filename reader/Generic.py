@@ -45,7 +45,7 @@ class Reader:
 
             for row in reader:
 
-                betrag = float(row['Betrag'].replace('.', '').replace(',', '.'))
+                amount = float(row['Betrag'].replace('.', '').replace(',', '.'))
                 date_tx = datetime.datetime.strptime(
                             row['Buchungstag'], date_format
                         ).replace(tzinfo=datetime.timezone.utc).timestamp()
@@ -57,7 +57,7 @@ class Reader:
                     'valuta': valuta,
                     'art': row['Art'],
                     'text_tx': row['Buchungstext'],
-                    'betrag': betrag,
+                    'amount': amount,
                     'peer': row.get('Gegenkonto'),
                     'currency': row['Währung'],
                     'parsed': {},
@@ -65,7 +65,7 @@ class Reader:
                     'tags': None
                 }
 
-                if not line['betrag']:
+                if not line['amount']:
                     continue  # Skip Null-Buchungen
 
                 result.append(line)

@@ -57,15 +57,16 @@ class Routes:
                 Args (uri):
                     iban, str:              IBAN zu der die Einträge angezeigt werden sollen.
                     text, str (query):      Volltextsuche im Betreff mit RegEx Support
-                    peer, str (query): Volltextsuche im Gegenkonto mit RegEx Support
+                    peer, str (query):      Volltextsuche im Gegenkonto mit RegEx Support
                     startDate, str (query): Startdatum (Y-m-d) für die Anzeige der Einträge
                     endDate, str (query):   Enddatum (Y-m-d) für die Anzeige der Einträge
                     category, str (query):  Kategorie-Filter
                     tag, str (query):       Tag-Filter, einzelner Eintrag oder kommagetrennte Liste
                     tag_mode, str (query):  Vergleichsmodus für Tag-Filter (siehe Models.md)
-                    betrag_min, float (query):  Betragsfilter (größer gleich betrag_min)
-                    betrag_max, float (query):  Betragsfilter (kleiner gleich betrag_max)
+                    amount_min, float (query):  Betragsfilter (größer gleich amount_min)
+                    amount_max, float (query):  Betragsfilter (kleiner gleich amount_max)
                     page, int (query):      Seite für die Paginierung (default: 1)
+                    descending, bool (query): Sortierreihenfolge nach Datum (default: True)
                 Returns:
                     html: Startseite mit Navigation
                 """
@@ -77,7 +78,8 @@ class Routes:
 
                 # Table with Transactions
                 current_app.logger.debug(f"Using condition filter: {condition}")
-                rows = parent.db_handler.select(iban, condition)
+                sort_order = request.args.get('descending', 'true').lower() == 'true'
+                rows = parent.db_handler.select(iban, condition, descending=sort_order)
 
                 # If pagination is requested, do not serve the whole page and all metadata
                 entries_per_page = 50
@@ -168,8 +170,8 @@ class Routes:
                     category, str (query):  Kategorie-Filter
                     tag, str (query):       Tag-Filter, einzelner Eintrag oder kommagetrennte Liste
                     tag_mode, str (query):  Vergleichsmodus für Tag-Filter (siehe Models.md)
-                    betrag_min, float (query):  Betragsfilter (größer gleich betrag_min)
-                    betrag_max, float (query):  Betragsfilter (kleiner gleich betrag_max)
+                    amount_min, float (query):  Betragsfilter (größer gleich amount_min)
+                    amount_max, float (query):  Betragsfilter (kleiner gleich amount_max)
                 Returns:
                     html: Seite mit Grafiken und Statistiken über die slektierten Einträge
                     (IBAN und optional Query)
@@ -186,12 +188,12 @@ class Routes:
                 # Calculate TOP categories and tags
                 sums = {'categories': {}, 'tags': {}}
                 for row in rows:
-                    betrag = row.get('betrag', 0.0)
+                    amount = row.get('amount', 0.0)
                     cat = row.get('category', 'unkategorisiert')
                     if cat not in sums['categories']:
                         sums['categories'][cat] = 0.0
 
-                    sums['categories'][cat] += betrag
+                    sums['categories'][cat] += amount
 
                     tags = row.get('tags', [])
                     if not tags:
@@ -200,7 +202,7 @@ class Routes:
                         if tag not in sums['tags']:
                             sums['tags'][tag] = 0.0
 
-                        sums['tags'][tag] += betrag
+                        sums['tags'][tag] += amount
 
                 # Sort Sums
                 sums['categories'] = dict(sorted(sums['categories'].items(),
@@ -419,7 +421,7 @@ class Routes:
                 """
                 Leert die Datenbank zu einer IBAN
                 Args (uri):
-                    iban, str:  (optional) IBAN zu der die Datenbank geleert werden soll.
+                    iban, str:  IBAN zu der die Datenbank geleert werden soll.
                                 (Default: Primäre IBAN aus der Config)
                 Returns:
                     json: Informationen zum Ergebnis des Löschauftrags.
