@@ -1,7 +1,7 @@
 # PynanceParser
 
-![pytest](https://img.shields.io/badge/pytest-passed%20(55/55)-darkgreen)
-![pylint](https://img.shields.io/badge/pylint-9.73-yellow)
+![pytest](https://img.shields.io/badge/pytest-passed%20(58/58)-darkgreen)
+![pylint](https://img.shields.io/badge/pylint-9.72-yellow)
 
 *This repo is german but you are welcome to add your language to the frontend.*
 
