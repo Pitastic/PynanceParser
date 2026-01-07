@@ -38,6 +38,10 @@ main {
 @media (max-width: 1023px) {.hide-m {display:none !important;}}
 
 /* Color classes */
+.error {
+    color: var(--pico-color-red-600);
+    font-weight: bold;
+}
 .delete {
     color: white;
     border-color: var(--pico-color-red-600);

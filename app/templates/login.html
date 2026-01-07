@@ -1,0 +1,39 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+
+<header>
+    <hgroup class="container hero">
+        <h1>Pynance Parser</h1>
+        <p>Manage Bankaccounts like a Boss !</p>
+    </hgroup>
+</header>
+
+<main class="container">
+
+    <section class="grid m-12 l-6-6 xxl-8-4 margin">
+
+        <header>
+            <strong>Login Passwort</strong>
+        </header>
+        <div class="grid m-6-6 xxl-6-6 margin">
+            <form method="post" action="/login">
+                <div role="group">
+                    <input type="password" name="password" value="" {% if error %}aria-invalid="true"{%endif%}>
+                    <input type="submit" value="🔒" role="button">
+                </div>
+            </form>
+        </div>
+
+    </section>
+
+    {% if error %}
+    <section>
+        <p class="error">{{ error }}</p>
+    </section>
+    {% endif %}
+
+</main>
+
+
+{% endblock %}

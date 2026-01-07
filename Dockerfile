@@ -21,4 +21,4 @@ RUN ln -sf /dev/stdout /var/log/apache2/access.log && \
 
 EXPOSE 80
 
-ENTRYPOINT ["/app/docker/entrypoint.sh"]
+ENTRYPOINT ["apachectl", "-D", "FOREGROUND"]

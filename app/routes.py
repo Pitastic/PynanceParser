@@ -4,7 +4,8 @@
 import os
 from datetime import datetime
 from flask import request, current_app, render_template, redirect, \
-                  make_response, send_from_directory
+                  make_response, send_from_directory, session
+import secrets
 
 
 class Routes:
@@ -36,6 +37,59 @@ class Routes:
                 return {
                     'version': current_app.config.get('VERSION', 'unknown')
                 }
+
+            @current_app.before_request
+            def require_login():
+                """
+                Before Request Handler, der sicherstellt, dass der User eingeloggt ist.
+                Falls nicht, wird dieser immer zur Login Seite umeleitet-
+                """
+                # Allow PyTest Client
+                if current_app.config.get('TESTING', False):
+                    return
+
+                # Allow access to login route
+                if request.endpoint == "login":
+                    return
+
+                # Allow access to CSS files
+                if request.endpoint == "static" and request.path.endswith(".css"):
+                    return
+
+                # Allow access to JS files
+                if request.endpoint == "static" and request.path.endswith(".js"):
+                    return
+
+                # Block everything else unless logged in
+                if not session.get("logged_in"):
+                    return redirect('/login')
+
+            @current_app.route("/login", methods=["GET", "POST"])
+            def login():
+                """
+                Login Seite, die ohne gültiges Cookie immer aufgerufen wird.
+                Args (form):
+                    password, str: Passwort für den Login
+                Returns:
+                    html: Login Formular
+                """
+                error = None
+
+                if request.method == "POST":
+                    password = request.form.get("password", "")
+                    if secrets.compare_digest(password, current_app.config['PASSWORD']):
+                        session["logged_in"] = True
+                        return redirect('/')
+
+                    error = "Invalid password"
+
+                return render_template('login.html', error=error)
+
+            @current_app.route("/logout")
+            def logout():
+                """Logout Seite, welche das Cookie löscht und zur Loin Seite weiterleitet."""
+                session.clear()
+                return redirect('/login')
 
             @current_app.route('/', methods=['GET'])
             def welcome() -> str:
@@ -214,16 +268,6 @@ class Routes:
 
                 return render_template('stats.html', sums=sums, IBAN=iban,
                                        filters=frontend_filters)
-
-            @current_app.route('/logout', methods=['GET'])
-            def logout():
-                """
-                Loggt den User aus der Session aus und leitet zur Startseite weiter.
-
-                Returns:
-                    redirect: Weiterleitung zur Startseite
-                """
-                return redirect('/')
 
             @current_app.route('/sw.js')
             def sw():

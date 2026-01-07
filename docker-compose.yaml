@@ -7,7 +7,6 @@ services:
     volumes:
       - ./settings:/app/settings
     environment:
-      - AUTH_USER=username
       - AUTH_PASSWORD=yourpasswordhere
 
   mongo:
