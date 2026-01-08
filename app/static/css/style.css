@@ -15,9 +15,8 @@ main {
   flex: 1;
 }
 
-.container.hero {
-    margin-top: 10%;
-}
+.container.hero {margin-top: 10%;}
+    main.container.hero {margin-top: 5%;}
 
 /* Pico Tooltip Feature with newlines*/
 .long-tooltip:before {

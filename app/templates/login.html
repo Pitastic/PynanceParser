@@ -9,21 +9,19 @@
     </hgroup>
 </header>
 
-<main class="container">
+<main class="container hero">
 
-    <section class="grid m-12 l-6-6 xxl-8-4 margin">
+    <section class="grid m-6-6 xxl-6-6 margin">
 
-        <header>
-            <strong>Login Passwort</strong>
-        </header>
-        <div class="grid m-6-6 xxl-6-6 margin">
-            <form method="post" action="/login">
-                <div role="group">
-                    <input type="password" name="password" value="" {% if error %}aria-invalid="true"{%endif%}>
-                    <input type="submit" value="🔒" role="button">
-                </div>
-            </form>
-        </div>
+        <form method="post" action="/login">
+            <div role="group">
+                <input type="password" name="password" value=""
+                    placeholder="Passwort"
+                    {% if error %}aria-invalid="true"{%endif%}
+                >
+                <input type="submit" value="🔒" role="button">
+            </div>
+        </form>
 
     </section>
 
