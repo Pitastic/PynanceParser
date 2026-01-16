@@ -42,12 +42,8 @@ class Reader(Generic):
                     continue
 
                 amount = float(row['Umsatz in EUR'].replace(',', '.'))
-                date_tx = datetime.datetime.strptime(
-                            date_tx, date_format
-                        ).replace(tzinfo=datetime.timezone.utc).timestamp()
-                valuta = datetime.datetime.strptime(
-                            row['Wertstellung (Valuta)'], date_format
-                        ).replace(tzinfo=datetime.timezone.utc).timestamp()
+                date_tx = self._parse_from_strftime(date_tx, date_format)
+                valuta = self._parse_from_strftime(row['Wertstellung (Valuta)'], date_format)
 
                 text_tx = row['Buchungstext']
                 match = rx.match(text_tx)

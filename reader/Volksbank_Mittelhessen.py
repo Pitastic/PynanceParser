@@ -83,11 +83,7 @@ class Reader(Generic):
             flavor="stream",
             table_areas=["60,629,573,51"],
             columns=["75,112,440,526"],
-            split_text=True,
-            #layout_kwargs={ # übernommen von Commerzbank, da ähnliches Layout
-            #    "char_margin": 2,
-            #    "word_margin": 0.5,
-            #},
+            split_text=True
         )
 
         # Tabellen aller Seiten zusammenfügen
@@ -133,12 +129,8 @@ class Reader(Generic):
             amount = amount[:-2].replace('.', '').replace(',', '.')
 
             line = {
-                'date_tx': datetime.datetime.strptime(
-                    f"{row[0]}{date_tx_year}", "%d.%m.%Y"
-                ).replace(tzinfo=datetime.timezone.utc).timestamp(),
-                'valuta': datetime.datetime.strptime(
-                    f"{row[1]}{date_tx_year}", "%d.%m.%Y"
-                ).replace(tzinfo=datetime.timezone.utc).timestamp(),
+                'date_tx': self._parse_from_strftime(f"{row[0]}{date_tx_year}", "%d.%m.%Y"),
+                'valuta': self._parse_from_strftime(f"{row[1]}{date_tx_year}", "%d.%m.%Y"),
                 'art': row[2],
                 'text_tx': "",
                 'amount': float(amount),
