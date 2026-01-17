@@ -27,7 +27,7 @@ def test_read_from_csv(test_app):
 
 
 # Look for test files and create a tuple list
-test_folder = os.path.join('/tmp', 'commerzbank')
+test_folder = os.path.join('/tmp', 'Commerzbank')
 test_files = []
 if not os.path.isdir(test_folder):
     test_files = [()]
@@ -47,6 +47,7 @@ def test_read_from_pdf(test_app, full_path):
 
     with test_app.app_context():
         transaction_list = Commerzbank().from_pdf(full_path)
+        assert transaction_list, "No transactions found in PDF file"
 
         # Check Reader Ergebnisse
         check_transaktion_list(transaction_list)

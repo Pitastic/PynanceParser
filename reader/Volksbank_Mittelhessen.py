@@ -82,7 +82,7 @@ class Reader(Generic):
             pages="all", # End -1
             flavor="stream",
             table_areas=["60,629,573,51"],
-            columns=["75,112,440,526"],
+            columns=["75,115,455"],
             split_text=True
         )
 
@@ -103,11 +103,11 @@ class Reader(Generic):
             if row[2].replace(' ', '').lower().startswith('alterkontostand'):
                 # Last row before transactions
                 start_index = self.all_rows.index(row) + 1
-                date_tx_year = row[2][-4:]  # Jahr für die Transaktionen merken
 
             if row[2].replace(' ', '').lower().startswith('neuerkontostand'):
                 # First row after transactions + final line
                 end_index = self.all_rows.index(row) - 1
+                date_tx_year = row[2][-4:]  # Jahr für die Transaktionen merken
                 break
 
         if date_tx_year is None or re.match(r'^\d{4}$', date_tx_year) is None:
@@ -125,8 +125,9 @@ class Reader(Generic):
                 continue  # Skip Header and unvalid Rows
 
             # Positives 'Haben' oder negatives 'Soll'
-            amount = f'-{row[3]}' if row[3] else row[4]
-            amount = amount[:-2].replace('.', '').replace(',', '.')
+            amount_prefix = '' if row[3][-1] == 'H' else '-'
+            amount = f"{amount_prefix}{re.sub(r'H|S', '', row[3]).strip()}"
+            amount = amount.replace('.', '').replace(',', '.')
 
             line = {
                 'date_tx': self._parse_from_strftime(f"{row[0]}{date_tx_year}", "%d.%m.%Y"),

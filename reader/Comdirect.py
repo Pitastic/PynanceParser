@@ -82,8 +82,9 @@ class Reader(Generic):
             filepath,
             pages="2-end",
             flavor="stream",
-            row_tol=10,
-            columns=["115,187,305,500"]*16
+            row_tol=12,
+            columns=["115,187,305,500"],
+            table_areas=["0,830,590,0"]
         )
         #TODO: Hack-araound: https://github.com/atlanhq/camelot/issues/357#issuecomment-520986016
 
@@ -118,6 +119,7 @@ class Reader(Generic):
         for i, row in enumerated_table:
 
             if re_datecheck.match(row[0]) is None:
+                print("skip row", row)
                 continue  # Skip Header and unvalid Rows
 
             amount = float(row[4].replace('.', '').replace(',', '.'))
