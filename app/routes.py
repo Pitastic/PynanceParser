@@ -383,7 +383,7 @@ class Routes:
                 Returns:
                     json: Informationen zur Datei und Ergebnis der Untersuchung.
                 """
-                input_file = request.files.get('file-input')
+                input_file = request.files.get('file-submit')
                 if not input_file:
                     return {'error': 'Es wurde keine Datei übermittelt.'}, 400
 

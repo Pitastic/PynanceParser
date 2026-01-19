@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     fileInput.addEventListener('change', () => {
         if (fileInput.files.length > 0) {
-            fileLabel.textContent = fileInput.files[0].name;
+            fileLabel.textContent = fileInput.files.length + " Datei(en) ausgewählt";
         } else {
             fileLabel.textContent = '.csv,.pdf,.html';
         }
@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const files = e.dataTransfer.files;
         if (files.length > 0) {
             fileInput.files = files;
-            fileLabel.textContent = files[0].name;
+            fileLabel.textContent = files.length + " Datei(en) ausgewählt";
         }
     });
 
@@ -248,24 +248,44 @@ function uploadFile() {
         alert('Es wurde keine Datei ausgewählt.');
         return;
     }
+    let fileSubmit = document.getElementById('file-submit');
 
-    const params = { file: 'file-input', 'bank':  bank_id}; // The value of 'file' corresponds to the input element's ID
-    apiSubmit('upload/' + iban, params, function (responseText, error) {
-        if (error) {
-            showAjaxError(error, responseText);
+    const params = { file: 'file-submit', 'bank': bank_id }; // The value of 'file' corresponds to the input element's ID
 
-        } else {
-            let success_msg = JSON.parse(responseText);
-            success_msg = 'Es wurden ' + success_msg.inserted + ' Transaktionen aus der ' +
-                            Math.round(success_msg.size / 1024 * 100) / 100 +
-                          ' KB großen Datei importiert.\n\nMöchtest du das Konto jetzt aufrufen?'
-            if (confirm(success_msg)) {
-                window.location.href = '/' + iban;
-            } else {
-                prepareAddModal('add-iban', null, iban);
-            }
-        }
-    }, true);
+    for (let i = 0, p = Promise.resolve(); i < fileInput.files.length; i++) {
+
+        // Source - https://stackoverflow.com/a/56447852
+        // Posted by superluminary, modified by community. See post 'Timeline' for change history
+        // Retrieved 2026-01-19, License - CC BY-SA 4.0
+        let new_file_list = new DataTransfer();
+        new_file_list.items.add(fileInput.files[i]);
+        fileSubmit.files = new_file_list.files;
+        console.log(fileInput.files[i].name, new_file_list, fileSubmit);
+        //TODO: Always sending the same file !!! Andere Methode um die files einzeln zu senden benötigt !!!
+        // append new promise to the chain
+        p = p.then(() =>
+            apiSubmit('upload/' + iban, params, function (responseText, error) {
+
+                if (error) {
+                    showAjaxError(error, responseText);
+    
+                } else {
+                    let success_msg = JSON.parse(responseText);
+                    success_msg = 'Es wurden ' + success_msg.inserted + ' Transaktionen aus der ' +
+                        Math.round(success_msg.size / 1024 * 100) / 100 +
+                        ' KB großen Datei importiert.\n\nMöchtest du das Konto jetzt aufrufen?'
+                    alert(success_msg);
+            
+                    //if (confirm(success_msg)) {
+                    //    window.location.href = '/' + iban;
+                    //} else {
+                    //    prepareAddModal('add-iban', null, iban);
+                    //}
+                }
+            }, true)
+        );
+
+    }
 }
 
 /**

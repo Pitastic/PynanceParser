@@ -105,7 +105,8 @@
         <div role="group">
             <div id="file-drop-area">
                 <span id="file-label">PDF / CSV / HTML</span>
-                <input type="file" id="file-input" name="file-input" accept=".csv,.pdf,.html" style="display: none;">
+                <input type="file" id="file-input" name="file-input" accept=".csv,.pdf,.html" multiple style="display: none;">
+                <input type="file" id="file-submit" name="file-submit" style="display: none;">
             </div>
             <button onclick="uploadFile()" class="contrast">Import</button>
         </div>
