@@ -39,6 +39,7 @@ def create_app(config_path: str) -> Flask:
                 template_folder=os.path.join(parent_dir, 'app', 'templates'),
                 static_folder=os.path.join(parent_dir, 'app', 'static')
     )
+    app.secret_key = os.urandom(24).hex()
 
     # Global Config
     app.config.from_pyfile(config_path)

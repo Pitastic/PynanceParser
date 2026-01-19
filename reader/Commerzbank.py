@@ -107,24 +107,29 @@ class Reader(Generic):
         date_tx = 0
         date_tx_year = "1970"  # Default Year if not found yet
         enumerated_table = enumerate(self.all_rows[start_index:end_index])
+
         for i, row in enumerated_table:
 
             if row[0].startswith('Buchungsdatum: '):
                 # All following rows have this 'date_tx'
                 date_tx_year = row[0][-4:]
-                date_tx = datetime.datetime.strptime(
+                date_tx = self._parse_from_strftime(
                     row[0][-10:], "%d.%m.%Y"
-                ).replace(tzinfo=datetime.timezone.utc).timestamp()
+                )
                 continue  # Skip Header Rows
+
+            if len(row[1]) < 5:
+                # No valid date in this row, skip
+                # This is needed because the bank itself does not honor
+                # their own layout and breaking boundaries to neighbour values.
+                continue
 
             # negativer Betrag in Spalte "Lasten" oder positiv "zu Gunsten"
             amount = f"-{row[2][:-1]}" if row[2] else row[3]
 
             line = {
                 'date_tx': date_tx,
-                'valuta': datetime.datetime.strptime(
-                        f"{row[1]}.{date_tx_year}", "%d.%m.%Y"
-                    ).replace(tzinfo=datetime.timezone.utc).timestamp(),
+                'valuta': self._parse_from_strftime(f"{row[1]}.{date_tx_year}", "%d.%m.%Y"),
                 'art': "",
                 'text_tx':  row[0],
                 'amount': float(amount.replace('.', '').replace(',', '.')),

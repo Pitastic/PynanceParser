@@ -26,6 +26,9 @@ docker compose build
 docker compose down && docker compose up -d
 ```
 
+**Ändere `AUTH_PASSWORD` in der `docker-compose.yaml` !**
+
+
 ### Standalone non-Docker Setup
 
 ```
@@ -35,6 +38,8 @@ source .venv/bin/activate
 pip install -r requirements.txt
 .venv/bin/python3.12 app/server.py
 ```
+
+**Ändere das Login Passwort in der `app/config.py` !**
 
 ### Start
 

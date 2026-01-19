@@ -27,15 +27,28 @@ def test_read_from_csv(test_app):
         check_transaktion_list(transaction_list)
 
 
-def test_read_from_pdf(test_app):
+# Look for test files and create a tuple list
+test_folder = os.path.join('/tmp', 'Volksbank_Mittelhessen')
+test_files = []
+if not os.path.isdir(test_folder):
+    test_files = [()]
+else:
+    for file in os.listdir(test_folder):
+        test_files.append(
+            (os.path.join(test_folder, file))
+        )
+
+# Using every test file in its own test
+@pytest.mark.parametrize("full_path", test_files)
+def test_read_from_pdf(test_app, full_path):
     """Testet das Einlesen einer PDF Datei mit Kontoumsätzen"""
-    test_file_pdf = os.path.join('/tmp', 'volksbank-mittelhessen.pdf')
-    if not os.path.isfile(test_file_pdf):
-        # Test file not provided (sensitive data is not part of git repo)
-        pytest.skip("Testfile /tmp/volksbank-mittelhessen.pdf not found....skipping")
+    if not full_path:
+        # Test files not provided (sensitive data is not part of git repo)
+        pytest.skip("Testfile not provided....skipping")
 
     with test_app.app_context():
-        transaction_list = Volksbank_Mittelhessen().from_pdf(test_file_pdf)
+        transaction_list = Volksbank_Mittelhessen().from_pdf(full_path)
+        assert transaction_list, "No transactions found in PDF file"
 
         # Check Reader Ergebnisse
         check_transaktion_list(transaction_list)

@@ -3,6 +3,7 @@
 
 import datetime
 import csv
+import re
 
 
 class Reader:
@@ -95,3 +96,43 @@ class Reader:
             ausgelesenen Kontoumsätzen entspricht.
         """
         raise NotImplementedError()
+
+    def _parse_from_strftime(self, date_string, date_format):
+        """
+        Hilfsmethode um ein Datum aus einem String mit einem Format in einen UTC-Timestamp
+        umzuwandeln.
+
+        Args:
+            date_string (str): Datum als String
+            date_format (str): Formatstring wie von `datetime.strptime` verwendet
+
+        Returns:
+            int: UTC-Timestamp des übergebenen Datums
+        """
+        try:
+            return datetime.datetime.strptime(
+                date_string, date_format
+            ).replace(tzinfo=datetime.timezone.utc).timestamp()
+
+        except ValueError as e:
+            if "day is out of range for month" in str(e):
+                # Handle invalid dates like 31.11.2023 -> 30.11.2023
+                split_char = re.search(r'[^\d]', date_string)
+                if not split_char:
+                    raise e  # No valid split character found
+
+                # Replace just the day part
+                split_char = split_char.group(0)
+                day_index = date_format.split(split_char).index('%d')
+                if day_index == -1:
+                    raise e  # No day part found in format
+
+                date_string_list = date_string.split(split_char)
+                date_string_list[day_index] = int(date_string_list[day_index]) - 1
+                date_string = split_char.join(map(str, date_string_list))
+
+                return self._parse_from_strftime(
+                    date_string, date_format
+                )
+
+            raise e  # Re-raise other ValueErrors

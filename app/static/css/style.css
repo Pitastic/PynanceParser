@@ -15,8 +15,11 @@ main {
   flex: 1;
 }
 
-.container.hero {
-    margin-top: 10%;
+.container.hero {margin-top: 10%;}
+    main.container.hero {margin-top: 5%;}
+
+.margin-top{
+    margin-top: 2em;
 }
 
 /* Pico Tooltip Feature with newlines*/
@@ -38,6 +41,10 @@ main {
 @media (max-width: 1023px) {.hide-m {display:none !important;}}
 
 /* Color classes */
+.error {
+    color: var(--pico-color-red-600);
+    font-weight: bold;
+}
 .delete {
     color: white;
     border-color: var(--pico-color-red-600);

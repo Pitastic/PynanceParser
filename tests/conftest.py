@@ -29,6 +29,7 @@ def test_app():
 
     # App Context
     app = create_app(config_path)
+    app.config['TESTING'] = True
     with app.app_context():
         yield app
 
