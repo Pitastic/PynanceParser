@@ -383,12 +383,12 @@ class Routes:
                 Returns:
                     json: Informationen zur Datei und Ergebnis der Untersuchung.
                 """
-                input_file = request.files.get('file-submit')
+                input_file = request.files.get('file-batch')
                 if not input_file:
                     return {'error': 'Es wurde keine Datei übermittelt.'}, 400
 
                 # Store Upload file to tmp
-                path = '/tmp/transactions.tmp'
+                path = f'/tmp/{input_file.filename}'
                 content_type, size = parent.mv_fileupload(input_file, path)
 
                 # Daten einlesen und in Object speichern (Bank und Format default bzw. wird geraten)
@@ -398,11 +398,6 @@ class Routes:
                     'application/pdf': 'pdf',
                     'text/plain': 'text',
                 }.get(content_type)
-
-                # Special handling for PDFs (extension needed)
-                if content_format == 'pdf':
-                    os.rename(path, f'{path}.pdf')
-                    path = f'{path}.pdf'
 
                 # Read Input and Parse the contents
                 try:

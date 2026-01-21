@@ -231,10 +231,12 @@ function importSettings() {
 }
 
 /**
- * Sends a file to the server for upload.
- * The file is selected via the file input element 'file-input'.
+ * Sends transactions in a file or a batch of files to the server for upload.
+ * The file is selected via the file input element 'file-input' (multiple)
+ * but every entry is send step-by-step to get results per call directly.
+ * Therefore this methods differ from the global `apiSubmit()` function.
  */
-function uploadFile() {
+function uploadIban() {
     const iban = document.getElementById('iban-input').value;
     if (!iban) {
         alert("Keine IBAN angegeben!");
@@ -242,50 +244,37 @@ function uploadFile() {
     }
 
     const bank_id = document.getElementById('bank-type').value
-
     const fileInput = document.getElementById('file-input');
     if (fileInput.files.length === 0) {
         alert('Es wurde keine Datei ausgewählt.');
         return;
     }
-    let fileSubmit = document.getElementById('file-submit');
 
-    const params = { file: 'file-submit', 'bank': bank_id }; // The value of 'file' corresponds to the input element's ID
+    //TODO: May need to create Promises per Loop
+    for (let i = 0; i < fileInput.files.length; i++) {
+        let fileFormData = new FormData();
+        fileFormData.append('bank', bank_id)
+        fileFormData.append('file-batch', fileInput.files[i]);
 
-    for (let i = 0, p = Promise.resolve(); i < fileInput.files.length; i++) {
+        const ajax = createAjax(function (responseText, error) {
 
-        // Source - https://stackoverflow.com/a/56447852
-        // Posted by superluminary, modified by community. See post 'Timeline' for change history
-        // Retrieved 2026-01-19, License - CC BY-SA 4.0
-        let new_file_list = new DataTransfer();
-        new_file_list.items.add(fileInput.files[i]);
-        fileSubmit.files = new_file_list.files;
-        console.log(fileInput.files[i].name, new_file_list, fileSubmit);
-        //TODO: Always sending the same file !!! Andere Methode um die files einzeln zu senden benötigt !!!
-        // append new promise to the chain
-        p = p.then(() =>
-            apiSubmit('upload/' + iban, params, function (responseText, error) {
+            //TODO: Update List of uploads with results per File
+            if (error) {
+                //showAjaxError(error, responseText);
+                console.warn(fileInput.files[i].name, error,responseText);
 
-                if (error) {
-                    showAjaxError(error, responseText);
-    
-                } else {
-                    let success_msg = JSON.parse(responseText);
-                    success_msg = 'Es wurden ' + success_msg.inserted + ' Transaktionen aus der ' +
-                        Math.round(success_msg.size / 1024 * 100) / 100 +
-                        ' KB großen Datei importiert.\n\nMöchtest du das Konto jetzt aufrufen?'
-                    alert(success_msg);
-            
-                    //if (confirm(success_msg)) {
-                    //    window.location.href = '/' + iban;
-                    //} else {
-                    //    prepareAddModal('add-iban', null, iban);
-                    //}
-                }
-            }, true)
-        );
+            } else {
+                console.info(fileInput.files[i].name, responseText);
+        
+            }
+        });
+
+    	ajax.open("POST", "/api/upload/" + iban, true);
+	    ajax.send(fileFormData);
 
     }
+    //TODO: Show an overall OK or confirm() for opening IBAN
+    console.log("All AJAX Requests finished");
 }
 
 /**
