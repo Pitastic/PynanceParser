@@ -119,7 +119,6 @@ class Reader(Generic):
         for i, row in enumerated_table:
 
             if re_datecheck.match(row[0]) is None:
-                print("skip row", row)
                 continue  # Skip Header and unvalid Rows
 
             amount = float(row[4].replace('.', '').replace(',', '.'))
