@@ -250,6 +250,8 @@ function uploadIban() {
         return;
     }
 
+    const upload_modal = document.getElementById('upload-list');
+
     // Prepare List entry for clone in loop
     const open_btn = document.querySelector('#upload-list footer a');
     open_btn.setAttribute('disabled', 'true');
@@ -294,7 +296,6 @@ function uploadIban() {
                 result = result.error;
 
             } else {
-                console.info(fileInput.files[i].name, responseText);
                 td2.setAttribute('aria-busy', 'false');
                 td2.innerHTML = '&#10004;';
                 result = result.inserted + ' Transaktionen importiert';
@@ -306,8 +307,7 @@ function uploadIban() {
 
         // Show Upload Modal
         document.querySelector('#add-iban header button').click();
-        const upload_modal = document.getElementById('upload-list');
-        openModal(upload_modal, { 'currentTarget': { 'dataset': {} }});
+        openModal(upload_modal, { 'currentTarget': { 'dataset': {} } });
 
         // Send request(s)
     	ajax.open("POST", "/api/upload/" + iban, true);
@@ -316,7 +316,7 @@ function uploadIban() {
     }
 
     //TODO: Show an overall OK or confirm() for opening IBAN
-    console.log("All AJAX Requests finished");
+    upload_modal.querySelector('footer a').href = '/' + iban;
     open_btn.removeAttribute('disabled');
 }
 
