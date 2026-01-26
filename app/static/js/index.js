@@ -271,7 +271,7 @@ function uploadIban() {
         const td2 = tr.querySelector('td:last-child');
         const td1 = tr.querySelector('td:first-child');
         let file_name = fileInput.files[i].name.slice(-30);
-        if (fileInput.files[i].name > 30) {
+        if (fileInput.files[i].name.length > 30) {
             file_name = '...' + file_name;
         }
         td1.innerHTML = file_name + '<br><small>&nbsp;</small>';
