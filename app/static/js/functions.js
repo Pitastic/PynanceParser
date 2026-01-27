@@ -166,6 +166,46 @@ function removeTagBullet(element, hiddenInputId) {
 
 }
 
+
+/**
+ * Show a popup with a result message from an operation
+ * 
+ * @param {string} heading	Heading for the PopUp
+ * @param {list} domlist	List of DOMELements to add in the "content" section
+ */
+function responsePopUp(heading, domlist) {
+	const popup = document.getElementById('response-popup');
+	popup.querySelector('header h2').textContent = heading;
+
+	const content = document.getElementById('response-content');
+	content.innerHTML = '';
+	domlist.forEach(dom => {
+		content.appendChild(dom);
+	});
+
+	// Close actual Popup if open and open Response PopUp
+	const openPopUp = document.querySelector('dialog[open] header button')
+	if (openPopUp) {
+		openPopUp.click();
+	}
+	openModal(popup, { 'currentTarget': { 'dataset': {} } });
+}
+
+/** Show a popup with an error message from an operation
+ * 
+ * @param {string} heading	Heading for the PopUp
+ * @param {number} error		Error code
+ * @param {string} responseText	Response text from the operation
+ */
+function errorPopUp(heading, error, responseText) {
+	const reason1 = document.createElement('p');
+	reason1.innerHTML = "Fehler " + error;
+	reason1.className = 'error';
+	const reason2 = document.createElement('pre');
+	reason2.innerHTML = responseText;
+	responsePopUp(heading, [reason1, reason2]);
+}
+
 // ----------------------------------------------------------------------------
 // -- AJAX Functions ----------------------------------------------------------
 // ----------------------------------------------------------------------------

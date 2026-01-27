@@ -76,6 +76,20 @@
 </footer>
 
 <!-- Popups -->
+<dialog id="response-popup">
+    <article>
+        <header>
+            <button aria-label="Close" rel="prev" data-target="response-popup" onclick="toggleModal(event)"></button>
+            <h2>Ergebnis</h2>
+        </header>
+        <div id="response-content">
+        </div>
+        <footer>
+            <a role="button" class="secondary" onclick="window.location.reload()">schließen</a>
+        </footer>
+    </article>
+</dialog>
+
 <dialog id="massedit-popup">
     <article>
         <header>
