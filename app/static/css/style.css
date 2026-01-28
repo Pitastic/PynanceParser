@@ -104,10 +104,23 @@ button.info {
 }
 
 /* Tables */
+.transactions th {
+    cursor: pointer;
+}
 .transactions .amount {
     white-space: nowrap;
     text-align: right;
 }
+    .transactions th.amount {
+        text-align: center;
+    }
+    .transactions th.sorted-asc::after, .transactions th.sorted-desc::after {
+        position: absolute;
+        margin-left: 4px;
+        color: var(--pico-primary);
+    }
+    .transactions th.sorted-asc::after { content: "\2193"; }
+    .transactions th.sorted-desc:after { content: "\2191"; }
 
 #dynamic-results tr th {
     font-weight: bold;
@@ -115,9 +128,7 @@ button.info {
 
 /* S : Slim button in transaction table */
 @media (max-width: 767px) {
-    .transactions th.amount {
-        text-align: center;
-    }
+
     .transactions tr {
         border-bottom: var(--pico-border-width) solid var(--pico-table-border-color);
     }
