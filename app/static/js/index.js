@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     fileInput.addEventListener('change', () => {
         if (fileInput.files.length > 0) {
-            fileLabel.textContent = fileInput.files[0].name;
+            fileLabel.textContent = fileInput.files.length + " Datei(en) ausgewählt";
         } else {
             fileLabel.textContent = '.csv,.pdf,.html';
         }
@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const files = e.dataTransfer.files;
         if (files.length > 0) {
             fileInput.files = files;
-            fileLabel.textContent = files[0].name;
+            fileLabel.textContent = files.length + " Datei(en) ausgewählt";
         }
     });
 
@@ -231,10 +231,12 @@ function importSettings() {
 }
 
 /**
- * Sends a file to the server for upload.
- * The file is selected via the file input element 'file-input'.
+ * Sends transactions in a file or a batch of files to the server for upload.
+ * The file is selected via the file input element 'file-input' (multiple)
+ * but every entry is send step-by-step to get results per call directly.
+ * Therefore this methods differ from the global `apiSubmit()` function.
  */
-function uploadFile() {
+function uploadIban() {
     const iban = document.getElementById('iban-input').value;
     if (!iban) {
         alert("Keine IBAN angegeben!");
@@ -242,30 +244,80 @@ function uploadFile() {
     }
 
     const bank_id = document.getElementById('bank-type').value
-
     const fileInput = document.getElementById('file-input');
     if (fileInput.files.length === 0) {
         alert('Es wurde keine Datei ausgewählt.');
         return;
     }
 
-    const params = { file: 'file-input', 'bank':  bank_id}; // The value of 'file' corresponds to the input element's ID
-    apiSubmit('upload/' + iban, params, function (responseText, error) {
-        if (error) {
-            showAjaxError(error, responseText);
+    const upload_modal = document.getElementById('upload-list');
 
-        } else {
-            let success_msg = JSON.parse(responseText);
-            success_msg = 'Es wurden ' + success_msg.inserted + ' Transaktionen aus der ' +
-                            Math.round(success_msg.size / 1024 * 100) / 100 +
-                          ' KB großen Datei importiert.\n\nMöchtest du das Konto jetzt aufrufen?'
-            if (confirm(success_msg)) {
-                window.location.href = '/' + iban;
-            } else {
-                prepareAddModal('add-iban', null, iban);
-            }
+    // Prepare List entry for clone in loop
+    const open_btn = document.querySelector('#upload-list footer a');
+    open_btn.setAttribute('disabled', 'true');
+    const list_table = document.querySelector('#upload-list table');
+    list_table.innerHTML = "";
+    const list_tr = document.createElement('tr');
+    const cell1 = document.createElement('td');
+    const cell2 = document.createElement('td');
+    const span = document.createElement('span');
+    span.setAttribute('aria-busy', "true");
+    cell2.appendChild(span);
+    list_tr.appendChild(cell1);
+    list_tr.appendChild(cell2);
+
+    //TODO: May need to create Promises per Loop
+    for (let i = 0; i < fileInput.files.length; i++) {
+        // DOM
+        const tr = list_tr.cloneNode(true);
+        const td2 = tr.querySelector('td:last-child');
+        const td1 = tr.querySelector('td:first-child');
+        let file_name = fileInput.files[i].name.slice(-30);
+        if (fileInput.files[i].name.length > 30) {
+            file_name = '...' + file_name;
         }
-    }, true);
+        td1.innerHTML = file_name + '<br><small>&nbsp;</small>';
+        list_table.appendChild(tr);
+
+        // Form
+        const fileFormData = new FormData();
+        fileFormData.append('bank', bank_id)
+        fileFormData.append('file-batch', fileInput.files[i]);
+
+        const ajax = createAjax(function (responseText, error) {
+
+            // Update List of uploads with results per File
+            let result = JSON.parse(responseText);
+            if (error) {
+                console.warn(fileInput.files[i].name, error, responseText);
+                td2.setAttribute('aria-busy', 'false');
+                td2.classList.add('error');
+                td2.innerHTML = '&times;';
+                result = result.error;
+
+            } else {
+                td2.setAttribute('aria-busy', 'false');
+                td2.innerHTML = '&#10004;';
+                result = result.inserted + ' Transaktionen importiert';
+        
+            }
+            td1.querySelector('small').innerHTML = result;
+
+        });
+
+        // Show Upload Modal
+        document.querySelector('#add-iban header button').click();
+        openModal(upload_modal, { 'currentTarget': { 'dataset': {} } });
+
+        // Send request(s)
+    	ajax.open("POST", "/api/upload/" + iban, true);
+	    ajax.send(fileFormData);
+
+    }
+
+    //TODO: Show an overall OK or confirm() for opening IBAN
+    upload_modal.querySelector('footer a').href = '/' + iban;
+    open_btn.removeAttribute('disabled');
 }
 
 /**

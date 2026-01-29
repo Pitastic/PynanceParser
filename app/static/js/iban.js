@@ -228,26 +228,41 @@ function tagAndCat(operation) {
     }
 
     apiSubmit(api_url + IBAN, payload, function (responseText, error) {
+        const heading = operation == 'tag' ? 'Tagging' : 'Kategorisierung';
         if (error) {
-            alert(operation + ' failed: ' + '(' + error + ')' + responseText);
+            errorPopUp(
+                operation.substring(1) + operation.substring(0, 1).toUpperCase() + ' fehlgeschlagen',
+                error, responseText
+            );
 
         } else {
-            alert(operation + ' successful!' + responseText);
-            if (dry_run) {
-                // List UUIDs which would have been tagged/cat
-                const r = JSON.parse(responseText)
-                let txt_list = ""
-                r.entries.forEach(element => {
-                    txt_list += "\n- " + element
-                });
-                alert("Folgende UUIDs würden geändert werden:\n" + txt_list);
+            const reason1 = document.createElement('p');
+            reason1.innerHTML = dry_run ? "Folgende Transaktionen wären geändert worden:" : "Folgende Transaktionen wurden geändert:";
 
-            } else {
-                // Tagged/Cat -> Reload
-                window.location.reload();
+            const reason2 = document.createElement('ul');
+            let r = JSON.parse(responseText)
+
+            if (r.entries.length == 0) {
+                const li = document.createElement('li');
+                li.innerHTML = '(keine)';
+                reason2.appendChild(li);
             }
 
+            r.entries.forEach(element => {
+                let li = document.createElement('li');
+                let a = document.createElement('a');
+                a.href = '/' + IBAN + '/' + element;
+                a.target = '_blank';
+                a.innerHTML = element;
+                li.appendChild(a);
+                reason2.appendChild(li);
+            });
+
+            responsePopUp(
+                heading + ' erfolgreich',
+                [reason1, reason2]);
         }
+
     }, false);
 }
 
@@ -270,11 +285,12 @@ function removeTags() {
 
     apiSubmit(api_function, tags, function (responseText, error) {
         if (error) {
-            alert('Tag removal failed: ' + '(' + error + ')' + responseText);
+            errorPopUp('Tag entfernen fehlgeschlagen', error, responseText);
 
         } else {
-            alert('Entries tags deleted successfully!' + responseText);
-            window.location.reload();
+            const p = document.createElement('p');
+            p.innerHTML = 'Die Tags der ausgewählten Einträge wurden erfolgreich entfernt.';
+            responsePopUp('Tags entfernt', [p]);
 
         }
     }, false);
@@ -300,11 +316,12 @@ function removeCats() {
 
     apiSubmit(api_function, payload, function (responseText, error) {
         if (error) {
-            alert('Cat removal failed: ' + '(' + error + ')' + responseText);
+            errorPopUp('Kategorie entfernen fehlgeschlagen', error, responseText);
 
         } else {
-            alert('Entries category deleted successfully!' + responseText);
-            window.location.reload();
+            const p = document.createElement('p');
+            p.innerHTML = 'Die Kategorie der ausgewählten Einträge wurden erfolgreich entfernt.';
+            responsePopUp('Kategorie entfernt', [p]);
 
         }
     }, false);
@@ -344,7 +361,7 @@ function addCat() {
 function getInfo(uuid, callback = alert) {
     apiGet('/' + IBAN + '/' + uuid, {}, function (responseText, error) {
         if (error) {
-            alert('getTx failed: ' + '(' + error + ')' + responseText);
+            errorPopUp('Transaktionsabruf fehlgeschlagen', error, responseText);
 
         } else {
             callback(responseText);

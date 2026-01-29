@@ -3,9 +3,9 @@
 
 import os
 from datetime import datetime
+import secrets
 from flask import request, current_app, render_template, redirect, \
                   make_response, send_from_directory, session
-import secrets
 
 
 class Routes:
@@ -383,12 +383,12 @@ class Routes:
                 Returns:
                     json: Informationen zur Datei und Ergebnis der Untersuchung.
                 """
-                input_file = request.files.get('file-input')
+                input_file = request.files.get('file-batch')
                 if not input_file:
                     return {'error': 'Es wurde keine Datei übermittelt.'}, 400
 
                 # Store Upload file to tmp
-                path = '/tmp/transactions.tmp'
+                path = f"/tmp/{secrets.token_hex(12)}"
                 content_type, size = parent.mv_fileupload(input_file, path)
 
                 # Daten einlesen und in Object speichern (Bank und Format default bzw. wird geraten)
@@ -416,7 +416,7 @@ class Routes:
                     insert_result = parent.db_handler.insert(parsed_data, iban)
                     inserted = insert_result.get('inserted')
 
-                except (KeyError, ValueError, NotImplementedError) as ex:
+                except (KeyError, ValueError) as ex:
                     return {
                         "error": (
                             "Die hochgeladene Datei konnte nicht verarbeitet werden, "

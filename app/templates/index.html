@@ -105,10 +105,26 @@
         <div role="group">
             <div id="file-drop-area">
                 <span id="file-label">PDF / CSV / HTML</span>
-                <input type="file" id="file-input" name="file-input" accept=".csv,.pdf,.html" style="display: none;">
+                <input type="file" id="file-input" name="file-input" accept=".csv,.pdf,.html" multiple style="display: none;">
             </div>
-            <button onclick="uploadFile()" class="contrast">Import</button>
+            <button onclick="uploadIban()" class="contrast">Import</button>
         </div>
+        <footer>
+            <a role="button" href="">Öffnen</a>
+        </footer>
+    </article>
+</dialog>
+
+<dialog id="upload-list">
+    <article>
+        <header>
+            <button aria-label="Close" rel="prev" data-target="upload-list" onclick="toggleModal(event)"></button>
+            <h2>Import</h2>
+        </header>
+
+        <table>
+        </table>
+
         <footer>
             <a role="button" href="">Öffnen</a>
         </footer>

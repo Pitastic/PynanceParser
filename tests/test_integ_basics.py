@@ -53,7 +53,7 @@ def test_upload_csv_commerzbank(test_app):
             # Prepare File
             content = get_testfile_contents(EXAMPLE_CSV, binary=True)
             files = {
-                'file-input': (io.BytesIO(content), 'input_commerzbank.csv'),
+                'file-batch': (io.BytesIO(content), 'input_commerzbank.csv'),
                 'bank': 'Commerzbank'
             }
             # Post File
@@ -137,7 +137,7 @@ def test_double_upload(test_app):
             # Prepare File
             content = get_testfile_contents(EXAMPLE_CSV, binary=True)
             files = {
-                'file-input': (io.BytesIO(content), 'input_commerzbank.csv'),
+                'file-batch': (io.BytesIO(content), 'input_commerzbank.csv'),
                 'bank': 'Commerzbank'
             }
             # Post File 1
@@ -154,7 +154,7 @@ def test_double_upload(test_app):
 
             # Post File 2
             files = {
-                'file-input': (io.BytesIO(content), 'input_commerzbank.csv'),
+                'file-batch': (io.BytesIO(content), 'input_commerzbank.csv'),
                 'bank': 'Commerzbank'
             }
             result = client.post(

@@ -166,6 +166,156 @@ function removeTagBullet(element, hiddenInputId) {
 
 }
 
+
+/**
+ * Show a popup with a result message from an operation
+ * 
+ * @param {string} heading	Heading for the PopUp
+ * @param {list} domlist	List of DOMELements to add in the "content" section
+ */
+function responsePopUp(heading, domlist) {
+	const popup = document.getElementById('response-popup');
+	popup.querySelector('header h2').textContent = heading;
+
+	const content = document.getElementById('response-content');
+	content.innerHTML = '';
+	domlist.forEach(dom => {
+		content.appendChild(dom);
+	});
+
+	// Close actual Popup if open and open Response PopUp
+	const openPopUp = document.querySelector('dialog[open] header button')
+	if (openPopUp) {
+		openPopUp.click();
+	}
+	openModal(popup, { 'currentTarget': { 'dataset': {} } });
+}
+
+/** Show a popup with an error message from an operation
+ * 
+ * @param {string} heading	Heading for the PopUp
+ * @param {number} error		Error code
+ * @param {string} responseText	Response text from the operation
+ */
+function errorPopUp(heading, error, responseText) {
+	const reason1 = document.createElement('p');
+	reason1.innerHTML = "Fehler " + error;
+	reason1.className = 'error';
+	const reason2 = document.createElement('pre');
+	reason2.innerHTML = responseText;
+	responsePopUp(heading, [reason1, reason2]);
+}
+
+/**
+ * Sort Table Rows
+ * 
+ * @param {string} table_id	The ID of the tabel to sort rows in
+ * 
+ * @param {number} col_index	The index of the column to compare rows content with
+ */
+function sortTable(table_id, col_index){
+	const table = document.getElementById(table_id);
+	if (!table){
+		console.error("Table '", table_id, "' to sort was not found");
+	}
+	if (typeof col_index == 'undefined'){
+		col_index = 0;
+	}
+
+	var switching = true;
+	var switchcount = 0;
+	var dir = "asc";
+
+	while (switching) {
+		// Loop until nothing else was switched
+		switching = false;
+		var rows = table.rows;
+
+		/*
+		Loop through the actual order of rows and
+		compare if one pair should be switched.
+		Break if a pair is found and switch it later.
+		This loop will be started again after the switch.
+		*/
+		for (var i = 1; i < (rows.length - 1); i++) {
+			var should_switch = false;
+			var x = rows[i].getElementsByTagName('td')[col_index];
+			var y = rows[i + 1].getElementsByTagName('td')[col_index];
+
+			// Compare values with special handling for numbers
+			if  (col_index == 0) {
+				// Compare timestamp from dataset
+				var x_val = Number(x.getElementsByTagName('input')[0].dataset.txdate);
+				var y_val = Number(y.getElementsByTagName('input')[0].dataset.txdate);
+
+			} else if (col_index == 5){
+				// Compare amount (numbers)
+				var x_val = Number(x.innerText.slice(0, -4));
+				var y_val = Number(y.innerText.slice(0, -4));
+
+			} else {
+				// Compare normal innerText
+				var x_val = x.innerText.toLowerCase();
+				var y_val = y.innerText.toLowerCase();
+			}
+
+			// Compare (depending on direction)
+			if (dir == "asc"){
+
+				if (x_val > y_val) {
+					// Switch needed: Brake!
+					should_switch = true;
+					break;
+				}
+
+			} else if (dir == "desc") {
+
+				if (x_val < y_val) {
+					// Switch needed: Brake!
+					should_switch = true;
+					break;
+				}
+
+			}
+		}
+
+		// Was a needed switch found in the loop?
+		if (should_switch) {
+			// Yes: Switch it now
+			rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+			
+			// Remember that we at least switched one time
+			switchcount ++;
+			
+			// Reset switching-var to get into the next iteration of the while loop
+			switching = true;
+
+		} else {
+			// There is no need for a switch...
+			if (switchcount == 0 && dir == "asc") {
+				// ...and there weren't any switches before:
+				// Change the direction of the sorting if it is still default 'asc'
+				dir = "desc";
+
+				// Reset switching-var to get into the next iteration of the while loop
+				switching = true;
+			}
+		}
+
+	}
+
+	const table_headings = rows[0].getElementsByTagName('th');
+	for (var i=0; i < table_headings.length; i++){
+		table_headings[i].classList.remove('sorted-asc');
+		table_headings[i].classList.remove('sorted-desc');
+	}
+	if (col_index == 0){
+		table_headings[1].classList.add('sorted-' + dir);
+	} else {
+		table_headings[col_index].classList.add('sorted-' + dir);
+	}
+}
+
 // ----------------------------------------------------------------------------
 // -- AJAX Functions ----------------------------------------------------------
 // ----------------------------------------------------------------------------

@@ -6,10 +6,33 @@ import copy
 import operator
 import logging
 import re
-from tinydb import TinyDB, Query, where
+from tinydb import TinyDB, Query, where, JSONStorage, middlewares
 from flask import current_app
+import portalocker
 
 from handler.BaseDb import BaseDb
+
+
+class FileLockMiddleware(middlewares.Middleware):
+    """
+    Middleware Klasse für die TinyDB Instanz, die vor jeder Operation ihre Methoden ausführen kann
+    (siehe: https://tinydb.readthedocs.io/en/latest/_modules/tinydb/middlewares.html).
+    Sie wird hier für ein Datei-Locking benötigt, um parallele (Flask) Requests 
+    auf die TindyDB zu ermöglichen.
+    """
+    def __init__(self, storage_cls):
+        super().__init__(storage_cls)
+        self.lock_file = os.path.join(current_app.config['DATABASE_URI'], 'db.lock')
+
+    def read(self):
+        """Hook into the database read operation with file locking."""
+        with portalocker.Lock(self.lock_file, timeout=5):
+            return self.storage.read()
+
+    def write(self, data):
+        """Hook into the database write operation with file locking."""
+        with portalocker.Lock(self.lock_file, timeout=5):
+            self.storage.write(data)
 
 
 class TinyDbHandler(BaseDb):
@@ -23,9 +46,11 @@ class TinyDbHandler(BaseDb):
         logging.info("Starting TinyDB Handler...")
         try:
             self.connection = TinyDB(os.path.join(
-                current_app.config['DATABASE_URI'],
-                current_app.config['DATABASE_NAME']
-            ))
+                    current_app.config['DATABASE_URI'],
+                    current_app.config['DATABASE_NAME']
+                ),
+                storage=FileLockMiddleware(JSONStorage)
+            )
 
             if not hasattr(self, 'connection'):
                 raise IOError('Es konnte kein Connection Objekt erstellt werden')

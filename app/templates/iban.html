@@ -34,15 +34,17 @@
 
 <main class="container flex">
     <section>
-        <table class="transactions">
+        <table id="transaction-table" class="transactions">
             <thead>
                 <tr>
                     <th><input type="checkbox" id="select-all"></th>
-                    <th>Datum<br><small class="secondary">(Valuta)</small></th>
-                    <th>Buchungstext</th>
-                    <th>Kategorie</th>
-                    <th class="hide-m">Tags</th>
-                    <th class="amount">Betrag</th>
+                    <th onclick="sortTable('transaction-table', 0)">
+                        Datum<br><small class="secondary">(Valuta)</small>
+                    </th>
+                    <th onclick="sortTable('transaction-table', 2)">Buchungstext</th>
+                    <th onclick="sortTable('transaction-table', 3)">Kategorie</th>
+                    <th onclick="sortTable('transaction-table', 4)" class="hide-m">Tags</th>
+                    <th onclick="sortTable('transaction-table', 5)" class="amount">Betrag</th>
                     <th>&nbsp;</th>
                 </tr>
             </thead>
@@ -76,6 +78,20 @@
 </footer>
 
 <!-- Popups -->
+<dialog id="response-popup">
+    <article>
+        <header>
+            <button aria-label="Close" rel="prev" data-target="response-popup" onclick="toggleModal(event)"></button>
+            <h2>Ergebnis</h2>
+        </header>
+        <div id="response-content">
+        </div>
+        <footer>
+            <a role="button" class="secondary" onclick="window.location.reload()">schließen</a>
+        </footer>
+    </article>
+</dialog>
+
 <dialog id="massedit-popup">
     <article>
         <header>
