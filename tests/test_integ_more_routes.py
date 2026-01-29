@@ -28,7 +28,7 @@ def test_upload_file_route(test_app):
             # Prepare File
             content = get_testfile_contents(EXAMPLE_CSV, binary=True)
             files = {
-                'file-input': (io.BytesIO(content), 'input_commerzbank.csv'),
+                'file-batch': (io.BytesIO(content), 'input_commerzbank.csv'),
                 'bank': 'Commerzbank'
             }
 
@@ -65,7 +65,7 @@ def test_get_error_messages(test_app):
             # - Prepare faulty File
             content = get_testfile_contents(EXAMPLE_CSV, binary=True)
             files = {
-                'file-input': (io.BytesIO(content), 'input_commerzbank.csv')
+                'file-batch': (io.BytesIO(content), 'input_commerzbank.csv')
             }
 
             # Post faulty File (missing 'bank' field for Generic importer)
