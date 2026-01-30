@@ -39,7 +39,17 @@
         "tags": ["Lebensmittel"],
         "filter": [{
             "key": "text_tx",
-            "value": "(EDEKA|Wucherpfennig|Penny|Aldi|Kaufland|netto)",
+            "value": "((?<!BY\\s)EDEKA|REWE.*SAGT\\sDANKE|Penny|Aldi|Kaufland|netto)",
+            "compare": "regex"
+        }]
+    },
+    {
+        "metatype": "rule",
+        "name": "Baecker",
+        "tags": ["Bäcker"],
+        "filter": [{
+            "key": "text_tx",
+            "value": "(SCHAEFERS\\sBY\\sEDEKA|MEISTERBAECKEREI|BAECKER\\sGOEING|Bäckerei|Baeckerei )",
             "compare": "regex"
         }]
     }
