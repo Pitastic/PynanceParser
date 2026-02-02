@@ -280,7 +280,7 @@ class UserInterface():
             'compare': '=='
         }]
 
-        updated_entries = self.db_handler.update(new_data, iban, condition)
+        updated_entries = self.db_handler.update(new_data, iban, condition, merge=False)
         return updated_entries
 
     def remove_cat(self, iban, t_id):

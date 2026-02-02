@@ -2,7 +2,6 @@
 """Datenbankhandler für die Interaktion mit einer TinyDB Datenbankdatei."""
 
 import os
-import copy
 import operator
 import logging
 import re
@@ -172,42 +171,56 @@ class TinyDbHandler(BaseDb):
             dict:
                 - updated, int: Anzahl der aktualisierten Datensätze
         """
-        # Form condition into a query and run
-        if condition is None:
+        # run update
+        docs_to_update = self.select(collection, condition, multi)
+        if not docs_to_update:
+            # No match, no update
+            return { 'updated': 0 }
+
+        collection = self.connection.table(collection)
+
+        # care about the right format
+        if data.get('tags') is not None and not isinstance(data.get('tags'), list):
+            data['tags'] = [data.get('tags')]
+
+        # Result store for updated uuids
+        update_result = []
+
+        # Form condition into a query
+        if condition is None and merge:
+            logging.error('Using "merge" without a query is not possible')
+            return { 'error': 'Using "merge" without a query is not possible', 'updated': 0 }
+
+        elif condition is None:
             query = Query().noop()
 
         else:
             query = self._form_complete_query(condition, multi)
 
-        # run update
-        new_tags = data.get('tags')
-        if new_tags and merge:
+        if not merge:
+            # Update all at once (no merging)
+            update_result += collection.update(data, query)
+            return { 'updated': len(update_result) }
 
-            docs_to_update = self.select(collection, condition, multi)
-            if not docs_to_update:
-                # No match, no update
-                return { 'updated': 0 }
+        # Update every Entry one-by-one (merge every list item)
+        for doc in docs_to_update:
 
-            # Special handling with list to update (select - edit - store)
-            collection = self.connection.table(collection)
-            update_data = {}
-            update_result = []
+            # Look for lists to merge with this entry
+            for d in data.keys():
 
-            # care about the right format
-            if not isinstance(new_tags, list):
-                data['tags'] = [new_tags]
+                if isinstance(doc.get(d), list) and merge:
+                    data[d] = list(set(doc.get(d) + data[d])) 
+                    continue
 
-            # Merge DB docs and update data and write it back to DB
-            for doc in docs_to_update:
-                existing_tags = doc.get('tags') or []
-                update_data = copy.deepcopy(data)
-                update_data['tags'] = list(set(existing_tags + new_tags))
-                update_result += collection.update(update_data, query)
-
-        else:
-            # Plain function (overwrite existing attributes)
-            collection = self.connection.table(collection)
-            update_result = collection.update(data, query)
+            # Update this uuid
+            update_result += collection.update(
+                data,
+                self._form_complete_query({
+                    'key': 'uuid',
+                    'value': doc.get('uuid'),
+                    'compare': '=='
+                })
+            )
 
         return { 'updated': len(update_result) }
 
