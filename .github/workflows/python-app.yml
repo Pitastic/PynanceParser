@@ -15,7 +15,7 @@ permissions:
 
 jobs:
 
-  PyTest:
+  PyTest_TinyDB:
 
     runs-on: ubuntu-latest
 
@@ -49,7 +49,72 @@ jobs:
 
         all_tests=$(expr ${test_passed} + ${test_failed})
 
-        echo "### Results" >> $GITHUB_STEP_SUMMARY
+        echo "### Results (with TinyDB)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| :checkered_flag: | :arrow_right_hook: | :x: |" >> $GITHUB_STEP_SUMMARY
+        echo "| ------------- | ------------- | ------------- |" >> $GITHUB_STEP_SUMMARY
+        echo "| $test_passed  | $test_skipped  | $test_failed  |" >> $GITHUB_STEP_SUMMARY
+
+        echo "$test_output"
+        if [[ $exitcode != 0 ]]; then
+          exit $exitcode
+        fi
+        exit 0
+
+  PyTest_MongoDB:
+
+    runs-on: ubuntu-latest
+
+    services:
+      mongodb:
+        image: mongo:8.2.4
+        env:
+          MONGO_INITDB_ROOT_USERNAME: testuser
+          MONGO_INITDB_ROOT_PASSWORD: testpassword
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd mongo
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.12"
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest
+        pip install -r requirements.txt
+        pip install -r tests/requirements.txt
+    - name: Adjust Config
+      run: |
+        sed -i -E s"|(DATABASE_BACKEND = )('tiny').*$|\1'mongo'|" tests/config.py
+        sed -i -E s"|(DATABASE_URI = )('/tmp').*$|\1'mongodb://testuser:testpassword@localhost:27017'|" tests/config.py
+        sed -i -E s"|(DATABASE_NAME = )('testdata.json').*$|\1'testdata'|" tests/config.py
+    - name: Test with pytest
+      run: |
+        set +e
+
+        test_output="$(PYTHONPATH=. pytest -rN)"
+        exitcode=$?
+          
+        test_failed=$(sed -n '$s/^=*\s*\([0-9]*\)\sfailed.*/\1/p' <<< "$test_output" |tail -n1)
+        if [[ -z $test_failed ]]; then test_failed=0 ; fi
+        
+        test_passed=$(sed -n -E 's|^=*\s([0-9]+\sfailed,\s)?(([0-9]*)\spassed,\s)?.*|\3|p' <<< "$test_output" | tail -n1)
+        if [[ -z $test_passed ]]; then test_passed=0 ; fi
+
+        test_skipped=$(tail -n1 <<< "$test_output" | rev |sed -E 's|^(.*deppiks\s([0-9]*))?.*|\2|')
+        if [[ -z $test_skipped ]]; then echo test_skipped=0 ; fi
+
+        all_tests=$(expr ${test_passed} + ${test_failed})
+
+        echo "### Results (with MongoDB)" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "| :checkered_flag: | :arrow_right_hook: | :x: |" >> $GITHUB_STEP_SUMMARY
         echo "| ------------- | ------------- | ------------- |" >> $GITHUB_STEP_SUMMARY
