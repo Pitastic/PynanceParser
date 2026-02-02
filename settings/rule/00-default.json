@@ -39,7 +39,7 @@
         "tags": ["Lebensmittel"],
         "filter": [{
             "key": "text_tx",
-            "value": "((?<!BY\\s)EDEKA|REWE.*SAGT\\sDANKE|Penny|Aldi|Kaufland|netto)",
+            "value": "((?<!BY\\s)EDEKA|Wucherpfennig|REWE.*SAGT\\sDANKE|Penny|Aldi|Kaufland|netto)",
             "compare": "regex"
         }]
     },
