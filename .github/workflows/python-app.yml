@@ -81,14 +81,13 @@ jobs:
         pip install pytest
         pip install -r requirements.txt
         pip install -r tests/requirements.txt
-    - name: Adjust Config
-      run: |
-        sed -i -E s"|(DATABASE_BACKEND = )('tiny').*$|\1'mongo'|" tests/config.py
-        sed -i -E s"|(DATABASE_URI = )('/tmp').*$|\1'mongodb://testuser:testpassword@localhost:27017'|" tests/config.py
-        sed -i -E s"|(DATABASE_NAME = )('testdata.json').*$|\1'testdata'|" tests/config.py
     - name: Test with pytest
       run: |
         set +e
+
+        sed -i -E s"|(DATABASE_BACKEND = )('tiny').*$|\1'mongo'|m" tests/config.py
+        sed -i -E s"|(DATABASE_URI = )('/tmp.*').*$|\1'mongodb://testuser:testpassword@localhost:27017'|" tests/config.py
+        sed -i -E s"|(DATABASE_NAME = )('testdata.json').*$|\1'testdata'|m" tests/config.py
 
         test_output="$(PYTHONPATH=. pytest -rN)"
         exitcode=$?
