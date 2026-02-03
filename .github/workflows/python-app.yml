@@ -64,12 +64,11 @@ jobs:
           MONGO_INITDB_ROOT_PASSWORD: testpassword
         ports:
           - 27017:27017
-        healthcheck:
-          test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
-          interval: 10s
-          timeout: 10s
-          retries: 5
-          start_period: 40s
+        options: >-
+          --health-cmd echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+          --health-interval 20s
+          --health-timeout 5s
+          --health-retries 5
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python 3.12
