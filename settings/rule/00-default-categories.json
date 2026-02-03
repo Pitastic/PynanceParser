@@ -1,0 +1,26 @@
+[
+    {
+        "metatype": "category",
+        "name": "Lebensmittel",
+        "category": "Lebensmittel",
+        "filter": [{
+            "key": "tags",
+            "value": ["Supermarkt", "Drogerie", "Apotheke", "Bäcker"],
+            "compare": "in"
+        }]
+    },
+    {
+        "metatype": "category",
+        "name": "Abgaben",
+        "category": "Öffentliche Ausgaben",
+        "multi": "OR",
+        "filter": [{
+            "key": "tags",
+            "value": ["Stadt", "Steuer"],
+            "compare": "in"
+        }],
+        "parsed": {
+            "Gläubiger-ID": "DE7000100000077777"
+        }
+    }
+]

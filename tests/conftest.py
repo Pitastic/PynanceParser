@@ -33,7 +33,7 @@ def test_app():
     with app.app_context():
         yield app
 
-    shutil.rmtree("/tmp/pynance-test", ignore_errors=True)
+    #shutil.rmtree("/tmp/pynance-test", ignore_errors=True)
 
 @pytest.fixture(scope="module")
 def mocked_db():

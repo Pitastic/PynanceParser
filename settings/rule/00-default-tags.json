@@ -1,29 +1,5 @@
 [
     {
-        "metatype": "category",
-        "name": "Lebensmittel",
-        "category": "Lebensmittel und Haushalt",
-        "filter": [{
-            "key": "tags",
-            "value": ["Supermarkt", "Drogerie", "Apotheke"],
-            "compare": "in"
-        }]
-    },
-    {
-        "metatype": "category",
-        "name": "Abgaben",
-        "category": "Öffentliche Ausgaben",
-        "multi": "OR",
-        "filter": [{
-            "key": "tags",
-            "value": ["Stadt", "Steuer"],
-            "compare": "in"
-        }],
-        "parsed": {
-            "Gläubiger-ID": "DE7000100000077777"
-        }
-    },
-    {
         "metatype": "rule",
         "name": "City Tax",
         "tags": ["Stadt"],
@@ -49,7 +25,17 @@
         "tags": ["Bäcker"],
         "filter": [{
             "key": "text_tx",
-            "value": "(SCHAEFERS\\sBY\\sEDEKA|MEISTERBAECKEREI|BAECKER\\sGOEING|Bäckerei|Baeckerei )",
+            "value": "(SCHAEFERS\\sBY\\sEDEKA|MEISTERBAECKEREI|BAECKER\\sGOEING|Bäckerei|Baeckerei)",
+            "compare": "regex"
+        }]
+    },
+    {
+        "metatype": "rule",
+        "name": "OnlinePayment",
+        "tags": ["online"],
+        "filter": [{
+            "key": "text_tx",
+            "value": "()",
             "compare": "regex"
         }]
     }
