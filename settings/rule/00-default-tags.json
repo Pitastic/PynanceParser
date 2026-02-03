@@ -35,7 +35,7 @@
         "tags": ["online"],
         "filter": [{
             "key": "text_tx",
-            "value": "()",
+            "value": "(Ayden)",
             "compare": "regex"
         }]
     }
