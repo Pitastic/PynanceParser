@@ -270,6 +270,28 @@ def test_get_tx(test_app):
                 "Der Inhalt der Testtransaktion wurde nicht wie erwartet selektiert"
 
 
+def test_add_and_get_group(test_app):
+    """
+    Testet das Hinzufügen einer Gruppe in der Instanz.
+    """
+    with test_app.app_context():
+
+        result = test_app.host.db_handler.add_iban_group("testgroup", ["DE89370400440532013000"])
+        assert result == {'inserted': 1}, 'Die Gruppe wurde nicht hinzugefügt.'
+
+        # No Doublettes
+        result = test_app.host.db_handler.add_iban_group("testgroup",
+                                    ["DE89370400440532013000", "DE89370400440532011111"])
+        assert result == {'inserted': 1}, \
+            'Die Gruppe wurde nicht geupdated.'
+
+        result = test_app.host.db_handler.get_group_ibans("testgroup")
+        assert isinstance(result, list), 'Die IBANs wurden nicht als Liste zurückgegeben.'
+        assert len(result) == 2, 'Die Gruppe enthält nicht die erwartete Anzahl an IBANs.'
+        assert "DE89370400440532013000" in result, 'Die erste IBAN wurde nicht zurückgegeben.'
+        assert 'DE89370400440532011111' in result, 'Die zweite IBAN wurde nicht zurückgegeben.'
+
+
 def test_tag_stored_rules(test_app):
     """Testet das Tagging über den API Endpunkt:
     - Tagging mit einer definierten Regel
@@ -375,8 +397,8 @@ def test_tag_custom_rules(test_app):
                 'rule_name': 'ui_selected_custom',
                 'rule': {
                     'tags': ['Supermarkt'],
-                    'filters': [
-                        {'key':'text_tx', 'value': r'EDEKA', 'compare': 'regex'}
+                    'filter': [
+                        {'key':'text_tx', 'value': 'EDEKA', 'compare': 'regex'}
                     ]
                 }
             }
@@ -530,6 +552,19 @@ def test_tag_manual(test_app):
             tags = r.get('tags')
             assert tags == ['Replaced_TAG'], \
                 "Es wurden falsche Tags gespeichert"
+
+            # Check Tagging within a Group
+            new_tag = {
+                'tags': ['Tagged in Group'],
+                'overwrite': True
+            }
+            r = client.put(
+                "/api/setManualTag/testgroup/786e1d4e16832aa321a0176c854fe087",
+                json=new_tag
+            )
+            r = r.json
+            assert r.get('updated') == 1, \
+                "Der Eintrag (in der Gruppe) wurde nicht erneut aktualisiert"
 
 
 def test_categorize_manual(test_app):

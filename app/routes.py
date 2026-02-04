@@ -446,7 +446,6 @@ class Routes:
                 Returns:
                     json: Informationen zur Datei und Ergebnis der Untersuchung.
                 """
-                print(request.files)
                 input_file = request.files.get('settings-input')
                 if not input_file:
                     return {'error': 'Es wurde keine Datei übermittelt.'}, 400
