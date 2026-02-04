@@ -112,7 +112,7 @@ class MongoDbHandler(BaseDb):
         except pymongo.errors.BulkWriteError:
             return {'inserted': 0}
 
-    def update(self, data, collection, condition=None, multi='AND', merge=True):
+    def _update(self, data, collection, condition=None, multi='AND', merge=True):
         """
         Aktualisiert Datensätze in der Datenbank, die die angegebene Bedingung erfüllen.
 
@@ -161,7 +161,7 @@ class MongoDbHandler(BaseDb):
         update_result = collection.update_many(query, update_op)
         return {'updated': update_result.modified_count}
 
-    def delete(self, collection, condition=None, multi='AND'):
+    def _delete(self, collection, condition=None, multi='AND'):
         """
         Löscht Datensätze in der Datenbank, die die angegebene Bedingung erfüllen.
 

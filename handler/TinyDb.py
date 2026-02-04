@@ -149,7 +149,7 @@ class TinyDbHandler(BaseDb):
         result = self.connection.table(collection).insert(data)
         return {'inserted': (1 if result else 0)}
 
-    def update(self, data, collection, condition=None, multi='AND', merge=True):
+    def _update(self, data, collection, condition=None, multi='AND', merge=True):
         """
         Aktualisiert Datensätze in der Datenbank, die die angegebene Bedingung erfüllen.
 
@@ -177,6 +177,8 @@ class TinyDbHandler(BaseDb):
             # No match, no update
             return { 'updated': 0 }
 
+        collection = self.connection.table(collection)
+
         # care about the right format
         if data.get('tags') is not None and not isinstance(data.get('tags'), list):
             data['tags'] = [data.get('tags')]
@@ -195,23 +197,14 @@ class TinyDbHandler(BaseDb):
         else:
             query = self._form_complete_query(condition, multi)
 
-        if not merge and self.check_collection_is_iban(collection):
+        if not merge:
             # Update all at once (no merging)
-            collection = self.connection.table(collection)
             update_result += collection.update(data, query)
             return { 'updated': len(update_result) }
-
-        if not merge and not self.check_collection_is_iban(collection):
-            # Update all at once (no merging) but loop ibans in group
-            for c in self.get_group_ibans(collection):
-                collection = self.connection.table(c)
-                update_result += collection.update(data, query)
-                return { 'updated': len(update_result) }
 
         # Update every Entry one-by-one (merge every list item)
         for doc in docs_to_update:
 
-            collection = self.connection.table(doc.get('iban'))
 
             # Look for lists to merge with this entry
             for d in data.keys():
@@ -232,7 +225,7 @@ class TinyDbHandler(BaseDb):
 
         return { 'updated': len(update_result) }
 
-    def delete(self, collection, condition=None, multi='AND'):
+    def _delete(self, collection, condition=None, multi='AND'):
         """
         Löscht Datensätze in der Datenbank, die die angegebene Bedingung erfüllen.
 
