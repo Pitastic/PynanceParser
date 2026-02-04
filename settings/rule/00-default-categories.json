@@ -13,7 +13,7 @@
         "metatype": "category",
         "name": "Abgaben",
         "category": "Abgaben",
-        "multi": "OR",
+        "multi": "AND",
         "filter": [{
             "key": "tags",
             "value": ["Stadt", "Steuer"],
