@@ -553,7 +553,7 @@ class Routes:
                         iban,
                         category=custom_rule.get('category'),
                         tags=custom_rule.get('tags'),
-                        filters=custom_rule.get('filters'),
+                        filters=custom_rule.get('filter'),
                         parsed_keys=list(custom_rule.get('parsed', {}).keys()),
                         parsed_vals=list(custom_rule.get('parsed', {}).values()),
                         multi=custom_rule.get('multi', 'AND'),

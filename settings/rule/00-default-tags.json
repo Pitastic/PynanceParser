@@ -15,7 +15,7 @@
         "tags": ["Lebensmittel"],
         "filter": [{
             "key": "text_tx",
-            "value": "((?<!BY\\s)EDEKA|Wucherpfennig|REWE.*SAGT\\sDANKE|ALDI.*SAGT\\sDANKE)",
+            "value": "((?<!BY\\s)EDEKA|Wucherpfennig|REWE.*SAGT\\sDANKE|ALDI.*SAGT\\sDANKE|^Kaufland)",
             "compare": "regex"
         }]
     },
@@ -47,6 +47,22 @@
             "key": "text_tx",
             "value": "([Aa]potheke|APOTHEKE)",
             "compare": "regex"
+        }]
+    },
+    {
+        "metatype": "rule",
+        "name": "Kredite und Zinsen",
+        "tags": ["Kredit"],
+        "multi": "AND",
+        "filter": [{
+            "key": "text_tx",
+            "value": "(Sollzins|Überziehungszins|Tilgung)",
+            "compare": "regex"
+        },
+        {
+            "key": "amount",
+            "value": 0,
+            "compare": "<"
         }]
     }
 ]
