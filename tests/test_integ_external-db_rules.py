@@ -60,7 +60,8 @@ def test_rules_with_custom_input(test_app):
                 tx_id = tx.get('uuid')
 
                 if tx_id not in EXPECTED_RESULTS:
-                    print(f"Skipping tx_id {tx_id} as it is not in EXPECTED_RESULTS")
+                    print(f"Skipping tx_id {tx_id} as it is not in EXPECTED_RESULTS "
+                          f"({tx.get('date_tx')}: {tx.get('text_tx')})")
                     continue
 
                 # Check the right tags

@@ -12,15 +12,39 @@
     {
         "metatype": "category",
         "name": "Abgaben",
-        "category": "Öffentliche Ausgaben",
+        "category": "Abgaben",
         "multi": "OR",
         "filter": [{
             "key": "tags",
             "value": ["Stadt", "Steuer"],
             "compare": "in"
+        },{
+            "key": "tags",
+            "value": ["Betreuung", "Bildung", "Verkehr"],
+            "compare": "notin"
         }],
         "parsed": {
             "Gläubiger-ID": "DE7000100000077777"
         }
+    },
+    {
+        "metatype": "category",
+        "name": "Fixkosten",
+        "category": "Fixkosten",
+        "filter": [{
+            "key": "tags",
+            "value": ["Strom", "Wasser", "Gas", "Versicherung", "Kommunikation", "Miete", "Kredite"],
+            "compare": "in"
+        }]
+    },
+    {
+        "metatype": "category",
+        "name": "Fortbewegung",
+        "category": "Fortbewegung",
+        "filter": [{
+            "key": "tags",
+            "value": ["Tanken", "Auto", "ÖPNV"],
+            "compare": "in"
+        }]
     }
 ]

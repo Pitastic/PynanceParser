@@ -15,7 +15,7 @@
         "tags": ["Lebensmittel"],
         "filter": [{
             "key": "text_tx",
-            "value": "((?<!BY\\s)EDEKA|Wucherpfennig|REWE.*SAGT\\sDANKE|Penny|Aldi|Kaufland|netto)",
+            "value": "((?<!BY\\s)EDEKA|Wucherpfennig|REWE.*SAGT\\sDANKE|ALDI.*SAGT\\sDANKE)",
             "compare": "regex"
         }]
     },
@@ -35,7 +35,17 @@
         "tags": ["online"],
         "filter": [{
             "key": "text_tx",
-            "value": "(Ayden)",
+            "value": "(PayPal\\s\\(?Europe\\)?\\sS\\.a\\.r\\.l\\.|Adyen\\sN\\.V\\.|WORLDPAY\\sLIMITED)",
+            "compare": "regex"
+        }]
+    },
+    {
+        "metatype": "rule",
+        "name": "Apotheken",
+        "tags": ["Apotheke"],
+        "filter": [{
+            "key": "text_tx",
+            "value": "([Aa]potheke|APOTHEKE)",
             "compare": "regex"
         }]
     }
