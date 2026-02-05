@@ -135,27 +135,41 @@ class MongoDbHandler(BaseDb):
                 - updated, int: Anzahl der aktualisierten Datensätze
         """
         collection = self.connection[collection]
+        if collection is None:
+            logging.error(f"Collection {collection} not found for update!")
+            return {'updated': 0}
 
         # Form condition into a query
         query = self._form_complete_query(condition, multi)
 
-        # Handle Tag-Lists
-        new_tags = data.get('tags')
-        if new_tags and merge:
-            # care about the right format
-            if not isinstance(new_tags, list):
-                data['tags'] = [new_tags]
+        # care about the right format
+        if not isinstance(data.get('tags', []), list):
+            data['tags'] = [data['tags']]
 
-            # Clean $set data from tags
-            del data['tags']
+        # Form condition into a query
+        if condition is None and merge:
+            logging.error('Using "merge" without a query is not possible')
+            return { 'error': 'Using "merge" without a query is not possible', 'updated': 0 }
 
-            # Define Operation
-            update_op = {
-                '$set': data,
-                '$addToSet': {'tags': {'$each': new_tags}}
-            }
+        if merge:
+            # Care about lists and merge with special command
+            unmerged_data = {}
+            add_to_set = {}
+            for d in data.keys():
+
+                if isinstance(data[d], list):
+                    add_to_set[d] = {'$each': data[d]}
+                    continue
+
+                unmerged_data[d] = data[d]
+
+            # Set all list keys to operation (or not if none)
+            update_op = {'$set': unmerged_data}
+            if add_to_set:
+                update_op['$addToSet'] = add_to_set
 
         else:
+            # No special handling
             update_op = {'$set': data}
 
         update_result = collection.update_many(query, update_op)

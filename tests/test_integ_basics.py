@@ -555,11 +555,11 @@ def test_tag_manual(test_app):
 
             # Check Tagging within a Group
             new_tag = {
-                'tags': ['Tagged in Group'],
+                'tags': ['Group-Tag'],
                 'overwrite': True
             }
             r = client.put(
-                "/api/setManualTag/testgroup/786e1d4e16832aa321a0176c854fe087",
+                "/api/setManualTag/testgroup/cf1fb4e6c131570e4f3b2ac857dead40",
                 json=new_tag
             )
             r = r.json
