@@ -139,7 +139,7 @@ class UserInterface():
         # Filter for Tags
         tag_filter = get_args.get('tags')
         if tag_filter is not None:
-            tag_filter = [t.strip() for t in tag_filter.split(',')]
+            tag_filter = [t.strip() for t in tag_filter.split(',') if t]
             condition.append({
                 'key': 'tags',
                 'value': tag_filter,

@@ -15,7 +15,7 @@
         "tags": ["Lebensmittel"],
         "filter": [{
             "key": "text_tx",
-            "value": "((?<!BY\\s)EDEKA|Wucherpfennig|REWE.*SAGT\\sDANKE|ALDI.*SAGT\\sDANKE|^Kaufland)",
+            "value": "((?<!BY\\s)EDEKA|Wucherpfennig|REWE.*SAGT\\sDANKE|ALDI.*SAGT\\sDANKE|^Kaufland|LIDL\\sSAGT\\sDANKE)",
             "compare": "regex"
         }]
     },

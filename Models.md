@@ -157,6 +157,7 @@ Dabei haben die Operatoren folgende Bedeutung:
 - `in`: Mindestens ein Wert der Vergleichsliste muss in dem Listenwert aus der Datenbank vorkommen.
 - `all`: Alle Werte der Vergleichsliste müssen in dem Listenwert aus der Datenbank vorkommen.
 - `notin`: Kein Wert der Vergleichsliste darf in dem Listenwert aus der Datenbank vorkommen.
+- `exact` : Alle Werte der Vergleichsliste und keine anderen müssen in dem Listenwert aus der Datenbank vorkommen (unabhängig von der Reihenfolge).
 - `regex`: Regex String, der auf den Buchungstext angewendet werden soll. Ein Teil-Treffer des RegExes wird als Treffer gewertet.
 
 #### .tags, list (nur bei metatype: `rule`)

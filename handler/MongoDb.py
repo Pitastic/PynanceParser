@@ -299,6 +299,8 @@ class MongoDbHandler(BaseDb):
             stmt = {'$nin': condition.get('value')}
         if condition_method == 'all':
             stmt = {'$all': condition.get('value')}
+        if condition_method == 'exact':
+            stmt = {'$all': condition.get('value'), '$size': len(condition.get('value'))}
 
         # Nested or Plain Key
         condition_key = condition.get('key')

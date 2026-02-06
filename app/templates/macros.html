@@ -19,7 +19,7 @@
             {{ transaction.date_tx | ctime }}
             <small class="secondary">({{ transaction.valuta | ctime }})</small>
         </td>
-        <td>{{ transaction.text_tx[:90] }}{% if transaction.text_tx|length > 60 %} ...{%endif%}</td>
+        <td>{{ transaction.text_tx[:90] }}{% if transaction.text_tx|length > 90 %} ...{%endif%}</td>
         <td>
             {% if transaction.category %}
             <a class="tag-chip category {{generate_class(transaction.category)}}" href="?category={{transaction.category}}" data-tooltip="Add Filter">
@@ -123,6 +123,7 @@
                     <option value="in" {{"selected" if filters.tag_mode and filters.tag_mode == 'in'}}>eines davon</option>
                     <option value="all" {{"selected" if filters.tag_mode and filters.tag_mode == 'all'}}>alle davon</option>
                     <option value="notin" {{"selected" if filters.tag_mode and filters.tag_mode == 'notin'}}>keine davon</option>
+                    <option value="exact" {{"selected" if filters.tag_mode and filters.tag_mode == 'exact'}}>genau diese Tags</option>
                 </select>
             </div>
         </label>

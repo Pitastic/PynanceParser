@@ -354,6 +354,8 @@ class TinyDbHandler(BaseDb):
             where_statement = where_statement.test(self._none_of_test, condition_val)
         if condition_method == 'all':
             where_statement = where_statement.all(condition_val)
+        if condition_method == 'exact':
+            where_statement = where_statement.test(self._same_elements, condition_val)
 
         # Standard Query
         try:
@@ -451,6 +453,10 @@ class TinyDbHandler(BaseDb):
     def _none_of_test(self, value, forbidden_values):
         """Benutzerdefinierter Test: Keines der Elemente ist in einer Liste vorhanden"""
         return not any(item in forbidden_values for item in value)
+
+    def _same_elements(self, value, given_values):
+        """Benutzerdefinierter Test: Alle Elemente der Listen sind gleich"""
+        return set(value) == set(given_values)
 
     def _get_collections(self):
         """
