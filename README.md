@@ -119,6 +119,12 @@ Daher sollte man beachten:
 
 In diesem Repository werden nur Basis-Regeln mitgeliefert, da speziellere und genauere Regeln sehr individuell auf einzelne Personen zugeschnitten sind. So schreibt zum Beispiel eine Versicherung die Versichertennummer mit in die Abbuchungen, was einen sehr guten Tagging-Indikator darstellt, jedoch nur für einen speziellen Nutzer dieses Programms. Das schreiben eigener Regeln ist daher unumgänglich, um bessere Ergebnisse zu erzielen.
 
+### Wahl der Datenbankengine
+
+TinyDB sollte nur bei kleinen Instanzen mit einzelnen Benutzern gewählt werden. Ein paralleler Zugriff ist mit PynanceParser zwar möglich, allerdings sinkt die Performance und die Fehleranfälligkeit steigt mit der Anzahl der Requests und der Anzahl der Einträge in der Datenbank. Insbesondere bei I/O-schwacher Hardware (z.B. Raspberry mit SD Karte) kann es schnell zum Crash des Servers kommen.
+
+Für die produktive Nutzung wird MongoDB daher empfohlen!
+
 ## Anpassungen / Contribution
 
 **You're Welcome !** :tada:

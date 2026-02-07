@@ -160,8 +160,8 @@ class BaseDb():
         """
         raise NotImplementedError()
 
-    def update(self, data: dict, collection: str, condition: dict|list[dict],
-               multi:str, merge:bool=True):
+    def update(self, data: dict, collection: str, condition: dict|list[dict]=None,
+               multi:str='AND', merge:bool=True):
         """
         Aktualisiert Datensätze in der Datenbank, die die angegebene Bedingung erfüllen.
 
@@ -184,9 +184,29 @@ class BaseDb():
             dict:
                 - updated, int: Anzahl der aktualisierten Datensätze
         """
+        if self.check_collection_is_iban(collection):
+            # Directly update IBAN collection
+            return self._update(data, collection, condition, multi, merge)
+
+        # Update all IBANs in group
+        update_result = 0
+        for iban in self.get_group_ibans(collection):
+            update_result += self._update(data, iban, condition, multi, merge).get('updated', 0)
+
+        return {'updated': update_result}
+
+    def _update(self, data: dict, collection: str, condition: dict|list[dict],
+               multi:str, merge:bool=True):
+        """
+        Private Methode zum Aktualisieren von Datensätzen in der Datenbank,
+        Siehe 'update' Methode.
+        Returns:
+            dict:
+                - updated, int: Anzahl der aktualisierten Datensätze
+        """
         raise NotImplementedError()
 
-    def delete(self, collection: str, condition: dict | list[dict]):
+    def delete(self, collection: str, condition: dict | list[dict]=None, multi: str='AND'):
         """
         Löscht Datensätze in der Datenbank, die die angegebene Bedingung erfüllen.
 
@@ -201,6 +221,26 @@ class BaseDb():
                     - 'regex'   : value wird als RegEx behandelt
             multi (str) : ['AND' | 'OR'] Wenn 'condition' eine Liste mit conditions ist,
                           werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
+        Returns:
+            dict:
+                - deleted, int: Anzahl der gelöschten Datensätze
+        """
+        if self.check_collection_is_iban(collection):
+            # Directly update IBAN collection
+            return self._delete(collection, condition, multi)
+
+        # Update all IBANs in group
+        update_result = 0
+        for iban in self.get_group_ibans(collection):
+            update_result += self._delete(iban, condition, multi).get('deleted', 0)
+
+        return {'deleted': update_result}
+
+    def _delete(self, collection: str, condition: dict | list[dict], multi: str):
+        """
+        Private Methode zum Löschen von Datensätzen in der Datenbank,
+        die die angegebene Bedingung erfüllen. Siehe 'delete' Methode.
+
         Returns:
             dict:
                 - deleted, int: Anzahl der gelöschten Datensätze
@@ -324,6 +364,7 @@ class BaseDb():
         """
         all_collections = self._get_collections()
         ibans = [col for col in all_collections if self.check_collection_is_iban(col)]
+        ibans.sort()
         return ibans
 
     def list_groups(self):
@@ -346,6 +387,7 @@ class BaseDb():
         for group in meta_results:
             groups.append(group.get('groupname'))
 
+        groups.sort()
         return groups
 
     def _get_collections(self):

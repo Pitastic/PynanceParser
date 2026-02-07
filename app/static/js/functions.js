@@ -64,10 +64,10 @@ function getFilteredList() {
 	}
 
 	const tags = document.getElementById('filter-tag-result').value;
-	if (tags) {
+	const tag_mode = document.getElementById('filter-tag-mode').value;
+	if (tags || tag_mode == 'exact') {
 		query_args = query_args + arg_concat + 'tags=' + tags;
 		arg_concat = '&';
-		const tag_mode = document.getElementById('filter-tag-mode').value;
 		if (tag_mode) {
 			query_args = query_args + arg_concat + 'tag_mode=' + tag_mode;
 			arg_concat = '&';

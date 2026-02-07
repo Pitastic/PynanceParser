@@ -2,7 +2,6 @@
 """Datenbankhandler für die Interaktion mit einer TinyDB Datenbankdatei."""
 
 import os
-import copy
 import operator
 import logging
 import re
@@ -150,7 +149,7 @@ class TinyDbHandler(BaseDb):
         result = self.connection.table(collection).insert(data)
         return {'inserted': (1 if result else 0)}
 
-    def update(self, data, collection, condition=None, multi='AND', merge=True):
+    def _update(self, data, collection, condition=None, multi='AND', merge=True):
         """
         Aktualisiert Datensätze in der Datenbank, die die angegebene Bedingung erfüllen.
 
@@ -172,46 +171,61 @@ class TinyDbHandler(BaseDb):
             dict:
                 - updated, int: Anzahl der aktualisierten Datensätze
         """
-        # Form condition into a query and run
-        if condition is None:
+        # run update
+        docs_to_update = self.select(collection, condition, multi)
+        if not docs_to_update:
+            # No match, no update
+            return { 'updated': 0 }
+
+        collection = self.connection.table(collection)
+
+        # care about the right format
+        if data.get('tags') is not None and not isinstance(data.get('tags'), list):
+            data['tags'] = [data.get('tags')]
+
+        # Result store for updated uuids
+        update_result = []
+
+        # Form condition into a query
+        if condition is None and merge:
+            logging.error('Using "merge" without a query is not possible')
+            return { 'error': 'Using "merge" without a query is not possible', 'updated': 0 }
+
+        elif condition is None:
             query = Query().noop()
 
         else:
             query = self._form_complete_query(condition, multi)
 
-        # run update
-        new_tags = data.get('tags')
-        if new_tags and merge:
+        if not merge:
+            # Update all at once (no merging)
+            update_result += collection.update(data, query)
+            return { 'updated': len(update_result) }
 
-            docs_to_update = self.select(collection, condition, multi)
-            if not docs_to_update:
-                # No match, no update
-                return { 'updated': 0 }
+        # Update every Entry one-by-one (merge every list item)
+        for doc in docs_to_update:
 
-            # Special handling with list to update (select - edit - store)
-            collection = self.connection.table(collection)
-            update_data = {}
-            update_result = []
 
-            # care about the right format
-            if not isinstance(new_tags, list):
-                data['tags'] = [new_tags]
+            # Look for lists to merge with this entry
+            for d in data.keys():
 
-            # Merge DB docs and update data and write it back to DB
-            for doc in docs_to_update:
-                existing_tags = doc.get('tags') or []
-                update_data = copy.deepcopy(data)
-                update_data['tags'] = list(set(existing_tags + new_tags))
-                update_result += collection.update(update_data, query)
+                if isinstance(doc.get(d), list) and merge:
+                    data[d] = list(set(doc.get(d) + data[d])) 
+                    continue
 
-        else:
-            # Plain function (overwrite existing attributes)
-            collection = self.connection.table(collection)
-            update_result = collection.update(data, query)
+            # Update this uuid
+            update_result += collection.update(
+                data,
+                self._form_complete_query({
+                    'key': 'uuid',
+                    'value': doc.get('uuid'),
+                    'compare': '=='
+                })
+            )
 
         return { 'updated': len(update_result) }
 
-    def delete(self, collection, condition=None, multi='AND'):
+    def _delete(self, collection, condition=None, multi='AND'):
         """
         Löscht Datensätze in der Datenbank, die die angegebene Bedingung erfüllen.
 
@@ -340,6 +354,8 @@ class TinyDbHandler(BaseDb):
             where_statement = where_statement.test(self._none_of_test, condition_val)
         if condition_method == 'all':
             where_statement = where_statement.all(condition_val)
+        if condition_method == 'exact':
+            where_statement = where_statement.test(self._same_elements, condition_val)
 
         # Standard Query
         try:
@@ -437,6 +453,10 @@ class TinyDbHandler(BaseDb):
     def _none_of_test(self, value, forbidden_values):
         """Benutzerdefinierter Test: Keines der Elemente ist in einer Liste vorhanden"""
         return not any(item in forbidden_values for item in value)
+
+    def _same_elements(self, value, given_values):
+        """Benutzerdefinierter Test: Alle Elemente der Listen sind gleich"""
+        return set(value) == set(given_values)
 
     def _get_collections(self):
         """

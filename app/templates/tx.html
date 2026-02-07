@@ -36,10 +36,6 @@
         </thead>
         <tbody>
             <tr>
-                <td>Art:</td>
-                <td>{{tx.art}}</td>
-            </tr>
-            <tr>
                 <td>Datum (Wertstellnug)</td>
                 <td>{{ tx.valuta | ctime }}</td>
             </tr>
@@ -48,8 +44,20 @@
                 <td>{{ tx.date_tx | ctime }}</td>
             </tr>
             <tr>
+                <td>Art:</td>
+                <td>{{tx.art}}</td>
+            </tr>
+            <tr>
+                <td>Konto:</td>
+                <td>{{tx.iban}}</td>
+            </tr>
+            <tr>
+                <td>Gegenkonto:</td>
+                <td>{{tx.gegenkonto}}</td>
+            </tr>
+            <tr>
                 <td>Betrag</td>
-                <td>{{tx.amount}} {{tx.currency}}</td>
+                <td>{{ "%.2f"|format(tx.amount|round(2)) }} {{tx.currency}}</td>
             </tr>
             <tr>
                 <td>Buchungstext</td>

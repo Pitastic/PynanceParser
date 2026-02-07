@@ -160,4 +160,4 @@ cython_debug/
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,python
 
 # Credentials:
-config.conf
+settings/*/0[^0]*.json

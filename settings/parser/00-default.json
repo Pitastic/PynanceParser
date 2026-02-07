@@ -2,7 +2,12 @@
     {
         "name": "Mandatsreferenz",
         "metatype": "parser",
-        "regex": "Mandatsref\\:\\s?([A-z0-9]*)"
+        "regex": "((?<=MREF\\:\\s|Mandatsref\\:\\s)([A-z0-9]*))"
+    },
+    {
+        "name": "End-toEnd-Referenz",
+        "metatype": "parser",
+        "regex": "((?<=EREF\\:\\s|End-to-End-Ref\\.\\:\\s)([A-Za-z0-9\\-\\s])+\\b(?!\\b:))"
     },
     {
         "name": "Gläubiger-ID",
