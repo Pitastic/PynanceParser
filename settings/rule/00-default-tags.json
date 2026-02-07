@@ -15,7 +15,7 @@
         "tags": ["Lebensmittel"],
         "filter": [{
             "key": "text_tx",
-            "value": "((?<!BY\\s)EDEKA|Wucherpfennig|REWE.*SAGT\\sDANKE|ALDI.*SAGT\\sDANKE|^Kaufland|LIDL\\sSAGT\\sDANKE)",
+            "value": "((?<!BY\\s)EDEKA|Wucherpfennig|REWE.*SAGT\\sDANKE|ALDI.*SAGT\\sDANKE|^Kaufland|LIDL\\sSAGT\\sDANKE|(^|\\W)(Lidl|LIDL)\\W)",
             "compare": "regex"
         }]
     },
@@ -35,17 +35,17 @@
         "tags": ["online"],
         "filter": [{
             "key": "text_tx",
-            "value": "(PayPal\\s\\(?Europe\\)?\\sS\\.a\\.r\\.l\\.|Adyen\\sN\\.V\\.|WORLDPAY\\sLIMITED)",
+            "value": "(PayPal\\s?\\(?Europe\\)?\\sS\\.a\\.r\\.l\\.|WORLDPAY\\sLIMITED|AMAZON\\s(PAYMENTS|MEDIA|.*S\\WA\\WR\\WL\\W))",
             "compare": "regex"
         }]
     },
     {
         "metatype": "rule",
-        "name": "Apotheken",
-        "tags": ["Apotheke"],
+        "name": "Apotheken und Drogerien",
+        "tags": ["Apotheke/Drogerie"],
         "filter": [{
             "key": "text_tx",
-            "value": "([Aa]potheke|APOTHEKE)",
+            "value": "([Aa]potheke|APOTHEKE|DROGERIEMARKT|ROSSMANN)",
             "compare": "regex"
         }]
     },
@@ -63,6 +63,16 @@
             "key": "amount",
             "value": 0,
             "compare": "<"
+        }]
+    },
+    {
+        "metatype": "rule",
+        "name": "Auto Service/Tanken",
+        "tags": ["Auto"],
+        "filter": [{
+            "key": "text_tx",
+            "value": "((^|\\W)ARAL\\s|(^|\\W)ESSO\\s|(^|\\W)SHELL\\s|(^|\\W)Shell\\s|AUTOHAUS|AUTOSERVICE|TANKSTELLE|(^|\\W)TANKEN\\W)",
+            "compare": "regex"
         }]
     }
 ]

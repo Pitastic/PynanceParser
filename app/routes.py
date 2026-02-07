@@ -101,6 +101,7 @@ class Routes:
                 ibans = parent.db_handler.list_ibans()
                 groups = parent.db_handler.list_groups()
                 meta = parent.db_handler.filter_metadata(condition=None)
+                meta.sort(key=lambda m: (m.get('metatype'), m.get('name')))
                 return render_template('index.html', ibans=ibans, groups=groups, meta=meta)
 
             @current_app.route('/<iban>', methods=['GET'])
@@ -159,6 +160,8 @@ class Routes:
                         if t not in tags:
                             tags.append(t)
 
+                tags.sort()
+
                 # All distinct Categories
                 # (must be filtered on our own because TinyDB doesn't support 'distinct' queries)
                 cats = []
@@ -167,6 +170,8 @@ class Routes:
                     c = row.get('category')
                     if c and c not in cats:
                         cats.append(c)
+
+                cats.sort()
 
                 return render_template('iban.html', transactions=rows[:entries_per_page],
                                        IBAN=iban, tags=tags, categories=cats,

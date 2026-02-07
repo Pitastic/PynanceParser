@@ -364,6 +364,7 @@ class BaseDb():
         """
         all_collections = self._get_collections()
         ibans = [col for col in all_collections if self.check_collection_is_iban(col)]
+        ibans.sort()
         return ibans
 
     def list_groups(self):
@@ -386,6 +387,7 @@ class BaseDb():
         for group in meta_results:
             groups.append(group.get('groupname'))
 
+        groups.sort()
         return groups
 
     def _get_collections(self):
