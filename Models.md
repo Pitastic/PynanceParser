@@ -77,7 +77,7 @@ Frei wählbarer Name der Regel.
 
 #### .regex, r-str
 
-Regex String, der auf den Buchungstext angewendet werden soll. Er muss genau eine Matching-Group enthalten. Der Wert dieses Treffers (der Gruppe) wird als Wert mit dem Namen der Regel in der Transaktion als Ergebnis gespeichert.
+Regex String, der auf den Buchungstext angewendet werden soll. Es wird immer die erste Matching-Group übernommen. Der Wert dieses Treffers (der Gruppe) wird als Wert mit dem Namen der Regel in der Transaktion als Ergebnis gespeichert.
 
 ## Rule Objects
 

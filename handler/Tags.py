@@ -35,7 +35,7 @@ class Tagger():
             for name, regex in parses.items():
                 re_match = regex.search(d['text_tx'])
                 if re_match:
-                    d['parsed'][name] = re_match.group(1)
+                    d['parsed'][name] = re_match.group(1).strip()
 
         return input_data
 
