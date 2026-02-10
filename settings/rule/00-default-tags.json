@@ -74,5 +74,45 @@
             "value": "((^|\\W)ARAL\\s|(^|\\W)ESSO\\s|(^|\\W)SHELL\\s|(^|\\W)Shell\\s|AUTOHAUS|AUTOSERVICE|TANKSTELLE|(^|\\W)TANKEN\\W)",
             "compare": "regex"
         }]
+    },
+    {
+        "metatype": "rule",
+        "name": "Gasverbrauch",
+        "tags": ["Gas"],
+        "filter": [{
+            "key": "text_tx",
+            "value": "(\\sGAS\\sGmbH|Gasversorgung|Gasvertrag|Gasabrechnung|Gasrechnung)",
+            "compare": "regex"
+        }]
+    },
+    {
+        "metatype": "rule",
+        "name": "Wasserverbrauch",
+        "tags": ["Wasser"],
+        "filter": [{
+            "key": "text_tx",
+            "value": "(Wasserwerke|Wasserverband|Wasserbetriebe)",
+            "compare": "regex"
+        }]
+    },
+    {
+        "metatype": "rule",
+        "name": "Stromverbrauch",
+        "tags": ["Strom"],
+        "filter": [{
+            "key": "text_tx",
+            "value": "(Avacon\\sNetz\\sGmbH|EWE\\sNETZ\\sGmbH)",
+            "compare": "regex"
+        }]
+    },
+    {
+        "metatype": "rule",
+        "name": "Telefon/Internet",
+        "tags": ["Kommunikation"],
+        "filter": [{
+            "key": "text_tx",
+            "value": "((Telefonica\\sGermany\\s|htp\\s)GmbH|(Vodafone|Telekom\\sDeutschland\\sGmbH|1&1\\sIonos\\sSE|Deutsche\\sTelekom\\sAG))",
+            "compare": "regex"
+        }]
     }
 ]
