@@ -114,5 +114,25 @@
             "value": "((Telefonica\\sGermany\\s|htp\\s)GmbH|(Vodafone|Telekom\\sDeutschland\\sGmbH|1&1\\sIonos\\sSE|Deutsche\\sTelekom\\sAG))",
             "compare": "regex"
         }]
+    },
+    {
+        "metatype": "rule",
+        "name": "Versicherungen allgemein",
+        "tags": ["Versicherung"],
+        "filter": [{
+            "key": "text_tx",
+            "value": "([Vv]ersicherung|[Vv]ersicherungsvertrag)",
+            "compare": "regex"
+        }]
+    },
+    {
+        "metatype": "rule",
+        "name": "Nahverkerhr/ÖPNV",
+        "tags": ["ÖPNV"],
+        "filter": [{
+            "key": "text_tx",
+            "value": "(Nahverkehr|ÖPNV|Deutsche\\sBahn|[Vv]ekehrsbetriebe)",
+            "compare": "regex"
+        }]
     }
 ]
