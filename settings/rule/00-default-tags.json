@@ -134,5 +134,21 @@
             "value": "(Nahverkehr|ÖPNV|Deutsche\\sBahn|[Vv]ekehrsbetriebe)",
             "compare": "regex"
         }]
+    },
+    {
+        "metatype": "rule",
+        "name": "Bargeldabhebungen",
+        "tags": ["bar"],
+        "multi": "OR",
+        "filter": [{
+            "key": "text_tx",
+            "value": "((BANK|[Bb]ank).*\\sGA\\s[0-9]+)|(^GA\\s(NR)?[0-9]+)",
+            "compare": "regex"
+        },
+        {
+            "key": "art",
+            "value": "^Auszahlung",
+            "compare": "regex"
+        }]
     }
 ]
