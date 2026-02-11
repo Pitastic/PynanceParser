@@ -101,6 +101,7 @@ class Routes:
                 ibans = parent.db_handler.list_ibans()
                 groups = parent.db_handler.list_groups()
                 meta = parent.db_handler.filter_metadata(condition=None)
+                meta.sort(key=lambda m: (m.get('metatype'), m.get('name')))
                 return render_template('index.html', ibans=ibans, groups=groups, meta=meta)
 
             @current_app.route('/<iban>', methods=['GET'])
@@ -159,6 +160,8 @@ class Routes:
                         if t not in tags:
                             tags.append(t)
 
+                tags.sort()
+
                 # All distinct Categories
                 # (must be filtered on our own because TinyDB doesn't support 'distinct' queries)
                 cats = []
@@ -167,6 +170,8 @@ class Routes:
                     c = row.get('category')
                     if c and c not in cats:
                         cats.append(c)
+
+                cats.sort()
 
                 return render_template('iban.html', transactions=rows[:entries_per_page],
                                        IBAN=iban, tags=tags, categories=cats,
@@ -446,7 +451,6 @@ class Routes:
                 Returns:
                     json: Informationen zur Datei und Ergebnis der Untersuchung.
                 """
-                print(request.files)
                 input_file = request.files.get('settings-input')
                 if not input_file:
                     return {'error': 'Es wurde keine Datei übermittelt.'}, 400
@@ -553,7 +557,7 @@ class Routes:
                         iban,
                         category=custom_rule.get('category'),
                         tags=custom_rule.get('tags'),
-                        filters=custom_rule.get('filters'),
+                        filters=custom_rule.get('filter'),
                         parsed_keys=list(custom_rule.get('parsed', {}).keys()),
                         parsed_vals=list(custom_rule.get('parsed', {}).values()),
                         multi=custom_rule.get('multi', 'AND'),

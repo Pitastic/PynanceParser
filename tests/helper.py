@@ -1,7 +1,15 @@
 """Hilfsfunktionen für die Tests"""
 
 import os
+import sys
 import json
+import re
+
+# Add Parent for importing from Modules
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(parent_dir)
+
+from handler.Tags import Tagger
 
 
 def check_transaktion_list(tx_list):
@@ -340,3 +348,28 @@ class MockDatabase:
                 }
             ]
         return []
+
+class MockTaggerParser(Tagger):
+    """
+    Mock Tagger Parser zum Testen der Parser-Regeln
+    """
+
+    def __init__(self, rule_name):
+        """Konstruktor hinterlegt Variablen"""
+        self.rule_name = rule_name
+        super().__init__(MockDatabase())
+
+    def _load_parsers(self):
+        """Lädt eine spezielle Rgel aus der JSON"""
+        json_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            '..', 'settings', 'parser', '00-default.json'
+        )
+        with open(json_path, "r") as f:
+            parser_settings = json.load(f)
+
+        for p in parser_settings:
+            if p.get('name') == self.rule_name:
+                return {p.get('name'): re.compile(p.get('regex'))}
+
+        assert False, f"Parser Regel {self.rule_name} konnte nicht geladen werden"

@@ -1,0 +1,154 @@
+[
+    {
+        "metatype": "rule",
+        "name": "City Tax",
+        "tags": ["Stadt"],
+        "filter": [{
+            "key": "text_tx",
+            "value": "(ABGABEN\\sLT\\.\\sBESCHEID)",
+            "compare": "regex"
+        }]
+    },
+    {
+        "metatype": "rule",
+        "name": "Supermarkets",
+        "tags": ["Lebensmittel"],
+        "filter": [{
+            "key": "text_tx",
+            "value": "((?<!BY\\s)EDEKA|Wucherpfennig|REWE.*SAGT\\sDANKE|ALDI.*SAGT\\sDANKE|^Kaufland|LIDL\\sSAGT\\sDANKE|(^|\\W)(Lidl|LIDL)\\W)",
+            "compare": "regex"
+        }]
+    },
+    {
+        "metatype": "rule",
+        "name": "Baecker",
+        "tags": ["Bäcker"],
+        "filter": [{
+            "key": "text_tx",
+            "value": "(SCHAEFERS\\sBY\\sEDEKA|MEISTERBAECKEREI|BAECKER\\sGOEING|Bäckerei|Baeckerei)",
+            "compare": "regex"
+        }]
+    },
+    {
+        "metatype": "rule",
+        "name": "OnlinePayment",
+        "tags": ["online"],
+        "filter": [{
+            "key": "text_tx",
+            "value": "(PayPal\\s?\\(?Europe\\)?\\sS\\.a\\.r\\.l\\.|WORLDPAY\\sLIMITED|AMAZON\\s(PAYMENTS|MEDIA|.*S\\WA\\WR\\WL\\W))",
+            "compare": "regex"
+        }]
+    },
+    {
+        "metatype": "rule",
+        "name": "Apotheken und Drogerien",
+        "tags": ["Apotheke/Drogerie"],
+        "filter": [{
+            "key": "text_tx",
+            "value": "([Aa]potheke|APOTHEKE|DROGERIEMARKT|ROSSMANN)",
+            "compare": "regex"
+        }]
+    },
+    {
+        "metatype": "rule",
+        "name": "Kredite und Zinsen",
+        "tags": ["Kredit"],
+        "multi": "AND",
+        "filter": [{
+            "key": "text_tx",
+            "value": "(Sollzins|Überziehungszins|Tilgung)",
+            "compare": "regex"
+        },
+        {
+            "key": "amount",
+            "value": 0,
+            "compare": "<"
+        }]
+    },
+    {
+        "metatype": "rule",
+        "name": "Auto Service/Tanken",
+        "tags": ["Auto"],
+        "filter": [{
+            "key": "text_tx",
+            "value": "((^|\\W)ARAL\\s|(^|\\W)ESSO\\s|(^|\\W)SHELL\\s|(^|\\W)Shell\\s|AUTOHAUS|AUTOSERVICE|TANKSTELLE|(^|\\W)TANKEN\\W)",
+            "compare": "regex"
+        }]
+    },
+    {
+        "metatype": "rule",
+        "name": "Gasverbrauch",
+        "tags": ["Gas"],
+        "filter": [{
+            "key": "text_tx",
+            "value": "(\\sGAS\\sGmbH|Gasversorgung|Gasvertrag|Gasabrechnung|Gasrechnung)",
+            "compare": "regex"
+        }]
+    },
+    {
+        "metatype": "rule",
+        "name": "Wasserverbrauch",
+        "tags": ["Wasser"],
+        "filter": [{
+            "key": "text_tx",
+            "value": "(Wasserwerke|Wasserverband|Wasserbetriebe)",
+            "compare": "regex"
+        }]
+    },
+    {
+        "metatype": "rule",
+        "name": "Stromverbrauch",
+        "tags": ["Strom"],
+        "filter": [{
+            "key": "text_tx",
+            "value": "(Avacon\\sNetz\\sGmbH|EWE\\sNETZ\\sGmbH)",
+            "compare": "regex"
+        }]
+    },
+    {
+        "metatype": "rule",
+        "name": "Telefon/Internet",
+        "tags": ["Kommunikation"],
+        "filter": [{
+            "key": "text_tx",
+            "value": "((Telefonica\\sGermany\\s|htp\\s)GmbH|(Vodafone|Telekom\\sDeutschland\\sGmbH|1&1\\sIonos\\sSE|Deutsche\\sTelekom\\sAG))",
+            "compare": "regex"
+        }]
+    },
+    {
+        "metatype": "rule",
+        "name": "Versicherungen allgemein",
+        "tags": ["Versicherung"],
+        "filter": [{
+            "key": "text_tx",
+            "value": "([Vv]ersicherung|[Vv]ersicherungsvertrag)",
+            "compare": "regex"
+        }]
+    },
+    {
+        "metatype": "rule",
+        "name": "Nahverkerhr/ÖPNV",
+        "tags": ["ÖPNV"],
+        "filter": [{
+            "key": "text_tx",
+            "value": "(Nahverkehr|ÖPNV|Deutsche\\sBahn|[Vv]ekehrsbetriebe)",
+            "compare": "regex"
+        }]
+    },
+    {
+        "metatype": "rule",
+        "name": "Bargeldabhebungen",
+        "tags": ["bar"],
+        "multi": "OR",
+        "filter": [{
+            "key": "text_tx",
+            "value": "((BANK|[Bb]ank).*\\sGA\\s[0-9]+)|(^GA\\s(NR)?[0-9]+)",
+            "compare": "regex"
+        },
+        {
+            "key": "art",
+            "value": "^Auszahlung",
+            "compare": "regex"
+        }]
+    }
+]

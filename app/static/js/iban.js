@@ -1,34 +1,15 @@
 "use strict";
 
+const selectAllCheckbox = document.getElementById('select-all');
 let ROW_CHECKBOXES = null;
 let PAGE = 1;
 
 document.addEventListener('DOMContentLoaded', function () {
 
     // enabling/disabling the edit button based on checkbox selection
-    const selectAllCheckbox = document.getElementById('select-all');
     ROW_CHECKBOXES = document.querySelectorAll('.row-checkbox');
-
-    selectAllCheckbox.addEventListener('change', function () {
-        ROW_CHECKBOXES.forEach(checkbox => {
-        checkbox.checked = selectAllCheckbox.checked;
-        });
-        updateEditButtonState();
-        listTxElements();
-    });
-
-    ROW_CHECKBOXES.forEach(checkbox => {
-        checkbox.checked = false;
-        checkbox.addEventListener('change', function () {
-        if (!this.checked) {
-            selectAllCheckbox.checked = false;
-        } else if (Array.from(ROW_CHECKBOXES).every(cb => cb.checked)) {
-            selectAllCheckbox.checked = true;
-        }
-        updateEditButtonState();
-        listTxElements();
-        });
-    });
+    selectAllCheckbox.addEventListener('change', set_all_checkboxes);
+    ROW_CHECKBOXES.forEach(checkbox => set_row_checkboxes(checkbox));
 
     // Tag Chip Bullets
     const inputTagContainers = [
@@ -67,6 +48,35 @@ document.addEventListener('DOMContentLoaded', function () {
 // ----------------------------------------------------------------------------
 // -- DOM Functions -----------------------------------------------------------
 // ----------------------------------------------------------------------------
+
+/**
+ * Set all checkboxes to the state of the headerbox
+ */
+function set_all_checkboxes() {
+    ROW_CHECKBOXES.forEach(checkbox => {
+        checkbox.checked = this.checked;
+    });
+    updateEditButtonState();
+    listTxElements();
+}
+
+/**
+ * Set an eventlistener for every box and change the header when unselected
+ * 
+ * @param {DOMElement} checkbox 
+ */
+function set_row_checkboxes(checkbox){
+    checkbox.checked = false;
+    checkbox.addEventListener('change', function () {
+    if (!this.checked) {
+        selectAllCheckbox.checked = false;
+    } else if (Array.from(ROW_CHECKBOXES).every(cb => cb.checked)) {
+        selectAllCheckbox.checked = true;
+    }
+    updateEditButtonState();
+    listTxElements();
+    });
+}
 
 /**
  * Clears information from a result Box
@@ -384,6 +394,12 @@ function loadMore() {
 
         // Append new Rows
         document.querySelector('.transactions tbody').innerHTML += responseText;
+
+        // enabling/disabling the edit button based on checkbox selection
+        const selectAllCheckbox = document.getElementById('select-all');
+        ROW_CHECKBOXES = document.querySelectorAll('.row-checkbox');
+        selectAllCheckbox.addEventListener('change', set_all_checkboxes);
+        ROW_CHECKBOXES.forEach(checkbox => set_row_checkboxes(checkbox));
     });
 
     // Call URI

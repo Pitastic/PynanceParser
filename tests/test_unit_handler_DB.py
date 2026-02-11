@@ -262,7 +262,7 @@ def test_update(test_app):
 
         # Update all with one field
         data = {'art': 'Überweisung'}
-        updated_db = test_app.host.db_handler.update(data, 'DE89370400440532013000')
+        updated_db = test_app.host.db_handler.update(data, 'DE89370400440532013000', merge=False)
         update_all = updated_db.get('updated')
         assert update_all == 5, \
             f'Es wurde nicht die richtige Anzahl geupdated (update_all): {update_all}'
