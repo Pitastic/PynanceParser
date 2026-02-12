@@ -150,7 +150,7 @@ class Reader(Generic):
                 # 1. There are more lines in the table
                 # 2. Next line belongs to this transaction
                 # 3. First next line is: Gegenkonto
-                prev_line_len = len(row[3])
+                prev_line_len = len(row[2])
                 i, row = next(enumerated_table)
                 if not line['text_tx']:
                     line['peer'] = row[2]
