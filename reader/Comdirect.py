@@ -25,7 +25,7 @@ class Reader(Generic):
             ausgelesenen Kontoumsätzen.
         """
         result = []
-        rx = re.compile(r'Auftraggeber\:\s(.*)Buchungstext\:\s(.*)')
+        rx = re.compile(r'(?:Auftraggeber|Empfänger)\:\s(.*)Buchungstext\:\s(.*)')
         with open(filepath, 'r', encoding='Windows-1252') as infile:
 
             # Skip the first 4 lines of the file: Standard Comdirect Header
@@ -37,24 +37,22 @@ class Reader(Generic):
             date_format = "%d.%m.%Y"
             for row in reader:
                 date_tx = row['Buchungstag']
-                if date_tx == "offen":
-                    # Skippe offene Buchungen
+                if re.match(r'^[0-9]{2}\.[0-9]{2}\.[0-9]{4}$', date_tx) is None:
+                    # Skippe offene Buchungen oder Überschriften
                     continue
 
-                amount = float(row['Umsatz in EUR'].replace(',', '.'))
+                amount = float(row['Umsatz in EUR'].replace('.', '').replace(',', '.'))
                 date_tx = self._parse_from_strftime(date_tx, date_format)
                 valuta = self._parse_from_strftime(row['Wertstellung (Valuta)'], date_format)
-
-                text_tx = row['Buchungstext']
-                match = rx.match(text_tx)
+                text_tx_match = rx.match(row['Buchungstext'])
 
                 line = {
                     'date_tx': date_tx,
                     'valuta': valuta,
                     'art': row['Vorgang'],
-                    'text_tx': match.group(2).strip(),
+                    'text_tx': text_tx_match.group(2).strip(),
                     'amount': amount,
-                    'peer': match.group(1).strip(),
+                    'peer': text_tx_match.group(1).strip(),
                     'currency': "EUR",
                     'parsed': {},
                     'category': None,

@@ -76,14 +76,14 @@ function getFilteredList() {
 
 	let amount_min = document.getElementById('filter-amount-min').value;
 	if (amount_min) {
-		amount_min = amount_min.replace(',', '.');
+		amount_min = amount_min.replace('.', '').replace(',', '.');
 		query_args = query_args + arg_concat + 'amount_min=' + amount_min;
 		arg_concat = '&';
 	}
 
 	let amount_max = document.getElementById('filter-amount-max').value;
 	if (amount_max) {
-		amount_max = amount_max.replace(',', '.');
+		amount_max = amount_max.replace('.', '').replace(',', '.');
 		query_args = query_args + arg_concat + 'amount_max=' + amount_max;
 		arg_concat = '&';
 	}

@@ -37,7 +37,7 @@ class Reader(Generic):
                     # Skippe offene Buchungen / Hinweise
                     continue
 
-                amount = float(row['Betrag'].replace(',', '.'))
+                amount = float(row['Betrag'].replace('.', '').replace(',', '.'))
                 date_tx = datetime.datetime.strptime(
                             date_tx, date_format
                         ).replace(tzinfo=datetime.timezone.utc).timestamp()
