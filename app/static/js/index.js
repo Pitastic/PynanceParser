@@ -266,14 +266,21 @@ function uploadIban() {
     list_tr.appendChild(cell1);
     list_tr.appendChild(cell2);
 
-    //TODO: May need to create Promises per Loop
+    // Use Promises to wait until all uploads finish
+    // Show Upload Modal once
+    document.querySelector('#add-iban header button').click();
+    openModal(upload_modal, { 'currentTarget': { 'dataset': {} } });
+
+    const uploadPromises = [];
+
     for (let i = 0; i < fileInput.files.length; i++) {
         // DOM
         const tr = list_tr.cloneNode(true);
         const td2 = tr.querySelector('td:last-child');
         const td1 = tr.querySelector('td:first-child');
-        let file_name = fileInput.files[i].name.slice(-30);
-        if (fileInput.files[i].name.length > 30) {
+        const file = fileInput.files[i];
+        let file_name = file.name.slice(-30);
+        if (file.name.length > 30) {
             file_name = '...' + file_name;
         }
         td1.innerHTML = file_name + '<br><small>&nbsp;</small>';
@@ -281,43 +288,50 @@ function uploadIban() {
 
         // Form
         const fileFormData = new FormData();
-        fileFormData.append('bank', bank_id)
-        fileFormData.append('file-batch', fileInput.files[i]);
+        fileFormData.append('bank', bank_id);
+        fileFormData.append('file-batch', file);
 
-        const ajax = createAjax(function (responseText, error) {
+        // Wrap each ajax call in a Promise
+        const p = new Promise((resolve) => {
+            const ajax = createAjax(function (responseText, error) {
+                let resultText = '';
+                let parsed = {};
+                try {
+                    parsed = JSON.parse(responseText || '{}');
+                } catch (e) {
+                    parsed = {};
+                }
 
-            // Update List of uploads with results per File
-            let result = JSON.parse(responseText);
-            if (error) {
-                console.warn(fileInput.files[i].name, error, responseText);
-                td2.setAttribute('aria-busy', 'false');
-                td2.classList.add('error');
-                td2.innerHTML = '&times;';
-                result = result.error;
+                if (error) {
+                    console.warn(file.name, error, responseText);
+                    td2.setAttribute('aria-busy', 'false');
+                    td2.classList.add('error');
+                    td2.innerHTML = '&times;';
+                    resultText = parsed.error || 'Fehler beim Import';
+                    resolve({ success: false, file: file.name, result: resultText });
 
-            } else {
-                td2.setAttribute('aria-busy', 'false');
-                td2.innerHTML = '&#10004;';
-                result = result.inserted + ' Transaktionen importiert';
-        
-            }
-            td1.querySelector('small').innerHTML = result;
+                } else {
+                    td2.setAttribute('aria-busy', 'false');
+                    td2.innerHTML = '&#10004;';
+                    resultText = (parsed.inserted !== undefined) ? (parsed.inserted + ' Transaktionen importiert') : 'OK';
+                    resolve({ success: true, file: file.name, result: resultText });
+                }
 
+                td1.querySelector('small').innerHTML = resultText;
+            });
+
+            ajax.open("POST", "/api/upload/" + iban, true);
+            ajax.send(fileFormData);
         });
 
-        // Show Upload Modal
-        document.querySelector('#add-iban header button').click();
-        openModal(upload_modal, { 'currentTarget': { 'dataset': {} } });
-
-        // Send request(s)
-    	ajax.open("POST", "/api/upload/" + iban, true);
-	    ajax.send(fileFormData);
-
+        uploadPromises.push(p);
     }
 
-    //TODO: Show an overall OK or confirm() for opening IBAN
-    upload_modal.querySelector('footer a').href = '/' + iban;
-    open_btn.removeAttribute('disabled');
+    // After all uploads finish, update modal link and re-enable button
+    Promise.all(uploadPromises).then((results) => {
+        upload_modal.querySelector('footer a').href = '/' + iban;
+        open_btn.removeAttribute('disabled');
+    });
 }
 
 /**
