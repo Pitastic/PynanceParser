@@ -487,6 +487,7 @@ class Routes:
                     rule_name, str: Name der Regel, die angewendet werden soll.
                                     (Default: Alle Regeln werden angewendet)
                     dry_run, bool:  Switch to show, which TX would be updated. Do not update.
+                    streaming, bool: Switch to enable streaming of partial results per matched rule.
                 Returns:
                     json: Informationen zum Ergebnis des Taggings.
                 """
@@ -518,6 +519,7 @@ class Routes:
                                     in comparison with already cat. transactions
                                     (higher = more important)
                     prio_set, int:  Override: Compare with 'prio' but set this value instead.
+                    streaming, bool: Switch to enable streaming of partial results per matched rule.
                 Returns:
                     json: Informationen zum Ergebnis des Taggings.
                 """

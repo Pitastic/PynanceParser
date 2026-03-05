@@ -435,6 +435,100 @@ function apiSubmit(sub, params, callback, isFile = false) {
 }
 
 /**
+ * Sends a streaming request to endpoints that return NDJSON partials.
+ * Calls `partialCallback` for each partial JSON object and `finalCallback`
+ * for the final aggregated object. The server must be requested with
+ * `streaming: true` in the JSON payload (this function adds it automatically).
+ *
+ * @param {string} sub - API endpoint (e.g. 'tag/DE...')
+ * @param {Object} params - JSON payload (will have `streaming: true` set)
+ * @param {function(Object):void} partialCallback - called for each partial object
+ * @param {function(Object):void} finalCallback - called for the final aggregated object
+ */
+function apiSubmitStreaming(sub, params, partialCallback, finalCallback) {
+	const ajax = new XMLHttpRequest();
+	let method;
+	let body;
+
+	method = 'PUT';
+	// Ensure server returns streaming NDJSON
+	params.streaming = true;
+	body = JSON.stringify(params);
+
+	ajax.open(method, '/api/' + sub, true);
+	if (method != 'POST') {
+		ajax.setRequestHeader('Content-type', 'application/json');
+	}
+
+	// processedLen tracks how many characters of responseText we've consumed
+	let processedLen = 0;
+	// pending holds an incomplete last line between chunks
+	let pending = '';
+	let finalCalled = false;
+
+	ajax.onprogress = function () {
+		try {
+			const text = ajax.responseText || '';
+			if (!text || text.length <= processedLen) return;
+
+			const newChunk = text.slice(processedLen);
+			processedLen = text.length;
+
+			const combined = pending + newChunk;
+			const lines = combined.split('\n');
+
+			// process all complete lines
+			for (let i = 0; i < lines.length - 1; i++) {
+				const line = lines[i].trim();
+				if (line) handleLine(line);
+			}
+
+			// last element may be incomplete -> store as pending
+			pending = lines[lines.length - 1];
+		} catch (e) {
+			console.error('Streaming parse error (onprogress):', e);
+		}
+	};
+
+	ajax.onreadystatechange = function () {
+		if (this.readyState == 4) {
+			if (this.status >= 200 && this.status < 300) {
+				try {
+					// process any pending tail as a final line
+					if (pending && pending.trim()) {
+						handleLine(pending.trim());
+						pending = '';
+					}
+				} catch (e) {
+					console.error('Streaming final parse error:', e);
+				}
+			} else {
+				// error response
+				finalCallback && finalCallback({ error: 'HTTP ' + this.status, status: this.status });
+			}
+		}
+	};
+	function handleLine(line) {
+		try {
+			const obj = JSON.parse(line);
+			// Determine if this is a partial or the final result
+			if (obj && typeof obj === 'object' && obj.hasOwnProperty('rule')) {
+				partialCallback && partialCallback(obj);
+			} else {
+				// final aggregated result
+				finalCalled = true;
+				finalCallback && finalCallback(obj);
+			}
+		} catch (e) {
+			console.warn('Skipping non-json line in stream:', line, e);
+		}
+	}
+
+	ajax.send(body);
+	return ajax;
+}
+
+/**
  * Tags the entries in the database in a direct manner
  * A single or multiple transactions to tag could be provided
  *

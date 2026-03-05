@@ -204,6 +204,79 @@ function listTxElements() {
 }
 
 /**
+ * Handler for final Pop when Tagging
+ * 
+ * @param {string} responseText JSON from the response
+ * @param {string} error Error Message
+ */
+function showFinalPop_tagging(respnseText, error) {
+    showFinalPop('tag', respnseText, error);
+}
+
+/**
+ * Handler for final Pop when Categorization
+ * 
+ * @param {string} responseText JSON from the response
+ * @param {string} error Error Message
+ */
+function showFinalPop_categorization(respnseText, error) {
+    showFinalPop('cat', respnseText, error);
+}
+
+/**
+ * Show the final summary PopUp after Tagging or Categorization.
+ * 
+ * @param {string} operation Switch for the type of operation. One of [tag, cat]
+ * @param {string} response parsed JSON from the response
+ * @param {string} error Error Message
+ */
+function showFinalPop(operation, response, error) {
+    const heading = operation == 'tag' ? 'Tagging' : 'Kategorisierung';
+    if (error) {
+        errorPopUp(
+            operation.substring(1) + operation.substring(0, 1).toUpperCase() + ' fehlgeschlagen',
+            error, response
+        );
+
+    } else {
+        const reason1 = document.createElement('p');
+        reason1.innerHTML = "Folgende Transaktionen wurden selektiert:";
+
+        const reason2 = document.createElement('ul');
+
+        if (response.entries.length == 0) {
+            const li = document.createElement('li');
+            li.innerHTML = '(keine)';
+            reason2.appendChild(li);
+        }
+
+        response.entries.forEach(element => {
+            let li = document.createElement('li');
+            let a = document.createElement('a');
+            a.href = '/' + IBAN + '/' + element;
+            a.target = '_blank';
+            a.innerHTML = element;
+            li.appendChild(a);
+            reason2.appendChild(li);
+        });
+
+        responsePopUp(
+            heading + ' erfolgreich',
+            [reason1, reason2]);
+    }
+
+}
+
+/**
+ * 
+ * @param {Object} responsePart Parsed JSON from response with partial results
+ */
+function showPartsPop(responsePart){
+    console.log(responsePart);
+}
+
+
+/**
  * Tag or Cat the entries in the database.
  * Optional rule_name input and custom json rule are read
  * from input elements with corresponding IDs
@@ -211,7 +284,7 @@ function listTxElements() {
  * @param {string} operation    One of [tag, cat]. Switch for the type of operation
  */
 function tagAndCat(operation) {
-    let payload = {};
+    let payload = {'streaming': true};
     const rule_name = document.getElementById(operation + '-select').value;
     let api_url = operation + '/';
 
@@ -229,51 +302,23 @@ function tagAndCat(operation) {
             return;
         }
 
+        payload['streaming'] = false;
         api_url = 'tag-and-cat/';
     }
 
     const dry_run = document.getElementById(operation + '-dry').checked;
     if (dry_run) {
+        payload['streaming'] = false;
         payload['dry_run'] = dry_run;
     }
 
-    apiSubmit(api_url + IBAN, payload, function (responseText, error) {
-        const heading = operation == 'tag' ? 'Tagging' : 'Kategorisierung';
-        if (error) {
-            errorPopUp(
-                operation.substring(1) + operation.substring(0, 1).toUpperCase() + ' fehlgeschlagen',
-                error, responseText
-            );
+    const finalFunction = operation == 'tag' ? showFinalPop_tagging : showFinalPop_categorization;
 
-        } else {
-            const reason1 = document.createElement('p');
-            reason1.innerHTML = dry_run ? "Folgende Transaktionen wären geändert worden:" : "Folgende Transaktionen wurden geändert:";
-
-            const reason2 = document.createElement('ul');
-            let r = JSON.parse(responseText)
-
-            if (r.entries.length == 0) {
-                const li = document.createElement('li');
-                li.innerHTML = '(keine)';
-                reason2.appendChild(li);
-            }
-
-            r.entries.forEach(element => {
-                let li = document.createElement('li');
-                let a = document.createElement('a');
-                a.href = '/' + IBAN + '/' + element;
-                a.target = '_blank';
-                a.innerHTML = element;
-                li.appendChild(a);
-                reason2.appendChild(li);
-            });
-
-            responsePopUp(
-                heading + ' erfolgreich',
-                [reason1, reason2]);
-        }
-
-    }, false);
+    if (payload.streaming) {
+        apiSubmitStreaming(api_url + IBAN, payload, showPartsPop, finalFunction);
+    } else {
+        apiSubmit(api_url + IBAN, payload, finalFunction, false);
+    }
 }
 
 /**
