@@ -39,23 +39,15 @@ class Tagger():
 
         return input_data
 
-    def categorize(self, iban: str, rule_name: str = None,
-                   prio: int = None, prio_set: int = None, dry_run: bool = False) -> dict:
-        """
-        Kategorisiert die Kontoumsätze anhand von hinterlegten Regeln je Kategorie.
+    def _cat_generator(self, iban: str, rule_name: str = None,
+                              prio: int = None, prio_set: int = None,
+                              dry_run: bool = False) -> dict:
+        """Generator that yields partial results per rule and finally the overall result.
 
-        Args:
-            iban:           Name der Collection, in der gefiltert werden soll.
-            rule_name:      Name of a rule to be applied on users transactions
-                            Default: All rules are applied
-            prio:           Override ruleset value of priority for this categorization run
-                            in comparison with already cat. transactions (higher = important)
-            prio_set:       Override: Compare with 'prio' but set this value instead.
-            dry_run:        Switch to show, which TX would be updated. Do not update.
-        Returns:
-            dict:
-                - categorized (int): Summe aller erfolgreichen Kategorisierungen (0 bei dry_run)
-                - entries (list): UUIDs die selektiert wurden (auch bei dry_run)
+        Yields partial dicts for each rule (and per-row partials where appropriate)
+        and finally the full result dict.
+
+        For more details see `categorize` function.
         """
         result = { 'categorized': 0, 'entries': [] }
 
@@ -82,15 +74,15 @@ class Tagger():
         for r_name, rule in cat_rules.items():
             logging.info(f"Kategorisierung mit Rule {r_name}...")
 
-            # Updated Category Object
-            new_categories = {}
+            # Partial Result for this rule (for streaming)
+            partial_result = {'rule': r_name, 'categorized': 0, 'entries': [], 'matched': 0}
 
-            if rule.get('category') is not None:
-                new_categories['category'] = rule.get('category')
-
-            if not new_categories:
+            if rule.get('category') is None:
                 logging.warning(f"Rule '{r_name}' hat keine Kategorie - skipping...")
                 continue
+
+            # Updated Category Object
+            new_categories = {'category': rule.get('category')}
 
             if prio_set is not None:
                 new_categories['prio'] = prio_set
@@ -138,9 +130,13 @@ class Tagger():
                 continue
 
             logging.info(f"Rule '{r_name}' trifft {len(matched)} transactions.")
+            partial_result['matched'] = len(matched)
 
             # Create updated Data and get UUIDs
             for row in matched:
+
+                # yield partial result for this rule (streaming)
+                yield partial_result
 
                 # UUIDs
                 uuid = row.get('uuid')
@@ -148,6 +144,7 @@ class Tagger():
                     raise ValueError(f'The following data in the DB has no UUID ! - {row}')
 
                 result['entries'].append(uuid)
+                partial_result['entries'].append(uuid)
 
                 # Update Request / Dry run
                 if dry_run:
@@ -162,25 +159,25 @@ class Tagger():
                                     f"'{uuid}' nicht geupdated werden - skipping..."))
                     continue
 
-                result['categorized'] += updated.get('updated')
+                updated = updated.get('updated')
+                result['categorized'] += updated
+                partial_result['categorized'] += updated
 
-        return result
+            # yield final result for this rule (streaming)
+            yield partial_result
 
-    def tag(self, iban: str, rule_name: str=None, dry_run: bool=False) -> dict:
+        # yield final result of the overall result
+        result['entries'] = list(set(result['entries']))
+        yield result
+
+    def _tag_generator(self, iban: str, rule_name: str=None, dry_run: bool=False):
+        """Generator that yields partial results per rule and finally the overall result.
+
+        Yields partial dicts for each rule (and per-row partials where appropriate)
+        and finally the full result dict.
+
+        For more details see `tag` function.
         """
-        Tagged Transaktionen anhand von Regeln in der Datenbank.
-
-        Args:
-            iban:           Name der Collection, in der gefiltert werden soll.
-            rule_name:      Name of a rule to apply on users transactions.
-                            Default: All rules are applied
-            dry_run:        Switch to show, which TX would be updated. Do not update.
-        Returns:
-            dict:
-            - tagged (int): Summe aller erfolgreichen Taggings (0 bei dry_run)
-            - entries (list): UUIDs die selektiert wurden (auch bei dry_run)
-        """
-        #raise NotImplementedError("Function not finished yet !")
         result = { 'tagged': 0, 'entries': [] }
 
         # Load specific tagging rule or all (when None)
@@ -199,7 +196,10 @@ class Tagger():
         query_args = self._form_tag_query(iban, 99)
 
         for r_name, rule in tagging_rules.items():
-            logging.info(f"RegEx Tagging mit Rule {r_name}...")
+            logging.info(f"Tagging mit Rule {r_name}...")
+
+            # Partial Result for this rule (for streaming)
+            partial_result = {'rule': r_name, 'tagged': 0, 'entries': [], 'matched': 0}
 
             # Spezielle Conditions einer Rule
             rule_args = copy.deepcopy(query_args)
@@ -233,9 +233,12 @@ class Tagger():
             # Nothing to update
             if not matched:
                 logging.info(f"Rule '{r_name}' trifft nichts.")
+                # yield empty result for this rule
+                yield partial_result
                 continue
 
             logging.info(f"Rule '{r_name}' trifft {len(matched)} transactions.")
+            partial_result['matched'] = len(matched)
 
             # Tags to set when matched
             new_tags = rule.get('tags', [])
@@ -243,12 +246,16 @@ class Tagger():
             # Create updated Data and get UUIDs
             for row in matched:
 
+                # yield partial result for this rule (streaming)
+                yield partial_result
+
                 # UUIDs
                 uuid = row.get('uuid')
                 if uuid is None:
                     raise ValueError(f'The following data in the DB has no UUID ! - {row}')
 
                 result['entries'].append(uuid)
+                partial_result['entries'].append(uuid)
 
                 # Update Request / Dry run
                 if dry_run:
@@ -273,9 +280,86 @@ class Tagger():
                                     f"'{uuid}' nicht geupdated werden - skipping..."))
                     continue
 
-                result['tagged'] += updated.get('updated')
+                updated = updated.get('updated')
+                result['tagged'] += updated
+                partial_result['tagged'] += updated
 
-        return result
+            # yield final result for this rule (streaming)
+            yield partial_result
+
+        # yield final result of the overall result
+        result['entries'] = list(set(result['entries']))
+        yield result
+
+    def categorize(self, iban: str, rule_name: str = None, prio: int = None,
+                   prio_set: int = None, dry_run: bool = False, streaming: bool = False) -> dict:
+        """
+        Kategorisiert die Kontoumsätze anhand von hinterlegten Regeln je Kategorie.
+
+        Args:
+            iban:           Name der Collection, in der gefiltert werden soll.
+            rule_name:      Name of a rule to be applied on users transactions
+                            Default: All rules are applied
+            prio:           Override ruleset value of priority for this categorization run
+                            in comparison with already cat. transactions (higher = important)
+            prio_set:       Override: Compare with 'prio' but set this value instead.
+            dry_run:        Switch to show, which TX would be updated. Do not update.
+        Returns:
+            dict (final result):
+                - categorized (int): Summe aller erfolgreichen Kategorisierungen (0 bei dry_run)
+                - entries (list): UUIDs die selektiert wurden (auch bei dry_run)
+
+        If `streaming` is True the caller receives the generator returned by
+        `_cat_generator`. Otherwise the generator is consumed and the final
+        yielded result is returned as a normal `dict`.
+        """
+        gen = self._cat_generator(iban, rule_name=rule_name, prio=prio, prio_set=prio_set, dry_run=dry_run)
+        if streaming:
+            return gen
+
+        last = None
+        for item in gen:
+            last = item
+
+        return last
+
+    def tag(self, iban: str, rule_name: str=None, dry_run: bool=False, streaming: bool=False) -> dict:
+        """
+        Tagged Transaktionen anhand von Regeln in der Datenbank.
+        Gibt bei `streming` einen Generator zurück mit teilweisen Ergebnissen pro Regel.
+        Andernfalls wird der Generator konsumiert und das finale Ergebnis als dict zurückgegeben.
+
+        Args:
+            iban:           Name der Collection, in der gefiltert werden soll.
+            rule_name:      Name of a rule to apply on users transactions.
+                            Default: All rules are applied
+            dry_run:        Switch to show, which TX would be updated. Do not update.
+
+        Returns:
+            dict (partial resutl):
+            - rule (str): Name of the applied rule
+            - tagged (int): Anzahl der mit dieser Regel getaggten Transaktionen (0 bei
+                            dry_run)
+            - entries (list): UUIDs die mit dieser Regel selektiert wurden (auch bei
+                            dry_run)
+
+            dict (final result):
+            - tagged (int): Summe aller erfolgreichen Taggings (0 bei dry_run)
+            - entries (list): UUIDs die selektiert wurden (auch bei dry_run)
+
+        If `streaming` is True the caller receives the generator returned by
+        `_tag_generator`. Otherwise the generator is consumed and the final
+        yielded result is returned as a normal `dict`.
+        """
+        gen = self._tag_generator(iban, rule_name=rule_name, dry_run=dry_run)
+        if streaming:
+            return gen
+
+        last = None
+        for item in gen:
+            last = item
+
+        return last
 
     def tag_ai(self, iban: str, dry_run: bool=False) -> dict:
         """

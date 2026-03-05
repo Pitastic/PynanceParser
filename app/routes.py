@@ -2,10 +2,11 @@
 """Routen für das User Interface."""
 
 import os
+import json
 from datetime import datetime
 import secrets
 from flask import request, current_app, render_template, redirect, \
-                  make_response, send_from_directory, session
+                  make_response, send_from_directory, session, Response, stream_with_context
 
 
 class Routes:
@@ -491,6 +492,16 @@ class Routes:
                 """
                 rule_name = request.json.get('rule_name')
                 dry_run = request.json.get('dry_run', False)
+                streaming = request.json.get('streaming', False)
+
+                if streaming:
+                    @stream_with_context
+                    def stream():
+                        for partial in parent.tagger.tag(iban, rule_name, dry_run, streaming=True):
+                            yield json.dumps(partial) + "\n"
+
+                    return Response(stream(), content_type='application/x-ndjson')
+
                 return parent.tagger.tag(iban, rule_name, dry_run)
 
             @current_app.route('/api/cat/<iban>', methods=['PUT'])
@@ -514,6 +525,20 @@ class Routes:
                 dry_run = request.json.get('dry_run', False)
                 prio = request.json.get('prio')
                 prio_set = request.json.get('prio_set')
+                streaming = request.json.get('streaming', False)
+
+                if streaming:
+                    gen = parent.tagger.categorize(
+                        iban, rule_name, prio, prio_set, dry_run, streaming=True
+                    )
+
+                    @stream_with_context
+                    def stream():
+                        for partial in gen:
+                            yield json.dumps(partial) + "\n"
+
+                    return Response(stream(), content_type='application/x-ndjson')
+
                 return parent.tagger.categorize(iban, rule_name, prio, prio_set, dry_run)
 
             @current_app.route('/api/tag-and-cat/<iban>', methods=['PUT'])
