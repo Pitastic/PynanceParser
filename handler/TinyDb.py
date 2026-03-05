@@ -205,6 +205,9 @@ class TinyDbHandler(BaseDb):
         # Update every Entry one-by-one (merge every list item)
         for doc in docs_to_update:
 
+            # Fix TinyDBs multiple results for same doc
+            if doc.get('uuid') in update_result:
+                continue
 
             # Look for lists to merge with this entry
             for d in data.keys():
@@ -214,7 +217,7 @@ class TinyDbHandler(BaseDb):
                     continue
 
             # Update this uuid
-            update_result += collection.update(
+            collection.update(
                 data,
                 self._form_complete_query({
                     'key': 'uuid',
@@ -222,6 +225,7 @@ class TinyDbHandler(BaseDb):
                     'compare': '=='
                 })
             )
+            update_result.append(doc.get('uuid'))
 
         return { 'updated': len(update_result) }
 
