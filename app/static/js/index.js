@@ -98,8 +98,8 @@ function prepareAddModal(modal_id, event, force_id) {
         if (mode == "group") {
             // Get Group Info; Activate Checkboxes for Ibans in Group
             const iban_checkboxes = document.querySelectorAll("#" + modal_id + " fieldset input");
-            apiGet("getMeta/" + id, {}, function (responseText, error) {
-                const ibans = JSON.parse(responseText)['ibans'] || [];
+            apiGet("getMeta/" + id, {}, function (response, error) {
+                const ibans = response['ibans'] || [];
                 iban_checkboxes.forEach(box => {
                     if (ibans.includes(box.value)) {
                         // Activate IBAN as Groupmember
@@ -113,16 +113,15 @@ function prepareAddModal(modal_id, event, force_id) {
 
         // Modal is Add-IBAN
         const stat_points = iban_stats.getElementsByTagName('b');
-        apiGet('stats/' + id, {}, function (responseText, error) {
+        apiGet('stats/' + id, {}, function (repsonse, error) {
             // Get basic Stats
             if (error) {
                 alert(error);
                 return;
             }
-            const r = JSON.parse(responseText);
-            stat_points[0].innerHTML = r.count;
-            stat_points[1].innerHTML = formatUnixToDate(r.min);
-            stat_points[2].innerHTML = formatUnixToDate(r.max);
+            stat_points[0].innerHTML = repsonse.count;
+            stat_points[1].innerHTML = formatUnixToDate(repsonse.min);
+            stat_points[2].innerHTML = formatUnixToDate(repsonse.max);
             iban_stats.classList.remove('hide');
         })
 
@@ -186,12 +185,12 @@ function saveSetting() {
         return;
     }
 
-    apiSubmit('saveMeta/' + meta_type, payload, function (responseText, error) {
+    apiSubmit('saveMeta/' + meta_type, payload, function (response, error) {
         if (error) {
-            showAjaxError(error, responseText);
+            showAjaxError(error, response);
 
         } else {
-            alert('Einstellungen gespeichert' + responseText)
+            alert('Einstellungen gespeichert' + response)
             result_text.value = '';
 
         }
@@ -217,13 +216,12 @@ function importSettings() {
     }
 
     const params = { file: 'settings-input' }; // The value of 'file' corresponds to the input element's ID
-    apiSubmit('upload/metadata/' + settings_type, params, function (responseText, error) {
+    apiSubmit('upload/metadata/' + settings_type, params, function (response, error) {
         if (error) {
-            showAjaxError(error, responseText);
+            showAjaxError(error, response);
 
         } else {
-            let success_msg = JSON.parse(responseText);
-            alert('Es wurden ' + success_msg.inserted + ' Einträge aus der Datei importiert.');
+            alert('Es wurden ' + response.inserted + ' Einträge aus der Datei importiert.');
             window.location.href = '/';
 
         }
@@ -293,31 +291,26 @@ function uploadIban() {
 
         // Wrap each ajax call in a Promise
         const p = new Promise((resolve) => {
-            const ajax = createAjax(function (responseText, error) {
-                let resultText = '';
-                let parsed = {};
-                try {
-                    parsed = JSON.parse(responseText || '{}');
-                } catch (e) {
-                    parsed = {};
-                }
+            const ajax = createAjax(function (response, error) {
+                let result = '';
+                let parsed = response || '{}';
 
                 if (error) {
-                    console.warn(file.name, error, responseText);
+                    console.warn(file.name, error, response);
                     td2.setAttribute('aria-busy', 'false');
                     td2.classList.add('error');
                     td2.innerHTML = '&times;';
-                    resultText = parsed.error || 'Fehler beim Import';
-                    resolve({ success: false, file: file.name, result: resultText });
+                    result = parsed.error || 'Fehler beim Import';
+                    resolve({ success: false, file: file.name, result: result });
 
                 } else {
                     td2.setAttribute('aria-busy', 'false');
                     td2.innerHTML = '&#10004;';
-                    resultText = (parsed.inserted !== undefined) ? (parsed.inserted + ' Transaktionen importiert') : 'OK';
-                    resolve({ success: true, file: file.name, result: resultText });
+                    result = (parsed.inserted !== undefined) ? (parsed.inserted + ' Transaktionen importiert') : 'OK';
+                    resolve({ success: true, file: file.name, result: result });
                 }
 
-                td1.querySelector('small').innerHTML = resultText;
+                td1.querySelector('small').innerHTML = result;
             });
 
             ajax.open("POST", "/api/upload/" + iban, true);
@@ -382,13 +375,12 @@ function deleteDB(delete_group) {
         return;
     }
 
-    apiGet('deleteDatabase/'+ collection, {}, function (responseText, error) {
+    apiGet('deleteDatabase/'+ collection, {}, function (response, error) {
         if (error) {
-            showAjaxError(error, responseText);
+            showAjaxError(error, response);
 
         } else {
-            let success_msg = JSON.parse(responseText);
-            alert(success_msg.deleted + ' IBAN(s) / Gruppe(n) gelöscht');
+            alert(response.deleted + ' IBAN(s) / Gruppe(n) gelöscht');
             window.location.reload();
 
         }

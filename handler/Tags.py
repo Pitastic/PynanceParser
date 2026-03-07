@@ -5,7 +5,7 @@ import copy
 import random
 import re
 import logging
-
+from time import sleep
 
 class Tagger():
     """Handler für die Untersuchung und Markierung von Umsätzen."""
@@ -49,7 +49,7 @@ class Tagger():
 
         For more details see `categorize` function.
         """
-        result = { 'categorized': 0, 'entries': [] }
+        result = { 'categorized': 0, 'entries': [], 'matched': 0 }
 
         # Load specific tagging rule or all (when None)
         cat_rules = self._load_ruleset(rule_name=rule_name, categories=True)
@@ -178,7 +178,7 @@ class Tagger():
 
         For more details see `tag` function.
         """
-        result = { 'tagged': 0, 'entries': [] }
+        result = { 'tagged': 0, 'entries': [], 'matched': 0 }
 
         # Load specific tagging rule or all (when None)
         tagging_rules = self._load_ruleset(rule_name=rule_name, categories=False)
@@ -248,6 +248,8 @@ class Tagger():
 
                 # yield partial result for this rule (streaming)
                 yield partial_result
+                #DEV:
+                sleep(random.uniform(1, 3))
 
                 # UUIDs
                 uuid = row.get('uuid')
@@ -496,12 +498,15 @@ class Tagger():
             logging.error(msg)
             return {'error': msg}, 400
 
-        result = { 'tagged': 0, 'categorized': 0, 'entries': [] }
+        result = { 'entries': [], 'rule': '-Benutzerdefiniert-', 'matched': 0 }
         prio_set = prio if prio_set is None else prio_set
         update_data = {}
 
         if category is not None:
+            result['categorized'] = 0
+
             # Set Category: Tags are filter arguments; Prio matters
+            update_data['category'] = category
             update_data['prio'] = prio_set
             query_args = self._form_tag_query(iban, prio)
 
@@ -512,10 +517,9 @@ class Tagger():
                     'compare': 'in'
                 })
 
-            if category is not None:
-                update_data['category'] = category
-
         else:
+            result['tagged'] = 0
+
             # Set Tags: Prio does not matter (tags to set will be uniqued later)
             query_args = self._form_tag_query(iban, 99)
 
@@ -546,6 +550,8 @@ class Tagger():
         if not matched:
             logging.info("Die Custom Rule trifft nichts.")
             return result
+
+        result['matched'] = len(matched)
 
         # Create updated Data and get UUIDs
         for row in matched:

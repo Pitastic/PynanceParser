@@ -87,6 +87,10 @@ button.info {
     background: var(--pico-color-red-600);
     color: white;
 }
+.updated-count {
+    float: left;
+    width: 5em;
+}
 
 /* File Upload Area */
 #file-drop-area, #settings-drop-area {
