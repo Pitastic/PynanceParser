@@ -149,8 +149,10 @@ class Routes:
 
                 # All distinct Rule Names
                 # (must be filtered on our own because TinyDB doesn't support 'distinct' queries)
-                rulenames = parent.db_handler.filter_metadata({'key':'metatype', 'value': 'rule'})
-                rulenames = [r.get('name') for r in rulenames if r.get('name')]
+                tag_rules = parent.db_handler.filter_metadata({'key':'metatype', 'value': 'rule'})
+                tag_rules = [r.get('name') for r in tag_rules if r.get('name')]
+                cat_rules = parent.db_handler.filter_metadata({'key':'metatype', 'value': 'category'})
+                cat_rules = [r.get('name') for r in cat_rules if r.get('name')]
 
                 # All distinct Tags
                 # (must be filtered on our own because TinyDB doesn't support 'distinct' queries)
@@ -176,7 +178,8 @@ class Routes:
 
                 return render_template('iban.html', transactions=rows[:entries_per_page],
                                        IBAN=iban, tags=tags, categories=cats,
-                                       rules=rulenames, filters=frontend_filters)
+                                       tag_rules=tag_rules, cat_rules=cat_rules,
+                                       filters=frontend_filters)
 
             @current_app.route('/<iban>/<t_id>', methods=['GET'])
             def showTx(iban, t_id):

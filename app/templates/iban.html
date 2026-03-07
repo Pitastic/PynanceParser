@@ -149,8 +149,8 @@
         <p>
             <select id="tag-select">
                 <option value="">Alle Regeln</option>
-                {% for r in rules %}
-                <option>{{r}}</option>
+                {% for t in tag_rules %}
+                <option>{{t}}</option>
                 {% endfor %}
                 <option value="ui_selected_custom">Custom</option>
             </select>
@@ -172,7 +172,7 @@
         <p>
             <select id="cat-select">
                 <option value="">Alle Regeln</option>
-                {% for c in categories %}
+                {% for c in cat_rules %}
                 <option>{{c}}</option>
                 {% endfor %}
                 <option value="ui_selected_custom">Custom</option>

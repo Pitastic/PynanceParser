@@ -5,7 +5,7 @@ import copy
 import random
 import re
 import logging
-from time import sleep
+
 
 class Tagger():
     """Handler für die Untersuchung und Markierung von Umsätzen."""
@@ -248,8 +248,6 @@ class Tagger():
 
                 # yield partial result for this rule (streaming)
                 yield partial_result
-                #DEV:
-                sleep(random.uniform(1, 3))
 
                 # UUIDs
                 uuid = row.get('uuid')
