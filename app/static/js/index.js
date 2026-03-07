@@ -98,8 +98,8 @@ function prepareAddModal(modal_id, event, force_id) {
         if (mode == "group") {
             // Get Group Info; Activate Checkboxes for Ibans in Group
             const iban_checkboxes = document.querySelectorAll("#" + modal_id + " fieldset input");
-            apiGet("getMeta/" + id, {}, function (responseText, error) {
-                const ibans = JSON.parse(responseText)['ibans'] || [];
+            apiGet("getMeta/" + id, {}, function (response, error) {
+                const ibans = response['ibans'] || [];
                 iban_checkboxes.forEach(box => {
                     if (ibans.includes(box.value)) {
                         // Activate IBAN as Groupmember
@@ -113,16 +113,15 @@ function prepareAddModal(modal_id, event, force_id) {
 
         // Modal is Add-IBAN
         const stat_points = iban_stats.getElementsByTagName('b');
-        apiGet('stats/' + id, {}, function (responseText, error) {
+        apiGet('stats/' + id, {}, function (repsonse, error) {
             // Get basic Stats
             if (error) {
                 alert(error);
                 return;
             }
-            const r = JSON.parse(responseText);
-            stat_points[0].innerHTML = r.count;
-            stat_points[1].innerHTML = formatUnixToDate(r.min);
-            stat_points[2].innerHTML = formatUnixToDate(r.max);
+            stat_points[0].innerHTML = repsonse.count;
+            stat_points[1].innerHTML = formatUnixToDate(repsonse.min);
+            stat_points[2].innerHTML = formatUnixToDate(repsonse.max);
             iban_stats.classList.remove('hide');
         })
 
@@ -186,12 +185,12 @@ function saveSetting() {
         return;
     }
 
-    apiSubmit('saveMeta/' + meta_type, payload, function (responseText, error) {
+    apiSubmit('saveMeta/' + meta_type, payload, function (response, error) {
         if (error) {
-            showAjaxError(error, responseText);
+            showAjaxError(error, response);
 
         } else {
-            alert('Einstellungen gespeichert' + responseText)
+            alert('Einstellungen gespeichert' + response)
             result_text.value = '';
 
         }
@@ -217,13 +216,12 @@ function importSettings() {
     }
 
     const params = { file: 'settings-input' }; // The value of 'file' corresponds to the input element's ID
-    apiSubmit('upload/metadata/' + settings_type, params, function (responseText, error) {
+    apiSubmit('upload/metadata/' + settings_type, params, function (response, error) {
         if (error) {
-            showAjaxError(error, responseText);
+            showAjaxError(error, response);
 
         } else {
-            let success_msg = JSON.parse(responseText);
-            alert('Es wurden ' + success_msg.inserted + ' Einträge aus der Datei importiert.');
+            alert('Es wurden ' + response.inserted + ' Einträge aus der Datei importiert.');
             window.location.href = '/';
 
         }
@@ -266,14 +264,21 @@ function uploadIban() {
     list_tr.appendChild(cell1);
     list_tr.appendChild(cell2);
 
-    //TODO: May need to create Promises per Loop
+    // Use Promises to wait until all uploads finish
+    // Show Upload Modal once
+    document.querySelector('#add-iban header button').click();
+    openModal(upload_modal, { 'currentTarget': { 'dataset': {} } });
+
+    const uploadPromises = [];
+
     for (let i = 0; i < fileInput.files.length; i++) {
         // DOM
         const tr = list_tr.cloneNode(true);
         const td2 = tr.querySelector('td:last-child');
         const td1 = tr.querySelector('td:first-child');
-        let file_name = fileInput.files[i].name.slice(-30);
-        if (fileInput.files[i].name.length > 30) {
+        const file = fileInput.files[i];
+        let file_name = file.name.slice(-30);
+        if (file.name.length > 30) {
             file_name = '...' + file_name;
         }
         td1.innerHTML = file_name + '<br><small>&nbsp;</small>';
@@ -281,43 +286,45 @@ function uploadIban() {
 
         // Form
         const fileFormData = new FormData();
-        fileFormData.append('bank', bank_id)
-        fileFormData.append('file-batch', fileInput.files[i]);
+        fileFormData.append('bank', bank_id);
+        fileFormData.append('file-batch', file);
 
-        const ajax = createAjax(function (responseText, error) {
+        // Wrap each ajax call in a Promise
+        const p = new Promise((resolve) => {
+            const ajax = createAjax(function (response, error) {
+                let result = '';
+                let parsed = response || '{}';
 
-            // Update List of uploads with results per File
-            let result = JSON.parse(responseText);
-            if (error) {
-                console.warn(fileInput.files[i].name, error, responseText);
-                td2.setAttribute('aria-busy', 'false');
-                td2.classList.add('error');
-                td2.innerHTML = '&times;';
-                result = result.error;
+                if (error) {
+                    console.warn(file.name, error, response);
+                    td2.setAttribute('aria-busy', 'false');
+                    td2.classList.add('error');
+                    td2.innerHTML = '&times;';
+                    result = parsed.error || 'Fehler beim Import';
+                    resolve({ success: false, file: file.name, result: result });
 
-            } else {
-                td2.setAttribute('aria-busy', 'false');
-                td2.innerHTML = '&#10004;';
-                result = result.inserted + ' Transaktionen importiert';
-        
-            }
-            td1.querySelector('small').innerHTML = result;
+                } else {
+                    td2.setAttribute('aria-busy', 'false');
+                    td2.innerHTML = '&#10004;';
+                    result = (parsed.inserted !== undefined) ? (parsed.inserted + ' Transaktionen importiert') : 'OK';
+                    resolve({ success: true, file: file.name, result: result });
+                }
 
+                td1.querySelector('small').innerHTML = result;
+            });
+
+            ajax.open("POST", "/api/upload/" + iban, true);
+            ajax.send(fileFormData);
         });
 
-        // Show Upload Modal
-        document.querySelector('#add-iban header button').click();
-        openModal(upload_modal, { 'currentTarget': { 'dataset': {} } });
-
-        // Send request(s)
-    	ajax.open("POST", "/api/upload/" + iban, true);
-	    ajax.send(fileFormData);
-
+        uploadPromises.push(p);
     }
 
-    //TODO: Show an overall OK or confirm() for opening IBAN
-    upload_modal.querySelector('footer a').href = '/' + iban;
-    open_btn.removeAttribute('disabled');
+    // After all uploads finish, update modal link and re-enable button
+    Promise.all(uploadPromises).then((results) => {
+        upload_modal.querySelector('footer a').href = '/' + iban;
+        open_btn.removeAttribute('disabled');
+    });
 }
 
 /**
@@ -368,13 +375,12 @@ function deleteDB(delete_group) {
         return;
     }
 
-    apiGet('deleteDatabase/'+ collection, {}, function (responseText, error) {
+    apiGet('deleteDatabase/'+ collection, {}, function (response, error) {
         if (error) {
-            showAjaxError(error, responseText);
+            showAjaxError(error, response);
 
         } else {
-            let success_msg = JSON.parse(responseText);
-            alert(success_msg.deleted + ' IBAN(s) / Gruppe(n) gelöscht');
+            alert(response.deleted + ' IBAN(s) / Gruppe(n) gelöscht');
             window.location.reload();
 
         }

@@ -96,11 +96,10 @@ function resetDetails() {
  * @param {string} result - The text to be shwon as JSON string.
  */
 function fillTxDetails(result) {
-    const r = JSON.parse(result);
     const selector = "#dynamic-results td.";
-    for (const key in r) {
-        if (r.hasOwnProperty(key)) {
-            const value = r[key];
+    for (const key in result) {
+        if (result.hasOwnProperty(key)) {
+            const value = result[key];
             let td = document.querySelector(selector + key);
             if (!td) {
                 continue;
@@ -108,11 +107,11 @@ function fillTxDetails(result) {
 
             if (key == 'date_tx' || key == "valuta") {
                 // Dateformat
-                td.innerHTML = formatUnixToDate(r[key]);
+                td.innerHTML = formatUnixToDate(result[key]);
 
-            } else if ((key == 'category' || key == "tags") && r[key]) {
+            } else if ((key == 'category' || key == "tags") && result[key]) {
                 // Tag Chips
-                const row = Array.isArray(r[key]) ? r[key] : [r[key]];
+                const row = Array.isArray(result[key]) ? result[key] : [result[key]];
                 for (let index = 0; index < row.length; index++) {
                     const a_link = document.createElement('a');
                     a_link.innerHTML = row[index];
@@ -127,26 +126,26 @@ function fillTxDetails(result) {
 
             } else if (key == 'amount') {
                 // Round
-                td.innerHTML = r[key].toFixed(2);
+                td.innerHTML = result[key].toFixed(2);
 
             } else if (key == 'peer') {
                 // Add Filter link
                 const a_link = document.createElement('a');
-                a_link.innerHTML = r[key];
+                a_link.innerHTML = result[key];
                 a_link.className = "secondary";
-                a_link.href = "?peer=" + r[key];
+                a_link.href = "?peer=" + result[key];
                 a_link.dataset.tooltip = "Add Filter";
                 td.appendChild(a_link);
 
             } else {
-                td.innerHTML = r[key];
+                td.innerHTML = result[key];
 
             }
         }
     }
 
     const tx_link = document.querySelector('#details-popup footer a');
-    tx_link.href = '/' + IBAN + '/' + r['uuid'];
+    tx_link.href = '/' + IBAN + '/' + result['uuid'];
 }
 
 /**
@@ -204,6 +203,83 @@ function listTxElements() {
 }
 
 /**
+ * Show the final summary PopUp after Tagging or Categorization.
+ * 
+ * @param {string} operation Switch for the type of operation. One of [tag, cat]
+ * @param {string} response parsed JSON from the response
+ * @param {string} error Error Message
+ */
+function showFinalPop(response, error) {
+	const popup = document.getElementById('response-popup');
+    
+    //Überschrift ändern "...erfolgreich"
+    const heading = popup.querySelector('header h2')
+    heading.textContent = heading.textContent.split(' ')[0] + " erfolgreich";
+    
+    //Loading Spinner entfernen
+    heading.setAttribute('aria-busy', 'false');
+}
+
+/**
+ * Show PopUp and start to fill results
+ * 
+ * @param {Object} response Parsed JSON from response with partial results
+ */
+function showPartsPop(op, response){
+    if (response.error){
+        errorPopUp(
+            op[0].toUpperCase() + op.substring(1) + " fehlgeschlagen",
+            response.error, response.raw
+        )
+        return;
+    }
+
+    const rule_list = document.getElementById('result-rule-entries');
+    let rule_line = rule_list.querySelector('details[name="' + response.rule + '"]');
+    let ul; let update_count;
+    
+    if (!rule_line) {
+        // Create new Rule Line
+        rule_line = document.createElement('details');
+        rule_line.setAttribute('name', response.rule);
+        
+        const summary = document.createElement('summary');
+        summary.innerHTML = response.rule;
+        
+        update_count = document.createElement('span');
+        update_count.className = "updated-count";
+        summary.appendChild(update_count);
+        
+        ul = document.createElement('ul');
+        
+        rule_line.appendChild(summary);
+        rule_line.appendChild(ul);
+        rule_list.appendChild(rule_line);
+    }
+    
+    // Add information about the current rule
+    const number_updated = op == 'tag' ? response.tagged : response.categorized;
+    ul = rule_line.querySelector('ul');
+    update_count = rule_line.querySelector('summary .updated-count');
+    update_count.innerHTML = "(" + number_updated + "/" + response.matched + ")";
+    
+    if (!response.entries.length) {
+        return;
+    }
+    const li = document.createElement('li');
+    const entry = response.entries[response.entries.length - 1];
+
+    const a = document.createElement('a');
+    a.href = '/' + IBAN + '/' + entry;
+    a.target = '_blank';
+    a.innerHTML = entry;
+
+    li.appendChild(a);
+    ul.appendChild(li);
+}
+
+
+/**
  * Tag or Cat the entries in the database.
  * Optional rule_name input and custom json rule are read
  * from input elements with corresponding IDs
@@ -211,7 +287,7 @@ function listTxElements() {
  * @param {string} operation    One of [tag, cat]. Switch for the type of operation
  */
 function tagAndCat(operation) {
-    let payload = {};
+    let payload = {'streaming': true};
     const rule_name = document.getElementById(operation + '-select').value;
     let api_url = operation + '/';
 
@@ -229,51 +305,51 @@ function tagAndCat(operation) {
             return;
         }
 
+        payload['streaming'] = false;
         api_url = 'tag-and-cat/';
     }
 
     const dry_run = document.getElementById(operation + '-dry').checked;
     if (dry_run) {
+        payload['streaming'] = false;
         payload['dry_run'] = dry_run;
     }
 
-    apiSubmit(api_url + IBAN, payload, function (responseText, error) {
-        const heading = operation == 'tag' ? 'Tagging' : 'Kategorisierung';
-        if (error) {
-            errorPopUp(
-                operation.substring(1) + operation.substring(0, 1).toUpperCase() + ' fehlgeschlagen',
-                error, responseText
-            );
+    // Open Result PopUp (fill with parts later)
+    const heading = operation == 'tag' ? 'Tagging' : 'Kategorisierung';
 
-        } else {
-            const reason1 = document.createElement('p');
-            reason1.innerHTML = dry_run ? "Folgende Transaktionen wären geändert worden:" : "Folgende Transaktionen wurden geändert:";
+    const paragraph1 = document.createElement('p');
+    paragraph1.innerHTML = "Die folgenden Regeln haben Einträge geupdated bzw. selektiert:";
 
-            const reason2 = document.createElement('ul');
-            let r = JSON.parse(responseText)
+    const paragraph2 = document.createElement('p');
+    paragraph2.id = 'result-rule-entries';
 
-            if (r.entries.length == 0) {
-                const li = document.createElement('li');
-                li.innerHTML = '(keine)';
-                reason2.appendChild(li);
+    responsePopUp(
+        heading + ' läuft ...',
+        [paragraph1, paragraph2],
+        true
+    );
+
+    // Start Request
+    if (payload.streaming) {
+        // Single / Multiple Rules
+        apiSubmitStreaming(api_url + IBAN, payload, function(response, error) {
+            showPartsPop(operation, response);
+        }, showFinalPop);
+
+    } else {
+        // Custom / Single Rule (Feed parts manually)
+        apiSubmit(api_url + IBAN, payload, function(response, error) {
+            const entries = response.entries || [];
+            let responsePart = response;
+            for (let index = 0; index < entries.length; index++) {
+                responsePart.entries = [entries[index]];
+                showPartsPop(operation, responsePart);
             }
+            showFinalPop(response, error);
+        }, false);
 
-            r.entries.forEach(element => {
-                let li = document.createElement('li');
-                let a = document.createElement('a');
-                a.href = '/' + IBAN + '/' + element;
-                a.target = '_blank';
-                a.innerHTML = element;
-                li.appendChild(a);
-                reason2.appendChild(li);
-            });
-
-            responsePopUp(
-                heading + ' erfolgreich',
-                [reason1, reason2]);
-        }
-
-    }, false);
+    }
 }
 
 /**

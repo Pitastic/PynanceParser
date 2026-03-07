@@ -172,10 +172,15 @@ function removeTagBullet(element, hiddenInputId) {
  * 
  * @param {string} heading	Heading for the PopUp
  * @param {list} domlist	List of DOMELements to add in the "content" section
+ * @param {boolean} busy	Whether the popup should show a busy indicator
  */
-function responsePopUp(heading, domlist) {
+function responsePopUp(heading, domlist, busy) {
 	const popup = document.getElementById('response-popup');
-	popup.querySelector('header h2').textContent = heading;
+	const popHeading = popup.querySelector('header h2')
+	popHeading.textContent = heading;
+	if (busy) {
+		popHeading.setAttribute('aria-busy', 'true');
+	}
 
 	const content = document.getElementById('response-content');
 	content.innerHTML = '';
@@ -371,12 +376,18 @@ function concatURI(value_dict, formData) {
 function createAjax(callback) {
 	const ajax = new XMLHttpRequest();
 	ajax.onreadystatechange = function () {
+		let response = "";
+		try {
+			response = JSON.parse(this.response);
+		} catch (e) {
+			response = this.responseText;
+		}
 		if (this.readyState == 4 && this.status >= 200 && this.status < 300) {
-			callback(this.responseText);
+			callback(response);
 		} else if (this.readyState != 4) {
 			// pending
 		} else {
-			callback(this.responseText, this.status);
+			callback(response, this.status);
 		}
 	};
 	return ajax;
@@ -406,7 +417,7 @@ function apiGet(sub, params, callback, method = "GET") {
  * @param {string} sub - The API endpoint to append to the base URL.
  * @param {Object} params - An object containing key-value pairs to be sent as query parameters.
  * @param {function} callback - A callback function to handle the response.
- * 								Receives the response text and stsatus code as arguments.
+ * 								Receives the response text and status code as arguments.
  * @param {boolean} [isFile=false] - A switch to enable special file upload handling.
  */
 function apiSubmit(sub, params, callback, isFile = false) {
@@ -432,6 +443,100 @@ function apiSubmit(sub, params, callback, isFile = false) {
 		ajax.setRequestHeader("Content-type", "application/json");
 	}
 	ajax.send(request_uri);
+}
+
+/**
+ * Sends a streaming request to endpoints that return NDJSON partials.
+ * Calls `partialCallback` for each partial JSON object and `finalCallback`
+ * for the final aggregated object. The server must be requested with
+ * `streaming: true` in the JSON payload (this function adds it automatically).
+ *
+ * @param {string} sub - API endpoint (e.g. 'tag/DE...')
+ * @param {Object} params - JSON payload (will have `streaming: true` set)
+ * @param {function(Object):void} partialCallback - called for each partial object
+ * @param {function(Object):void} finalCallback - called for the final aggregated object
+ */
+function apiSubmitStreaming(sub, params, partialCallback, finalCallback) {
+	const ajax = new XMLHttpRequest();
+	let method;
+	let body;
+
+	method = 'PUT';
+	// Ensure server returns streaming NDJSON
+	params.streaming = true;
+	body = JSON.stringify(params);
+
+	ajax.open(method, '/api/' + sub, true);
+	if (method != 'POST') {
+		ajax.setRequestHeader('Content-type', 'application/json');
+	}
+
+	// processedLen tracks how many characters of responseText we've consumed
+	let processedLen = 0;
+	// pending holds an incomplete last line between chunks
+	let pending = '';
+	let finalCalled = false;
+
+	ajax.onprogress = function () {
+		try {
+			const text = ajax.responseText || '';
+			if (!text || text.length <= processedLen) return;
+
+			const newChunk = text.slice(processedLen);
+			processedLen = text.length;
+
+			const combined = pending + newChunk;
+			const lines = combined.split('\n');
+
+			// process all complete lines
+			for (let i = 0; i < lines.length - 1; i++) {
+				const line = lines[i].trim();
+				if (line) handleLine(line);
+			}
+
+			// last element may be incomplete -> store as pending
+			pending = lines[lines.length - 1];
+		} catch (e) {
+			console.error('Streaming parse error (onprogress):', e);
+		}
+	};
+
+	ajax.onreadystatechange = function () {
+		if (this.readyState == 4) {
+			if (this.status >= 200 && this.status < 300) {
+				try {
+					// process any pending tail as a final line
+					if (pending && pending.trim()) {
+						handleLine(pending.trim());
+						pending = '';
+					}
+				} catch (e) {
+					console.error('Streaming final parse error:', e);
+				}
+			} else {
+				// error response
+				finalCallback && finalCallback({ error: 'HTTP ' + this.status, raw: pending });
+			}
+		}
+	};
+	function handleLine(line) {
+		try {
+			const obj = JSON.parse(line);
+			// Determine if this is a partial or the final result
+			if (obj && typeof obj === 'object' && obj.hasOwnProperty('rule')) {
+				partialCallback && partialCallback(obj);
+			} else {
+				// final aggregated result
+				finalCalled = true;
+				finalCallback && finalCallback(obj);
+			}
+		} catch (e) {
+			console.warn('Skipping non-json line in stream:', line, e);
+		}
+	}
+
+	ajax.send(body);
+	return ajax;
 }
 
 /**
@@ -466,13 +571,12 @@ function manualTag(t_ids, tags, overwrite) {
 		tagging['t_ids'] = t_ids;
 	};
 
-	apiSubmit(api_function, tagging, function (responseText, error) {
+	apiSubmit(api_function, tagging, function (response, error) {
 		if (error) {
 			alert('Tagging fehlgeschlagen: ' + '(' + error + ')');
 
 		} else {
-			const success_msg = JSON.parse(responseText);
-			const counts = success_msg.updated != 1 ? success_msg.updated + ' Einträge' : success_msg.updated + ' Eintrag';
+			const counts = response.updated != 1 ? response.updated + ' Einträge' : response.updated + ' Eintrag';
 			alert(counts + ' getaggt');
 			window.location.reload();
 
@@ -525,13 +629,12 @@ function manualCat(t_ids, cat) {
 
 	}
 
-	apiSubmit(api_function, payload, function (responseText, error) {
+	apiSubmit(api_function, payload, function (response, error) {
 		if (error) {
-			alert('Tagging failed: ' + '(' + error + ')' + responseText);
+			alert('Tagging failed: ' + '(' + error + ')' + response);
 
 		} else {
-			const success_msg = JSON.parse(responseText);
-			const counts = success_msg.updated != 1 ? success_msg.updated + ' Einträge' : success_msg.updated + ' Eintrag';
+			const counts = response.updated != 1 ? response.updated + ' Einträge' : response.updated + ' Eintrag';
 			alert(counts + ' kategorisiert');
 			window.location.reload();
 
@@ -546,8 +649,8 @@ function manualCat(t_ids, cat) {
 * @param {string} responseText The response text from the AJAX call
 *
 */
-function showAjaxError(error_code, responseText) {
-	const error_msg = JSON.parse(responseText).error || "unbekannter Fehler";
+function showAjaxError(error_code, repsonse) {
+	const error_msg = repsonse.error || "unbekannter Fehler";
 	alert('Fehler ' + error_code + ': ' + error_msg);
 }
 
@@ -556,8 +659,8 @@ function showAjaxError(error_code, responseText) {
 * @param {string} responseText The response text from the AJAX call
 *
 */
-function formatResultText(responseText) {
-	return JSON.stringify(JSON.parse(responseText), null, 4);
+function formatResultText(response) {
+	return JSON.stringify(response, null, 4);
 }
 
 
