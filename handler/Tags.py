@@ -315,7 +315,9 @@ class Tagger():
         `_cat_generator`. Otherwise the generator is consumed and the final
         yielded result is returned as a normal `dict`.
         """
-        gen = self._cat_generator(iban, rule_name=rule_name, prio=prio, prio_set=prio_set, dry_run=dry_run)
+        gen = self._cat_generator(iban, rule_name=rule_name,
+                                  prio=prio, prio_set=prio_set,
+                                  dry_run=dry_run)
         if streaming:
             return gen
 
@@ -325,7 +327,8 @@ class Tagger():
 
         return last
 
-    def tag(self, iban: str, rule_name: str=None, dry_run: bool=False, streaming: bool=False) -> dict:
+    def tag(self, iban: str, rule_name: str=None, dry_run: bool=False,
+            streaming: bool=False) -> dict:
         """
         Tagged Transaktionen anhand von Regeln in der Datenbank.
         Gibt bei `streming` einen Generator zurück mit teilweisen Ergebnissen pro Regel.

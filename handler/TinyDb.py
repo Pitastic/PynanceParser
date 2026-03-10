@@ -192,7 +192,7 @@ class TinyDbHandler(BaseDb):
             logging.error('Using "merge" without a query is not possible')
             return { 'error': 'Using "merge" without a query is not possible', 'updated': 0 }
 
-        elif condition is None:
+        if condition is None:
             query = Query().noop()
 
         else:
@@ -214,7 +214,7 @@ class TinyDbHandler(BaseDb):
             for d in data.keys():
 
                 if isinstance(doc.get(d), list) and merge:
-                    data[d] = list(set(doc.get(d) + data[d])) 
+                    data[d] = list(set(doc.get(d) + data[d]))
                     continue
 
             # Update this uuid

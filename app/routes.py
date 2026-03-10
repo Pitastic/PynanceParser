@@ -65,6 +65,8 @@ class Routes:
                 if not session.get("logged_in"):
                     return redirect('/login')
 
+                return
+
             @current_app.route("/login", methods=["GET", "POST"])
             def login():
                 """
@@ -149,9 +151,13 @@ class Routes:
 
                 # All distinct Rule Names
                 # (must be filtered on our own because TinyDB doesn't support 'distinct' queries)
-                tag_rules = parent.db_handler.filter_metadata({'key':'metatype', 'value': 'rule'})
+                tag_rules = parent.db_handler.filter_metadata(
+                    {'key':'metatype', 'value': 'rule'}
+                )
                 tag_rules = [r.get('name') for r in tag_rules if r.get('name')]
-                cat_rules = parent.db_handler.filter_metadata({'key':'metatype', 'value': 'category'})
+                cat_rules = parent.db_handler.filter_metadata(
+                    {'key':'metatype', 'value': 'category'}
+                )
                 cat_rules = [r.get('name') for r in cat_rules if r.get('name')]
 
                 # All distinct Tags
@@ -791,8 +797,8 @@ class Routes:
                 iban_data = parent.db_handler.select(iban)
                 iban_len = len(iban_data)
 
-                # Selekt Rules
-                parsers = parent.tagger._load_parsers()
+                # Select Rules (use private method beforehand to prevent loading in a loop)
+                parsers = parent.tagger._load_parsers() # pylint: disable=protected-access
 
                 # Parse data with rules
                 @stream_with_context
@@ -811,7 +817,9 @@ class Routes:
 
                         # Yield partial success
                         processed = idx+10 if idx+10 < iban_len else iban_len
-                        yield json.dumps({'updated': updated, 'processed': processed, 'count': iban_len}) + "\n"
+                        yield json.dumps(
+                            {'updated': updated, 'processed': processed, 'count': iban_len}
+                        ) + "\n"
 
                 return Response(stream(iban_data, parsers), content_type='application/x-ndjson')
 
