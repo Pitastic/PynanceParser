@@ -458,18 +458,15 @@ function apiSubmit(sub, params, callback, isFile = false) {
  */
 function apiSubmitStreaming(sub, params, partialCallback, finalCallback) {
 	const ajax = new XMLHttpRequest();
-	let method;
+	let method = 'PUT';
 	let body;
 
-	method = 'PUT';
 	// Ensure server returns streaming NDJSON
 	params.streaming = true;
 	body = JSON.stringify(params);
 
 	ajax.open(method, '/api/' + sub, true);
-	if (method != 'POST') {
-		ajax.setRequestHeader('Content-type', 'application/json');
-	}
+	ajax.setRequestHeader('Content-type', 'application/json');
 
 	// processedLen tracks how many characters of responseText we've consumed
 	let processedLen = 0;
@@ -525,6 +522,11 @@ function apiSubmitStreaming(sub, params, partialCallback, finalCallback) {
 			// Determine if this is a partial or the final result
 			if (obj && typeof obj === 'object' && obj.hasOwnProperty('rule')) {
 				partialCallback && partialCallback(obj);
+
+			} else if (obj && typeof obj === 'object' && obj.hasOwnProperty('processed') &&
+			  obj.processed < obj.count) {
+				partialCallback && partialCallback(obj);
+
 			} else {
 				// final aggregated result
 				finalCalled = true;

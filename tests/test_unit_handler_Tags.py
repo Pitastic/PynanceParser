@@ -50,6 +50,32 @@ def test_parsing_regex(test_app):
                     f"In Eintrag {i} gab es False-Positives"
 
 
+def test_re_parsing_regex(test_app):
+    """Testet das erneute Parsen der Datensätze mit übergebenen RegExes (z.B. für benutzerdefinierte Regeln)"""
+    with test_app.app_context():
+        tagger = Tagger(MockDatabase())
+        custom_parsers = tagger._load_parsers()
+
+        # Fake Daten laden
+        path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            'input_commerzbank2.json'
+        )
+        with open(path, 'rb') as test_data:
+            data = json.load(test_data)
+
+        assert data, "Test Kontoumsätze konnten nicht geladen werden"
+
+        parsed_data = tagger.parse(data, parsers=custom_parsers)
+
+        # Check enrichment from parser
+        for entry in parsed_data:
+            if entry.get('date_tx') == 1672876800 and entry.get('amount') == -221.98:
+                assert entry.get('parsed').get('Mandatsreferenz') == 'M1111111', \
+                    "Das Parsing hat nicht die erwarteten Ergebnisse geliefert"
+            
+
+
 def test_categorize(test_app):
     """Testet das Kategorisieren einzelner Datensätze"""
     with test_app.app_context():
@@ -64,7 +90,6 @@ def test_tag(test_app):
     with test_app.app_context():
         tagger = Tagger(MockDatabase())
         mocker_result = tagger.tag(iban="DE89370400440532013000")
-        print("Mocker Result:", mocker_result)
         assert 'test_tag' in mocker_result.get('entries') and \
             'test_tag2' in mocker_result.get('entries'), \
             "Result does not match with Mocker Fake"
@@ -130,7 +155,6 @@ def test_tag_streaming(test_app):
 
             # Generator yields mutable partial dicts; copy to capture state at yield-time
             if isinstance(item, dict) and item.get('rule') is not None:
-                print(f"Received partial:", item)
                 partials.append(copy.deepcopy(item))
 
             else:
@@ -157,7 +181,6 @@ def test_categorize_streaming(test_app):
 
         for item in gen:
             if isinstance(item, dict) and item.get('rule') is not None:
-                print(f"Received partial:", item)
                 partials.append(copy.deepcopy(item))
             else:
                 final = item

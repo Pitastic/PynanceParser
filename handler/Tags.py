@@ -13,7 +13,7 @@ class Tagger():
     def __init__(self, db_handler):
         self.db_handler = db_handler
 
-    def parse(self, input_data):
+    def parse(self, input_data, parsers=None) -> list:
         """
         Untersucht die Daten eines Standard-Objekts (hauptsächlich den Text)
         und identifiziert spezielle Angaben anhand von Mustern.
@@ -22,6 +22,7 @@ class Tagger():
         Args:
             input_data, list(dict): Liste mit Transaktionen,
                                     auf die das Parsing angewendet werden soll.
+            parsers, dict: Optionales Dict mit Parsern (Key: Bezeichner, Value: RegEx Pattern).
 
         Returns:
             list(dict): Updated input_data
@@ -29,10 +30,11 @@ class Tagger():
         # RegExes
         # Der Key wird als Bezeichner für das Ergebnis verwendet.
         # Jeder RegEx muss genau eine Gruppe matchen.
-        parses = self._load_parsers()
+        if parsers is None:
+            parsers = self._load_parsers()
 
         for d in input_data:
-            for name, regex in parses.items():
+            for name, regex in parsers.items():
                 re_match = regex.search(d['text_tx'])
                 if re_match:
                     d['parsed'][name] = re_match.group(1).strip()

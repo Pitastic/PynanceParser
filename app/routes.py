@@ -774,6 +774,47 @@ class Routes:
 
                 return updated_entries
 
+            @current_app.route('/api/reparse/<iban>', methods=['PUT'])
+            def reparse(iban):
+                """
+                Reparsed die Transaktionen für eine IBAN.
+
+                Args (uri):
+                    iban, str: IBAN für die die Transaktionen reparsed werden sollen.
+                Returns (streaming):
+                    dict: updated, int: Anzahl der gespeicherten Datensätzen
+                """
+                # Selekt data to parse
+                if not parent.check_requested_iban(iban):
+                    return "", 404
+
+                iban_data = parent.db_handler.select(iban)
+                iban_len = len(iban_data)
+
+                # Selekt Rules
+                parsers = parent.tagger._load_parsers()
+
+                # Parse data with rules
+                @stream_with_context
+                def stream(iban_data, parsers):
+                    for idx in range(0, len(iban_data), 10):
+                        # Parse
+                        partial = iban_data[idx:idx+10]
+                        partial = parent.tagger.parse(partial, parsers=parsers)
+
+                        # Save new parsed data in DB
+                        updated = 0
+                        for p in partial:
+                            updated += parent.db_handler.update(
+                                p, iban, {'key': 'uuid', 'value': p.get('uuid')}, merge=False
+                            ).get('updated', 0)
+
+                        # Yield partial success
+                        processed = idx+10 if idx+10 < iban_len else iban_len
+                        yield json.dumps({'updated': updated, 'processed': processed, 'count': iban_len}) + "\n"
+
+                return Response(stream(iban_data, parsers), content_type='application/x-ndjson')
+
             @current_app.route('/api/stats/<iban>', methods=['GET'])
             def statsIban(iban):
                 """

@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', function () {
 function prepareAddModal(modal_id, event, force_id) {
     const mode = modal_id.split('-')[1];
     const text_input = document.getElementById(mode + "-input");
-    const link_open = document.querySelector("#" + modal_id + " footer a");
+    const link_open = document.querySelector("#" + modal_id + " footer a:last-child");
     const iban_stats = document.getElementById('iban-stats');
     
     if (force_id || (event && event.currentTarget.dataset[mode])) {
@@ -386,4 +386,41 @@ function deleteDB(delete_group) {
         }
     }, 'DELETE');
     
+}
+
+/**
+ * Re-Parse all transactions in an IBAN-Database with the current settings.
+ */
+function reParse() {
+    const iban = document.getElementById('iban-input').value;
+    if (!iban) {
+        alert("Keine IBAN angegeben!");
+        return;
+    }
+
+    // Prepare Result PopUp
+    const popup = document.getElementById('reparse-iban');
+    const button = popup.querySelector('footer a');
+    const progress = popup.querySelector('progress');
+    const updated = popup.querySelector('p > span');
+    button.setAttribute('disabled', 'true');
+    openModal(popup, { 'currentTarget': { 'dataset': {} } });
+
+    apiSubmitStreaming('/reparse/' + iban, {},
+        function(response, error) {
+            if (error) {
+                errorPopUp('Neuparse fehlgeschlagen', error, response);
+            } else {
+                updated.innerHTML = response.updated || 0;
+                progress.value = response.processed || 0;
+                progress.max = response.count || 0;
+            }
+        },
+        function(response) {
+            updated.innerHTML = response.updated || 0;
+            progress.value = response.processed || 0;
+            progress.max = response.count || 0;
+            button.removeAttribute('disabled');
+        }
+    );
 }

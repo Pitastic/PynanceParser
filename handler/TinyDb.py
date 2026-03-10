@@ -175,6 +175,7 @@ class TinyDbHandler(BaseDb):
         docs_to_update = self.select(collection, condition, multi)
         if not docs_to_update:
             # No match, no update
+            logging.info('No matching documents found for update with condition: %s', condition)
             return { 'updated': 0 }
 
         collection = self.connection.table(collection)

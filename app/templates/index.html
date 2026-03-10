@@ -109,6 +109,17 @@
             </div>
             <button onclick="uploadIban()" class="contrast">Import</button>
         </div>
+        <details>
+            <summary>
+                Transaktionen neu parsen.
+            </summary>
+            <p>
+                Aller Transaktionen dieser IBAN werden mit den aktuellen Parsing-Mustern eingelesen und <i>(nur)</i> die Ergebnisse des Parsings überschrieben.
+            </p>
+            <p class="center">
+                <a role="button" class="delete outline" href="javascript:reParse()">Erneut parsen</a>
+            </p>
+        </details>
         <footer>
             <a role="button" href="">Öffnen</a>
         </footer>
@@ -127,6 +138,22 @@
 
         <footer>
             <a role="button" href="">Öffnen</a>
+        </footer>
+    </article>
+</dialog>
+
+<dialog id="reparse-iban">
+    <article>
+        <header>
+            <button aria-label="Close" rel="prev" data-target="upload-list" onclick="toggleModal(event)"></button>
+            <h2>Erneutes Parsing</h2>
+        </header>
+
+        <p>Geänderte Datensätze: <span>0</span></p>
+        <p><progress value="0" max="1" /></p>
+
+        <footer>
+            <a role="button" class="primary" href="/">OK</a>
         </footer>
     </article>
 </dialog>
