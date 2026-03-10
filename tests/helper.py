@@ -164,6 +164,10 @@ class MockDatabase:
             {'key': 'prio', 'value': 99, 'compare': '<'},
             {'key': 'text_tx', 'value': '(ABGABEN\\sLT\\.\\sBESCHEID)', 'compare': 'regex'}
         ]
+        self.query_tag_multi = [
+            {'key': 'prio', 'value': 99, 'compare': '<'},
+            {'key': 'amount', 'value': 10000000, 'compare': 'gt'}
+        ]
         self.query_ai = [
             {'key': 'category', 'value': None, 'compare': '=='},
             {'key': 'tags', 'value': None, 'compare': '=='}
@@ -248,6 +252,9 @@ class MockDatabase:
 
         if condition == self.query_tag:
             return [{'uuid': 'test_tag'}]
+
+        if condition == self.query_tag_multi:
+            return [{'uuid': 'test_tag'}, {'uuid': 'test_tag2'}]
 
         if condition == self.query_ai:
             return [
@@ -344,6 +351,16 @@ class MockDatabase:
                         "key": "text_tx",
                         "value": "(ABGABEN\\sLT\\.\\sBESCHEID)",
                         "compare": "regex"
+                    }]
+                },
+                {
+                    "metatype": "rule",
+                    "name": "MultiMatch",
+                    "tags": ["multi-match"],
+                    "filter": [{
+                        "key": "amount",
+                        "value": 10000000,
+                        "compare": "gt"
                     }]
                 }
             ]

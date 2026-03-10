@@ -332,6 +332,26 @@ def test_tag_stored_rules(test_app):
                 f"Die Regel 'City Tax' hat {len(matched_entries)} statt 1 Transactionen getroffen"
 
 
+def test_tag_route_streaming(test_app):
+    """Request the `/api/tag/<iban>` endpoint with `streaming=True` and verify NDJSON partials and final result."""
+    with test_app.app_context():
+        with test_app.test_client() as client:
+            params = {'rule_name': 'City Tax', 'dry_run': True, 'streaming': True}
+            resp = client.put("/api/tag/DE89370400440532013000", json=params)
+            assert resp.status_code == 200, "Streaming tag endpoint did not return 200"
+
+            text = resp.get_data(as_text=True)
+            lines = [l for l in text.splitlines() if l.strip()]
+            assert lines, "No NDJSON lines returned from streaming tag endpoint"
+
+            parsed = [json.loads(l) for l in lines]
+            partials = [p for p in parsed if 'rule' in p]
+            final = next((p for p in parsed if 'rule' not in p), None)
+
+            assert len(partials) >= 1, f"Expected at least 1 partial, got {len(partials)}"
+            assert final and 'entries' in final, "Final aggregated result missing or invalid"
+
+
 def test_categorize_stored_rules(test_app):
     """Testet das Kategorisieren über den API Endpunkt:
     - Kategorisieren mit einer definierten Regel
@@ -381,6 +401,26 @@ def test_categorize_stored_rules(test_app):
             )
             assert len(result_filtered) == 1, \
                 f"Falsche Anzahl an Datensätzen mit 'prio': {len(result_filtered)}"            
+
+
+def test_cat_route_streaming(test_app):
+    """Request the `/api/cat/<iban>` endpoint with `streaming=True` and verify NDJSON partials and final result."""
+    with test_app.app_context():
+        with test_app.test_client() as client:
+            params = {'rule_name': 'Abgaben', 'dry_run': True, 'streaming': True}
+            resp = client.put("/api/cat/DE89370400440532013000", json=params)
+            assert resp.status_code == 200, "Streaming cat endpoint did not return 200"
+
+            text = resp.get_data(as_text=True)
+            lines = [l for l in text.splitlines() if l.strip()]
+            assert lines, "No NDJSON lines returned from streaming cat endpoint"
+
+            parsed = [json.loads(l) for l in lines]
+            partials = [p for p in parsed if 'rule' in p]
+            final = next((p for p in parsed if 'rule' not in p), None)
+
+            assert len(partials) >= 1, f"Expected at least 1 partial, got {len(partials)}"
+            assert final and 'entries' in final, "Final aggregated result missing or invalid"
 
 
 def test_tag_custom_rules(test_app):

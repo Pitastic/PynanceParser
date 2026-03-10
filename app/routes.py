@@ -2,10 +2,11 @@
 """Routen für das User Interface."""
 
 import os
+import json
 from datetime import datetime
 import secrets
 from flask import request, current_app, render_template, redirect, \
-                  make_response, send_from_directory, session
+                  make_response, send_from_directory, session, Response, stream_with_context
 
 
 class Routes:
@@ -63,6 +64,8 @@ class Routes:
                 # Block everything else unless logged in
                 if not session.get("logged_in"):
                     return redirect('/login')
+
+                return
 
             @current_app.route("/login", methods=["GET", "POST"])
             def login():
@@ -148,8 +151,14 @@ class Routes:
 
                 # All distinct Rule Names
                 # (must be filtered on our own because TinyDB doesn't support 'distinct' queries)
-                rulenames = parent.db_handler.filter_metadata({'key':'metatype', 'value': 'rule'})
-                rulenames = [r.get('name') for r in rulenames if r.get('name')]
+                tag_rules = parent.db_handler.filter_metadata(
+                    {'key':'metatype', 'value': 'rule'}
+                )
+                tag_rules = [r.get('name') for r in tag_rules if r.get('name')]
+                cat_rules = parent.db_handler.filter_metadata(
+                    {'key':'metatype', 'value': 'category'}
+                )
+                cat_rules = [r.get('name') for r in cat_rules if r.get('name')]
 
                 # All distinct Tags
                 # (must be filtered on our own because TinyDB doesn't support 'distinct' queries)
@@ -175,7 +184,8 @@ class Routes:
 
                 return render_template('iban.html', transactions=rows[:entries_per_page],
                                        IBAN=iban, tags=tags, categories=cats,
-                                       rules=rulenames, filters=frontend_filters)
+                                       tag_rules=tag_rules, cat_rules=cat_rules,
+                                       filters=frontend_filters)
 
             @current_app.route('/<iban>/<t_id>', methods=['GET'])
             def showTx(iban, t_id):
@@ -486,11 +496,22 @@ class Routes:
                     rule_name, str: Name der Regel, die angewendet werden soll.
                                     (Default: Alle Regeln werden angewendet)
                     dry_run, bool:  Switch to show, which TX would be updated. Do not update.
+                    streaming, bool: Switch to enable streaming of partial results per matched rule.
                 Returns:
                     json: Informationen zum Ergebnis des Taggings.
                 """
                 rule_name = request.json.get('rule_name')
                 dry_run = request.json.get('dry_run', False)
+                streaming = request.json.get('streaming', False)
+
+                if streaming:
+                    @stream_with_context
+                    def stream():
+                        for partial in parent.tagger.tag(iban, rule_name, dry_run, streaming=True):
+                            yield json.dumps(partial) + "\n"
+
+                    return Response(stream(), content_type='application/x-ndjson')
+
                 return parent.tagger.tag(iban, rule_name, dry_run)
 
             @current_app.route('/api/cat/<iban>', methods=['PUT'])
@@ -507,6 +528,7 @@ class Routes:
                                     in comparison with already cat. transactions
                                     (higher = more important)
                     prio_set, int:  Override: Compare with 'prio' but set this value instead.
+                    streaming, bool: Switch to enable streaming of partial results per matched rule.
                 Returns:
                     json: Informationen zum Ergebnis des Taggings.
                 """
@@ -514,6 +536,20 @@ class Routes:
                 dry_run = request.json.get('dry_run', False)
                 prio = request.json.get('prio')
                 prio_set = request.json.get('prio_set')
+                streaming = request.json.get('streaming', False)
+
+                if streaming:
+                    gen = parent.tagger.categorize(
+                        iban, rule_name, prio, prio_set, dry_run, streaming=True
+                    )
+
+                    @stream_with_context
+                    def stream():
+                        for partial in gen:
+                            yield json.dumps(partial) + "\n"
+
+                    return Response(stream(), content_type='application/x-ndjson')
+
                 return parent.tagger.categorize(iban, rule_name, prio, prio_set, dry_run)
 
             @current_app.route('/api/tag-and-cat/<iban>', methods=['PUT'])
@@ -743,6 +779,49 @@ class Routes:
                     updated_entries['updated'] += updated.get('updated')
 
                 return updated_entries
+
+            @current_app.route('/api/reparse/<iban>', methods=['PUT'])
+            def reparse(iban):
+                """
+                Reparsed die Transaktionen für eine IBAN.
+
+                Args (uri):
+                    iban, str: IBAN für die die Transaktionen reparsed werden sollen.
+                Returns (streaming):
+                    dict: updated, int: Anzahl der gespeicherten Datensätzen
+                """
+                # Selekt data to parse
+                if not parent.check_requested_iban(iban):
+                    return "", 404
+
+                iban_data = parent.db_handler.select(iban)
+                iban_len = len(iban_data)
+
+                # Select Rules (use private method beforehand to prevent loading in a loop)
+                parsers = parent.tagger._load_parsers() # pylint: disable=protected-access
+
+                # Parse data with rules
+                @stream_with_context
+                def stream(iban_data, parsers):
+                    for idx in range(0, len(iban_data), 10):
+                        # Parse
+                        partial = iban_data[idx:idx+10]
+                        partial = parent.tagger.parse(partial, parsers=parsers)
+
+                        # Save new parsed data in DB
+                        updated = 0
+                        for p in partial:
+                            updated += parent.db_handler.update(
+                                p, iban, {'key': 'uuid', 'value': p.get('uuid')}, merge=False
+                            ).get('updated', 0)
+
+                        # Yield partial success
+                        processed = idx+10 if idx+10 < iban_len else iban_len
+                        yield json.dumps(
+                            {'updated': updated, 'processed': processed, 'count': iban_len}
+                        ) + "\n"
+
+                return Response(stream(iban_data, parsers), content_type='application/x-ndjson')
 
             @current_app.route('/api/stats/<iban>', methods=['GET'])
             def statsIban(iban):

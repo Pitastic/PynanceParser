@@ -175,6 +175,7 @@ class TinyDbHandler(BaseDb):
         docs_to_update = self.select(collection, condition, multi)
         if not docs_to_update:
             # No match, no update
+            logging.info('No matching documents found for update with condition: %s', condition)
             return { 'updated': 0 }
 
         collection = self.connection.table(collection)
@@ -191,7 +192,7 @@ class TinyDbHandler(BaseDb):
             logging.error('Using "merge" without a query is not possible')
             return { 'error': 'Using "merge" without a query is not possible', 'updated': 0 }
 
-        elif condition is None:
+        if condition is None:
             query = Query().noop()
 
         else:
@@ -205,16 +206,19 @@ class TinyDbHandler(BaseDb):
         # Update every Entry one-by-one (merge every list item)
         for doc in docs_to_update:
 
+            # Fix TinyDBs multiple results for same doc
+            if doc.get('uuid') in update_result:
+                continue
 
             # Look for lists to merge with this entry
             for d in data.keys():
 
                 if isinstance(doc.get(d), list) and merge:
-                    data[d] = list(set(doc.get(d) + data[d])) 
+                    data[d] = list(set(doc.get(d) + data[d]))
                     continue
 
             # Update this uuid
-            update_result += collection.update(
+            collection.update(
                 data,
                 self._form_complete_query({
                     'key': 'uuid',
@@ -222,6 +226,7 @@ class TinyDbHandler(BaseDb):
                     'compare': '=='
                 })
             )
+            update_result.append(doc.get('uuid'))
 
         return { 'updated': len(update_result) }
 
