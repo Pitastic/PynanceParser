@@ -258,7 +258,7 @@ class BaseDb():
         """
         if not self.check_collection_is_iban(collection):
             # Delete group config from metadata
-            return self.delete('metadata', [
+            return self._delete('metadata', [
                 {
                     'key': 'metatype',
                     'value': 'config'
