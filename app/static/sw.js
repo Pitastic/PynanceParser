@@ -1,11 +1,11 @@
 self.addEventListener('install', function (event) {
-    event.waitUntil(
-        function(){
-            console.log("SW: PWA installiert !");
-        }
-    );
+    self.skipWaiting();
+});
+
+self.addEventListener('activate', function (event) {
+    event.waitUntil(self.clients.claim());
 });
 
 self.addEventListener('fetch', function (event) {
-    // Bisher kein Ressourcen Management nötig !
+    // Not needed for now...
 });

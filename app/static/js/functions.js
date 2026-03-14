@@ -393,6 +393,54 @@ function createAjax(callback) {
 	return ajax;
 }
 
+// -----------------------------
+// PWA: Service Worker registration and Install prompt handling
+// -----------------------------
+if ('serviceWorker' in navigator) {
+	window.addEventListener('load', function () {
+		navigator.serviceWorker.register('/static/sw.js').then(function (reg) {
+			console.log('Service worker registered.', reg);
+		}).catch(function (err) {
+			console.warn('Service worker registration failed:', err);
+		});
+	});
+}
+
+let deferredPWAInstall = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+	e.preventDefault();
+	deferredPWAInstall = e;
+	let btn = document.getElementById('pwa-install-btn');
+	if (!btn) {
+		btn = document.createElement('button');
+		btn.id = 'pwa-install-btn';
+		btn.className = 'bottom-fixed right';
+		btn.textContent = 'Install App';
+		btn.style.padding = '0.6rem';
+		btn.addEventListener('click', async () => {
+			btn.style.display = 'none';
+			deferredPWAInstall.prompt();
+			const choice = await deferredPWAInstall.userChoice;
+			deferredPWAInstall = null;
+			if (choice.outcome === 'accepted') {
+				console.log('User accepted the A2HS prompt');
+			} else {
+				console.log('User dismissed the A2HS prompt');
+			}
+		});
+		document.body.appendChild(btn);
+	} else {
+		btn.style.display = 'inline-block';
+	}
+});
+
+window.addEventListener('appinstalled', (evt) => {
+	const btn = document.getElementById('pwa-install-btn');
+	if (btn) btn.style.display = 'none';
+	console.log('PWA was installed.');
+});
+
+
 /**
  * Sends a GET request to the specified API endpoint with the given parameters.
  *
