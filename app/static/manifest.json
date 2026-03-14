@@ -1,9 +1,9 @@
 {
   "name": "PynanceParser",
-  "short_name": "Pynance",
+  "short_name": "PynanceParser",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "background_color": "#000000",
   "theme_color": "#4db6ac",
   "description": "Get Insides into your Bank Account",
   "icons": [
