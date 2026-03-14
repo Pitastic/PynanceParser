@@ -54,12 +54,22 @@ class Routes:
                     return
 
                 # Allow access to CSS files
-                if request.endpoint == "static" and request.path.endswith(".css"):
+                if request.endpoint == "static" and request.path.startswith('/static/css'):
                     return
 
                 # Allow access to JS files
-                if request.endpoint == "static" and request.path.endswith(".js"):
+                if request.endpoint == "static" and request.path.startswith('/static/js'):
                     return
+
+                # Allow access to icon files and manifest (PWA assets)
+                if request.endpoint == "static" and (
+                    request.path.startswith('/static/icons') or
+                    request.path.endswith('manifest.json') or
+                    request.path.endswith('favicon.svg') or
+                    request.path.endswith('sw.js')
+                ):
+                    return
+                
 
                 # Block everything else unless logged in
                 if not session.get("logged_in"):
