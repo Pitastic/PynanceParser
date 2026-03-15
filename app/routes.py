@@ -65,7 +65,7 @@ class Routes:
                 if request.endpoint == "static" and (
                     request.path.startswith('/static/icons') or
                     request.path.endswith('manifest.json') or
-                    request.path.endswith('favicon.svg') or
+                    request.path.endswith('favicon.png') or
                     request.path.endswith('sw.js')
                 ):
                     return

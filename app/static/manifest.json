@@ -8,12 +8,12 @@
   "description": "Get Insides into your Bank Account",
   "icons": [
     {
-      "src": "/static/favicon.svg",
+      "src": "/static/favicon.png",
       "sizes": "192x192",
       "type": "image/svg+xml"
     },
     {
-      "src": "/static/favicon.svg",
+      "src": "/static/favicon.png",
       "sizes": "512x512",
       "type": "image/svg+xml"
     }
