@@ -33,5 +33,40 @@
 
 </main>
 
+<script>
+let deferredPWAInstall = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+	e.preventDefault();
+	deferredPWAInstall = e;
+	let btn = document.getElementById('pwa-install-btn');
+	if (!btn) {
+		btn = document.createElement('button');
+		btn.id = 'pwa-install-btn';
+		btn.className = 'secondary';
+		btn.textContent = 'Install WebApp';
+		btn.addEventListener('click', async () => {
+			btn.style.display = 'none';
+			deferredPWAInstall.prompt();
+			const choice = await deferredPWAInstall.userChoice;
+			deferredPWAInstall = null;
+			if (choice.outcome === 'accepted') {
+				console.log('User accepted the A2HS prompt');
+			} else {
+				console.log('User dismissed the A2HS prompt');
+			}
+		});
+        document.querySelector('body footer').prepend(document.createElement('br'));
+        document.querySelector('body footer').prepend(btn);
+	} else {
+		btn.style.display = 'inline-block';
+	}
+});
+
+window.addEventListener('appinstalled', (evt) => {
+	const btn = document.getElementById('pwa-install-btn');
+	if (btn) btn.style.display = 'none';
+	console.log('PWA was installed.');
+});
+</script>
 
 {% endblock %}

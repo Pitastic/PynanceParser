@@ -71,6 +71,11 @@ small.secondary, strong.secondary, i.secondary {
     .bottom-fixed > button {
         border-radius: 2em;
     }
+
+#pwa-install-btn {
+    margin-bottom: 6em;
+}
+
 /* Info TX button */
 button.info {
     padding: 1em;

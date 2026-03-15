@@ -393,6 +393,19 @@ function createAjax(callback) {
 	return ajax;
 }
 
+// -----------------------------
+// PWA: Service Worker registration and Install prompt handling
+// -----------------------------
+if ('serviceWorker' in navigator) {
+	window.addEventListener('load', function () {
+		navigator.serviceWorker.register('/static/sw.js').then(function (reg) {
+			console.log('Service worker registered.', reg);
+		}).catch(function (err) {
+			console.warn('Service worker registration failed:', err);
+		});
+	});
+}
+
 /**
  * Sends a GET request to the specified API endpoint with the given parameters.
  *
