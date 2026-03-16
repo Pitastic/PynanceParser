@@ -47,24 +47,29 @@ class Routes:
                 """
                 # Allow PyTest Client
                 if current_app.config.get('TESTING', False):
-                    return
+                    return None
 
                 # Allow access to login route or static content needed before login
-                if request.endpoint == "login" or (request.endpoint == "static" and (
-                    request.path.startswith('/static/css') or
-                    request.path.startswith('/static/js') or
-                    request.path.startswith('/static/icons') or
+                if request.endpoint == "login":
+                    return None
+
+                if  request.endpoint == "static" and (
                     request.path.endswith('manifest.json') or
                     request.path.endswith('sw.js')
-                )):
-                    return
+                ):
+                    return None
+
+                if request.path.startswith('/static/css') or \
+                   request.path.startswith('/static/js') or \
+                   request.path.startswith('/static/icons'):
+                    return None
 
                 # Block everything else unless logged in
                 if not session.get("logged_in"):
                     return redirect('/login')
 
-                # Return True for logged-in users
-                return
+                # Return no Redirection for logged-in users
+                return None
 
             @current_app.route("/login", methods=["GET", "POST"])
             def login():

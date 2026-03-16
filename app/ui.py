@@ -12,6 +12,8 @@ from flask import current_app, redirect
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
 
+# Relative imports need to be after sys.path append
+#pylint: disable=wrong-import-position
 from app.routes import Routes
 
 from handler.TinyDb import TinyDbHandler
@@ -22,7 +24,7 @@ from reader.Generic import Reader as Generic
 from reader.Comdirect import Reader as Comdirect
 from reader.Commerzbank import Reader as Commerzbank
 from reader.Volksbank_Mittelhessen import Reader as Volksbank_Mittelhessen
-
+#pylint: enable=wrong-import-position
 
 class UserInterface():
     """Basisklasse mit Methoden für den Programmablauf"""

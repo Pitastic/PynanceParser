@@ -18,7 +18,7 @@ class Reader:
         folgt dem Template in `Models.md` sofern die Felder mit den Informationen
         von hier sicher gefüllt werden können.
         """
-        return
+        self.all_rows = []
 
     def from_csv(self, filepath):
         """
