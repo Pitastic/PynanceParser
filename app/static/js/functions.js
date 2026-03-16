@@ -4,6 +4,22 @@ let IBAN = window.location.pathname.split('/')[1];
 let TAGS = [];
 
 // ----------------------------------------------------------------------------
+// -- General Listeners -------------------------------------------------------
+// ----------------------------------------------------------------------------
+
+document.addEventListener('DOMContentLoaded', function () {
+
+	// Set PWA if used in PWA
+	if (sessionStorage.getItem('pwa_installed') != 'true'){
+		if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches ||
+		   window.navigator.standalone === true) {
+			sessionStorage.setItem('pwa_installed', 'true');
+		}
+	}
+
+});
+
+// ----------------------------------------------------------------------------
 // -- DOM Functions ----------------------------------------------------------
 // ----------------------------------------------------------------------------
 
@@ -391,6 +407,19 @@ function createAjax(callback) {
 		}
 	};
 	return ajax;
+}
+
+// -----------------------------
+// PWA: Service Worker registration and Install prompt handling
+// -----------------------------
+if ('serviceWorker' in navigator) {
+	window.addEventListener('load', function () {
+		navigator.serviceWorker.register('/static/sw.js').then(function (reg) {
+			console.log('Service worker registered.', reg);
+		}).catch(function (err) {
+			console.warn('Service worker registration failed:', err);
+		});
+	});
 }
 
 /**

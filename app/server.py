@@ -8,7 +8,9 @@ from flask import Flask
 
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(os.path.join(parent_dir))
-from app.ui import UserInterface
+
+# Relative imports need to be after sys.path append
+from app.ui import UserInterface #pylint: disable=wrong-import-position
 
 
 def create_app(config_path: str) -> Flask:

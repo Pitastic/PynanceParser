@@ -236,7 +236,7 @@ class BaseDb():
 
         return {'deleted': update_result}
 
-    def _delete(self, collection: str, condition: dict | list[dict], multi: str):
+    def _delete(self, collection: str, condition: dict | list[dict]=None, multi: str='AND'):
         """
         Private Methode zum Löschen von Datensätzen in der Datenbank,
         die die angegebene Bedingung erfüllen. Siehe 'delete' Methode.

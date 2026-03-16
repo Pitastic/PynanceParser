@@ -71,6 +71,11 @@ small.secondary, strong.secondary, i.secondary {
     .bottom-fixed > button {
         border-radius: 2em;
     }
+
+#pwa-install-btn {
+    margin-bottom: 6em;
+}
+
 /* Info TX button */
 button.info {
     padding: 1em;
@@ -159,7 +164,6 @@ button.info {
     background-color: var(--pico-code-kbd-background-color);
     border-radius: var(--pico-border-radius);
     color: var(--pico-code-kbd-color);
-    font-weight: bolder;
     font-size: .875em;
     font-family: var(--pico-font-family);
     line-height: initial;
@@ -184,6 +188,7 @@ button.info {
     }
 
     .tag-chip.parsed {background-color: blueviolet; color:black;}
+    .tag-chip.parsed b {display: block;}
     .tag-chip:hover { filter: brightness(110%); }
 
     /* Generated Color Classes */

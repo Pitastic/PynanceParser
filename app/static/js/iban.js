@@ -43,6 +43,9 @@ document.addEventListener('DOMContentLoaded', function () {
         window.location.href = '/' + IBAN;
     })
 
+    // Update Details Link ("_blank" for non-PWA)
+    updateDetailsLink();
+
 });
 
 // ----------------------------------------------------------------------------
@@ -58,6 +61,19 @@ function set_all_checkboxes() {
     });
     updateEditButtonState();
     listTxElements();
+}
+
+/**
+ * Set "more" button to target "_blank" if not PWA
+ */
+function updateDetailsLink() {
+    var a = document.querySelector('#details-popup footer a.secondary');
+    if (!a) return;
+    if (sessionStorage.getItem('pwa_installed') == 'true') {
+        a.removeAttribute('target');
+    } else {
+        a.setAttribute('target', '_blank');
+    }
 }
 
 /**
