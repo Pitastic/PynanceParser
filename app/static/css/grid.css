@@ -46,6 +46,8 @@
             "gegen-val gegen-val"
             "tx-head tx-head"
             "tx-val tx-val"
+            "txt-head txt-head"
+            "txt-val txt-val"
             ". .";
     }
 
@@ -59,6 +61,8 @@
     #dynamic-results tr:nth-child(4) td { grid-area: gegen-val;}
     #dynamic-results tr:nth-child(9) th { grid-area: tx-head;}
     #dynamic-results tr:nth-child(9) td { grid-area: tx-val;}
+    #dynamic-results tr:nth-child(10) th { grid-area: txt-head;}
+    #dynamic-results tr:nth-child(10) td { grid-area: txt-val;}
 
     /* Stack nav */
     nav { display: block; }

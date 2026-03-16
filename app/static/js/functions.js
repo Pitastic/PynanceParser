@@ -4,6 +4,22 @@ let IBAN = window.location.pathname.split('/')[1];
 let TAGS = [];
 
 // ----------------------------------------------------------------------------
+// -- General Listeners -------------------------------------------------------
+// ----------------------------------------------------------------------------
+
+document.addEventListener('DOMContentLoaded', function () {
+
+	// Set PWA if used in PWA
+	if (sessionStorage.getItem('pwa_installed') != 'true'){
+		if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches ||
+		   window.navigator.standalone === true) {
+			sessionStorage.setItem('pwa_installed', 'true');
+		}
+	}
+
+});
+
+// ----------------------------------------------------------------------------
 // -- DOM Functions ----------------------------------------------------------
 // ----------------------------------------------------------------------------
 

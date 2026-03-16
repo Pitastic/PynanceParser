@@ -70,3 +70,14 @@ function manualTagTx(uuid) {
 function manualCatTx(uuid) {
     return manualCat([uuid], document.getElementById('cat-input').value);
 }
+
+/**
+ * Close window when used as PWA, otherwise go back in browser history.
+ */
+function closeOrBack() {
+    if (sessionStorage.getItem('pwa_installed') != 'true') {
+        window.close();
+    } else {
+        window.history.back();
+    }
+}
