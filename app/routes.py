@@ -49,32 +49,21 @@ class Routes:
                 if current_app.config.get('TESTING', False):
                     return
 
-                # Allow access to login route
-                if request.endpoint == "login":
-                    return
-
-                # Allow access to CSS files
-                if request.endpoint == "static" and request.path.startswith('/static/css'):
-                    return
-
-                # Allow access to JS files
-                if request.endpoint == "static" and request.path.startswith('/static/js'):
-                    return
-
-                # Allow access to icon files and manifest (PWA assets)
-                if request.endpoint == "static" and (
+                # Allow access to login route or static content needed before login
+                if request.endpoint == "login" or (request.endpoint == "static" and (
+                    request.path.startswith('/static/css') or
+                    request.path.startswith('/static/js') or
                     request.path.startswith('/static/icons') or
                     request.path.endswith('manifest.json') or
-                    request.path.endswith('favicon.png') or
                     request.path.endswith('sw.js')
-                ):
+                )):
                     return
-                
 
                 # Block everything else unless logged in
                 if not session.get("logged_in"):
                     return redirect('/login')
 
+                # Return True for logged-in users
                 return
 
             @current_app.route("/login", methods=["GET", "POST"])
