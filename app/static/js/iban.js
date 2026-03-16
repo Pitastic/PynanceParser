@@ -287,8 +287,12 @@ function showPartsPop(op, response){
 
     const a = document.createElement('a');
     a.href = '/' + IBAN + '/' + entry;
-    a.target = '_blank';
     a.innerHTML = entry;
+
+    // Use '_blank' when not in PWA
+    if (sessionStorage.getItem('pwa_installed') != 'true'){
+        a.target = '_blank';
+    }
 
     li.appendChild(a);
     ul.appendChild(li);
@@ -321,13 +325,11 @@ function tagAndCat(operation) {
             return;
         }
 
-        payload['streaming'] = false;
         api_url = 'tag-and-cat/';
     }
 
     const dry_run = document.getElementById(operation + '-dry').checked;
     if (dry_run) {
-        payload['streaming'] = false;
         payload['dry_run'] = dry_run;
     }
 
