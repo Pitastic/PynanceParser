@@ -7,4 +7,5 @@ disable=
     R0915,  # too-many-statements
     R0913,  # too-many-arguments
     R0912,  # too-many-branches
-    R0914   # too-many-locals
+    R0914,  # too-many-locals
+    R0917   # too-many-positional-arguments
