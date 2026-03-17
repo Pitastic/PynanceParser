@@ -324,7 +324,7 @@ function tagAndCat(operation) {
             alert("Kein Namen oder kein Metatype bei der Custom-Regel angegeben");
             return;
         }
-
+        payload['streaming'] = false;
         api_url = 'tag-and-cat/';
     }
 
