@@ -446,10 +446,13 @@ function apiGet(sub, params, callback, method = "GET") {
  * @param {string} sub - The API endpoint to append to the base URL.
  * @param {Object} params - An object containing key-value pairs to be sent as query parameters.
  * @param {function} callback - A callback function to handle the response.
- * 								Receives the response text and status code as arguments.
+ * 							Receives the response text and status code as arguments.
  * @param {boolean} [isFile=false] - A switch to enable special file upload handling.
+ * @param {string} [force_method] - The HTTP method to use for the request (e.g., "POST", "PUT").
+ * 							If not provided, it will be determined based on the presence of
+ * 							a file in the parameters.
  */
-function apiSubmit(sub, params, callback, isFile = false) {
+function apiSubmit(sub, params, callback, isFile = false, force_method = undefined) {
 	const ajax = createAjax(callback);
 	let method;
 	let request_uri;
@@ -464,6 +467,11 @@ function apiSubmit(sub, params, callback, isFile = false) {
 		// Append JSON
 		method = "PUT";
 		request_uri = JSON.stringify(params);
+	}
+
+	if (typeof force_method != "undefined") {
+		console.info("Setting method to", force_method.toUpperCase())
+		method = force_method.toUpperCase();
 	}
 
 	ajax.open(method, "/api/" + sub, true);

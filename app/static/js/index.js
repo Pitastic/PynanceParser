@@ -197,6 +197,28 @@ function saveSetting() {
     }, false);
 }
 
+/**
+ * Delete a value from Metadate by uuid.
+ * The key is selected via the select input element 'read-setting'.
+ */ 
+function deleteSetting() {
+    const setting_uuid = document.getElementById('read-setting').value;
+    if (!setting_uuid) {
+        alert('Kein Name einer Einstellung angegeben!');
+        return;
+    }
+
+    apiSubmit('deleteMeta/' + setting_uuid, {}, function (response, error) {
+        if (error) {
+            showAjaxError(error, response);
+
+        } else {
+            alert('Einstellung gelöscht !');
+            window.location.reload();
+
+        }
+    }, false, 'DELETE');
+}
 
 // ----------------------------------------------------------------------------
 // -- API Functions -----------------------------------------------------------

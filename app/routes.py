@@ -390,6 +390,25 @@ class Routes:
                 meta = parent.db_handler.filter_metadata(condition=None)
                 return meta, 200
 
+            @current_app.route('/api/deleteMeta/', methods=['DELETE'], defaults={'uuid':None})
+            @current_app.route('/api/deleteMeta/<uuid>', methods=['DELETE'])
+            def deleteMeta(uuid):
+                """
+                Löschen von Metadaten anhand der ID
+                Args (uri):
+                    uuid, str: ID der zu löschenden Metadaten
+                Returns:
+                    json: Informationen zum Ergebnis der Löschaktion
+                """
+                if not uuid:
+                    return {'error': 'No ID provided'}, 400
+
+                r = parent.db_handler.delete_metadata(uuid)
+                if not r.get('deleted'):
+                    return {'error': f'No data deleted: {r.get("error")}'}, 400
+
+                return r, 200
+
             @current_app.route('/api/upload/<iban>', methods=['POST'])
             def uploadIban(iban):
                 """

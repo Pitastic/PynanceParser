@@ -257,6 +257,11 @@ class MongoDbHandler(BaseDb):
 
         return {'inserted': 0}
 
+    def delete_metadata(self, uuid):
+        collection = self.connection['metadata']
+        delete_result = collection.delete_one({'uuid': uuid})
+        return {'deleted': delete_result.deleted_count}
+
     def _form_condition(self, condition):
         """
         Erstellt aus einem Condition-Dict eine entsprechende Query

@@ -321,6 +321,17 @@ class BaseDb():
         """
         raise NotImplementedError()
 
+    def delete_metadata(self, uuid: str):
+        """
+        Löscht Metadaten aus der Datenbank.
+
+        Args:
+            uuid (str): Unique ID (key) der zu löschenden Metadaten.
+        Returns:
+            dict: Informationen über den Löschvorgang.
+        """
+        raise NotImplementedError()
+
     def get_group_ibans(self, group: str, check_before: bool=False):
         """
         Ruft die Liste von IBANs einer Gruppe aus der Datenbank ab.
