@@ -159,10 +159,14 @@ class Routes:
                     {'key':'metatype', 'value': 'rule'}
                 )
                 tag_rules = [r.get('name') for r in tag_rules if r.get('name')]
+                print("BEFORE Sorting tags:", tag_rules)
+                tag_rules.sort()
+                print("AFTER Sorting tags:", tag_rules)
                 cat_rules = parent.db_handler.filter_metadata(
                     {'key':'metatype', 'value': 'category'}
                 )
                 cat_rules = [r.get('name') for r in cat_rules if r.get('name')]
+                cat_rules.sort()
 
                 # All distinct Tags
                 # (must be filtered on our own because TinyDB doesn't support 'distinct' queries)

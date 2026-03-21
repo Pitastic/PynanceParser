@@ -190,7 +190,7 @@ function saveSetting() {
             showAjaxError(error, response);
 
         } else {
-            alert('Einstellungen gespeichert' + response)
+            alert('Einstellungen gespeichert (' + response.inserted + ')');
             result_text.value = '';
 
         }
