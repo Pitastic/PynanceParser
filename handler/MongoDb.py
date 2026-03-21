@@ -305,7 +305,12 @@ class MongoDbHandler(BaseDb):
         if condition_method == 'all':
             stmt = {'$all': condition.get('value')}
         if condition_method == 'exact':
-            stmt = {'$all': condition.get('value'), '$size': len(condition.get('value'))}
+            if not condition.get('value'):
+                # Empty lists
+                stmt = {'$size': 0}
+            else:
+                # Lists with exact members
+                stmt = {'$all': condition.get('value')}
 
         # Nested or Plain Key
         condition_key = condition.get('key')
