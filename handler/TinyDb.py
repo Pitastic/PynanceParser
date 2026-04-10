@@ -310,6 +310,11 @@ class TinyDbHandler(BaseDb):
 
         return {'inserted': 0}
 
+    def delete_metadata(self, uuid):
+        collection = self.connection.table('metadata')
+        deleted_ids = collection.remove(Query().uuid == uuid)
+        return {'deleted': len(deleted_ids)}
+
     def _form_where(self, condition):
         """
         Erstellt aus einem Condition-Dict eine entsprechende Query
