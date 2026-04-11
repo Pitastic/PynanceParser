@@ -251,6 +251,35 @@ function importSettings() {
 }
 
 /**
+ * Sends a request to the server to export settings of the selected type.
+ * The type is selected via the select input element 'export-setting-type'.
+ */
+function exportSettings() {
+    const settings_type = document.getElementById('export-setting-type').value;
+    if (!settings_type) {
+        alert('Please select a settings type to export.');
+        return;
+    }
+
+    apiGet('export/metadata/' + settings_type, {}, function (response, error) {
+        if (error) {
+            showAjaxError(error, response);
+        } else {
+            const blob = new Blob([JSON.stringify(response, null, 4)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${settings_type}_export.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    });
+}
+
+
+/**
  * Sends transactions in a file or a batch of files to the server for upload.
  * The file is selected via the file input element 'file-input' (multiple)
  * but every entry is send step-by-step to get results per call directly.
