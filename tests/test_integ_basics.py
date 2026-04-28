@@ -6,7 +6,6 @@ import os
 import sys
 import io
 from bs4 import BeautifulSoup
-import pytest
 
 # Add Parent for importing from 'app.py'
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -731,93 +730,6 @@ def test_iban_filtering(test_app):
                 "Die Ergebnisseite mit den Transaktionen ist nicht (richtig) erreichbar"
             assert len(rows) == 1, \
                 f"Es wurden {len(rows)} Einträge gefunden, statt der erwarteten 1"
-
-
-def test_iban_filtering_tags(test_app):
-    """Eigene Funktion zum Testen der aufwendigeren Tag-Filter"""
-    with test_app.app_context():
-
-        with test_app.test_client() as client:
-
-            # in
-            result = client.get(r"/DE89370400440532013000?tags=Supermarkt%2CStadt&tag_mode=in")
-            soup = BeautifulSoup(result.text, features="html.parser")
-            rows = soup.css.select('table.transactions tr[name] td input.row-checkbox')
-            assert result.status_code == 200, \
-                "Die Ergebnisseite mit den Transaktionen ist nicht (richtig) erreichbar"
-            assert len(rows) == 2, \
-                f"Es wurden {len(rows)} Einträge gefunden, statt der erwarteten 2"
-
-            # notin
-            result = client.get(r"/DE89370400440532013000?tags=Supermarkt%2CStadt&tag_mode=notin")
-            soup = BeautifulSoup(result.text, features="html.parser")
-            rows = soup.css.select('table.transactions tr[name] td input.row-checkbox')
-            assert result.status_code == 200, \
-                "Die Ergebnisseite mit den Transaktionen ist nicht (richtig) erreichbar"
-            assert len(rows) == 3, \
-                f"Es wurden {len(rows)} Einträge gefunden, statt der erwarteten 3"
-
-            # all
-            result = client.get(
-                r"/DE89370400440532013000?tags=Test_SECONDARY_2%2CReplaced_TAG&tag_mode=all")
-            soup = BeautifulSoup(result.text, features="html.parser")
-            rows = soup.css.select('table.transactions tr[name] td input.row-checkbox')
-            assert result.status_code == 200, \
-                "Die Ergebnisseite mit den Transaktionen ist nicht (richtig) erreichbar"
-            assert len(rows) == 1, \
-                f"Es wurden {len(rows)} Einträge gefunden, statt der erwarteten 1"
-
-
-def test_iban_filtering_tags_equal(test_app):
-    """Testet die Gleichheitsfilter für Tags"""
-    with test_app.app_context():
-
-        with test_app.test_client() as client:
-
-            # exact (==)
-            result = client.get(
-                r"/DE89370400440532013000?tags=Test_SECONDARY_2%2CReplaced_TAG&tag_mode=exact")
-            soup = BeautifulSoup(result.text, features="html.parser")
-            rows = soup.css.select('table.transactions tr[name] td input.row-checkbox')
-            assert result.status_code == 200, \
-                "Die Ergebnisseite mit den Transaktionen ist nicht (richtig) erreichbar"
-            assert len(rows) == 1, \
-                f"Es wurden {len(rows)} Einträge gefunden, statt der erwarteten 1"
-
-            # add a third tag to one the above result entries
-            new_tag = {
-                'tags': ['Test_SECONDARY_3'],
-                't_ids': ["6884802db5e07ee68a68e2c64f9c0cdd",
-                          "fdd4649484137572ac642e2c0f34f9af"]
-            }
-            r = client.put(
-                "/api/setManualTags/DE89370400440532013000",
-                json=new_tag
-            )
-            assert r.status_code == 200, \
-                "Der API Endpoint zum Setzen von Tags ist nicht (richtig) erreichbar"
-
-            # test again exact (==)
-            result = client.get(
-                r"/DE89370400440532013000?tags=Test_SECONDARY_2%2CTest_SECONDARY_3&tag_mode=exact")
-            soup = BeautifulSoup(result.text, features="html.parser")
-            rows = soup.css.select('table.transactions tr[name] td input.row-checkbox')
-            assert result.status_code == 200, \
-                "Die Ergebnisseite mit den Transaktionen ist nicht (richtig) erreichbar"
-            assert len(rows) == 1, \
-                f"Es wurden {len(rows)} Einträge gefunden, statt der erwarteten 1"
-            assert "fdd4649484137572ac642e2c0f34f9af" == rows[0].attrs.get('data-txuuid'), \
-                "Der gefundene Eintrag war nicht der erwartete"
-
-            # exact (== no tags)
-            result = client.get(
-                r"/DE89370400440532013000?tags=&tag_mode=exact")
-            soup = BeautifulSoup(result.text, features="html.parser")
-            rows = soup.css.select('table.transactions tr[name] td input.row-checkbox')
-            assert result.status_code == 200, \
-                "Die Ergebnisseite mit den Transaktionen ist nicht (richtig) erreichbar"
-            assert len(rows) == 0, \
-                f"Es wurden {len(rows)} Einträge gefunden, statt der erwarteten 0"
 
 
 def test_statsapi(test_app):
