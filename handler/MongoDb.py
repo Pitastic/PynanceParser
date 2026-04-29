@@ -309,8 +309,11 @@ class MongoDbHandler(BaseDb):
                 # Empty lists
                 stmt = {'$size': 0}
             else:
-                # Lists with exact members
-                stmt = {'$all': condition.get('value')}
+                # Lists with exact members and exact length
+                stmt = {
+                    '$all': condition.get('value'),
+                    '$size': len(condition.get('value'))
+                }
 
         # Nested or Plain Key
         condition_key = condition.get('key')

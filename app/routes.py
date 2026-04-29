@@ -498,7 +498,41 @@ class Routes:
                 # Import and cleanup
                 result = parent.db_handler.import_metadata(path, metatype=metadata)
                 os.remove(path)
+                if result.get('error'):
+                    return {'error': f"Die Datei konnte nicht importiert werden: {result.get('error')}"}, 400
+
                 return result, 201 if result.get('inserted') else 200
+
+            @current_app.route('/api/export/metadata/<metatype>', methods=['GET'])
+            def exportMetadata(metatype):
+                """
+                Endpunkt für das Exportieren von Metadaten.
+
+                Args (uri):
+                    metatype (str): Type of Metadata to export
+                Returns:
+                    json: Informationen zur Datei und Ergebnis der Untersuchung.
+                """
+                if metatype not in ['rule', 'parser', 'config']:
+                    return {'error': 'Ungültiger Metadatentyp (rule, parser, config)'}, 400
+
+                meta = parent.db_handler.filter_metadata({
+                    'key': 'metatype',
+                    'value': metatype
+                })
+
+                # Strip uuids for export
+                for m in meta:
+                    m.pop('uuid', None)
+
+                # Create file response
+                response = make_response(json.dumps(meta, indent=4))
+                response.headers['Content-Type'] = 'application/json'
+                response.headers['Content-Disposition'] = (
+                    f'attachment; filename={metatype}_export.json'
+                )
+                return response
+
 
             @current_app.route('/api/deleteDatabase/<iban>', methods=['DELETE'])
             def deleteDatabase(iban):

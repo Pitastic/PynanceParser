@@ -56,12 +56,15 @@ def create_app(config_path: str) -> Flask:
 
     return app
 
-config = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)),
-    'config.py'
-)
-application = create_app(config)
 
-if __name__ == "__main__":
-    # Run the application directly if executed as a standalone script
-    application.run(host='0.0.0.0', port=8000, debug=True)
+# Only create the application if not in a test environment
+if os.getenv('PYTEST_MODE') is None:  # Or another test-detection method
+    config = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        'config.py'
+    )
+    application = create_app(config)
+
+    if __name__ == "__main__":
+        # Run the application directly if executed as a standalone script
+        application.run(host='0.0.0.0', port=8000, debug=True)
