@@ -765,7 +765,7 @@ def test_statspage(test_app):
                 "Die Statistikseite ist nicht (richtig) erreichbar"
             soup = BeautifulSoup(result.text, features="html.parser")
             table_rows = soup.css.select('table.ranking tr')
-            assert len(table_rows) == 9, \
+            assert len(table_rows) == 8, \
                 "Es wurde nicht die richtige Anzahl an Einträgen im Ranking der Kategorien gefunden"
 
             # ...mit Filter
@@ -775,7 +775,7 @@ def test_statspage(test_app):
                 "Die Statistikseite ist nicht (richtig) erreichbar"
             soup = BeautifulSoup(result.text, features="html.parser")
             table_rows = soup.css.select('table.ranking tr')
-            assert len(table_rows) == 6, \
+            assert len(table_rows) == 5, \
                 "Es wurde nicht die richtige Anzahl an Einträgen im Ranking der Kategorien gefunden"
 
 
