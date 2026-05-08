@@ -128,7 +128,9 @@ class Routes:
                     amount_min, float (query):  Betragsfilter (größer gleich amount_min)
                     amount_max, float (query):  Betragsfilter (kleiner gleich amount_max)
                     page, int (query):      Seite für die Paginierung (default: 1)
-                    descending, bool (query): Sortierreihenfolge nach Datum (default: True)
+                    sort_by, str (query):   Schlüssel, nach dem sortiert werden soll
+                                            (default: date_tx)
+                    descending, bool (query): Sortierreihenfolge (default: True, absteigend)
                 Returns:
                     html: Startseite mit Navigation
                 """
@@ -141,7 +143,10 @@ class Routes:
                 # Table with Transactions
                 current_app.logger.debug(f"Using condition filter: {condition}")
                 sort_order = request.args.get('descending', 'true').lower() == 'true'
-                rows = parent.db_handler.select(iban, condition, descending=sort_order)
+                sort_by = request.args.get('sort_by', 'date_tx')
+                rows = parent.db_handler.select(
+                    iban, condition, descending=sort_order, sort_by=sort_by
+                )
 
                 # If pagination is requested, do not serve the whole page and all metadata
                 entries_per_page = 50
@@ -532,7 +537,6 @@ class Routes:
                     f'attachment; filename={metatype}_export.json'
                 )
                 return response
-
 
             @current_app.route('/api/deleteDatabase/<iban>', methods=['DELETE'])
             def deleteDatabase(iban):

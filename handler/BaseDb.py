@@ -47,7 +47,7 @@ class BaseDb():
         return self.set_metadata(new_group, overwrite=True)
 
     def select(self, collection:str, condition: dict|list[dict]=None, multi: str='AND',
-               descending: bool=True):
+               descending: bool=True, sort_by: str='date_tx'):
         """
         Handler für das Vorbereiten der '_select' Methode, welche Datensätze aus der Datenbank
         selektiert, die die angegebene Bedingung erfüllen.
@@ -67,6 +67,7 @@ class BaseDb():
                           werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
             descending (bool):   Wenn True, werden die Ergebnisse aufsteigend nach Datum sortiert.
                                  Default: True.
+            sort_by (str):      Schlüssel, nach dem sortiert werden soll. Default: 'date_tx'
         Returns:
             dict:
                 - result, list: Liste der ausgewählten Datensätze
@@ -90,8 +91,8 @@ class BaseDb():
 
         result_list = self._select(collection, condition, multi)
 
-        # Sort the result by date_tx
-        result_list = sorted(result_list, reverse=descending, key=lambda x: x.get('date_tx', 0))
+        # Sort the result by the specified field
+        result_list = sorted(result_list, reverse=descending, key=lambda x: x.get(sort_by, 0))
 
         for r in result_list:
             # Format Datestrings

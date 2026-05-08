@@ -75,9 +75,10 @@
                         value=""
                     {% endif %}
                 />
-                <select id="filter-descending">
-                    <option value="true" {{"selected" if not filters.descending or filters.descending == 'true'}}>absteigend</option>
-                    <option value="false" {{"selected" if filters.descending and filters.descending == 'false'}}>aufsteigend</option>
+                <select id="filter-sort-date">
+                    <option value="true" {{"selected" if filters.get('sort_by', 'date_tx') != 'date_tx'}}></option>
+                    <option value="true" {{"selected" if filters.get('sort_by', 'date_tx') == 'date_tx' and (not filters.get('descending') or filters.get('descending') == 'true')}}>absteigend</option>
+                    <option value="false" {{"selected" if filters.get('sort_by', 'date_tx') == 'date_tx' and filters.get('descending') and filters.get('descending') == 'false'}}>aufsteigend</option>
                 </select>
             </div>
         </label>
@@ -142,6 +143,12 @@
                     {% else %}
                         value="" />
                     {% endif %}
+
+                <select id="filter-sort-amount">
+                    <option value="" {{"selected" if not filters.get('sort_by', 'date_tx') or filters.get('sort_by') == '' or filters.get('sort_by') == 'date_tx'}}></option>
+                    <option value="true" {{"selected" if filters.get('sort_by', 'date_tx') == 'amount' and filters.get('descending') == 'true'}}>absteigend</option>
+                    <option value="false" {{"selected" if filters.get('sort_by', 'date_tx') == 'amount' and filters.get('descending') == 'false'}}>aufsteigend</option>
+                </select>
             </div>
         </label>
 

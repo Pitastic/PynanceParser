@@ -96,3 +96,38 @@ def test_sort_entries_date_desc(test_app):
         dates = [entry['date_tx'] for entry in sorted_entries]
         assert dates == sorted(dates, reverse=True), \
             "Die Einträge sind nicht korrekt nach Datum absteigend sortiert."
+
+def test_sort_entries_amount_asc(test_app):
+    """
+    Testet das sortierte Ausgeben von Einträgen nach Betrag aufsteigend.
+    """
+    with test_app.app_context():
+        group_name = "testgroup"
+
+        # Get entries in ascending order by amount
+        sorted_entries = test_app.host.db_handler.select(
+            group_name, sort_by='amount', descending=False
+        )
+
+        # Check sorted form of retrieved entries
+        amounts = [entry['amount'] for entry in sorted_entries]
+        assert amounts == sorted(amounts), \
+            "Die Einträge sind nicht korrekt nach Betrag aufsteigend sortiert."
+
+
+def test_sort_entries_amount_desc(test_app):
+    """
+    Testet das sortierte Ausgeben von Einträgen nach Betrag absteigend.
+    """
+    with test_app.app_context():
+        group_name = "testgroup"
+
+        # Get entries in descending order by amount
+        sorted_entries = test_app.host.db_handler.select(
+            group_name, sort_by='amount', descending=True
+        )
+
+        # Check sorted form of retrieved entries
+        amounts = [entry['amount'] for entry in sorted_entries]
+        assert amounts == sorted(amounts, reverse=True), \
+            "Die Einträge sind nicht korrekt nach Betrag absteigend sortiert."
