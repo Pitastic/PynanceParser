@@ -560,17 +560,106 @@ class BaseDb():
         iban_regex = re.compile(r'[A-Z]{2}[0-9]{2}[ ]?([0-9]{4}[ ]?){4,7}[0-9]{1,4}')
         return bool(re.match(iban_regex, collection))
 
-    def min_max_collection(self, collection: str, key: str):
+    def stats_top(self, collection: str, condition: dict|list[dict]):
         """
-        Gibt das Minimum und Maximum sowie die Gesamtzahl an Datensätzen einer Collection zurück.
+        Berechnet die Top-Kategorien und Tags basierend unter
+        Berücksichtigung einer Filter-Condition.
 
         Args:
-            collection (str): Name der Collection.
-            key (str): Schlüssel, für den Minimum und Maximum ermittelt werden sollen.
-        Returns:
-            dict:
-                - min (any): Minimum Wert
-                - max (any): Maximum Wert
-                - count (int): Anzahl der Datensätze
+            collection (str): Name der Collection oder Gruppe, aus der selektiert werden soll.
+            condition (dict | list(dict)): Bedingung als Dictionary
+        Returns: dict
+            - cat_top_in, list[dict]: Liste der Kategorien mit den höchsten
+                                        positiven Werten
+            - cat_top_out, list[dict]: Liste der Kategorien mit den höchsten
+                                        negativen Werten
+            - tag_top_in, list[dict]: Liste der Tags mit den höchsten
+                                        positiven Werten
+            - tag_top_out, list[dict]: Liste der Tags mit den höchsten
+                                        negativen Werten
+            - categories, dict:
+                category, str: Name der Kategorie
+                count, int: Anzahl der Transaktionen mit dieser Kategorie
+                sum, int: Summe der Beträge der Transaktionen mit dieser Kategorie
+                abs_in, int: Summe der positiven Beträge der Transaktionen mit
+                                dieser Kategorie
+                abs_out, int: Summe der negativen Beträge der Transaktionen mit
+                                dieser Kategorie
+            - tags, dict:
+                tag, str: Name des Tags
+                count, int: Anzahl der Transaktionen mit diesem Tag
+                sum, int: Summe der Beträge der Transaktionen mit diesem Tag
+                abs_in, int: Summe der positiven Beträge der Transaktionen
+                                mit diesem Tag
+                abs_out, int: Summe der negativen Beträge der Transaktionen
         """
-        raise NotImplementedError()
+        result = {
+            'cat_top_in': [],
+            'cat_top_out': [],
+            'tag_top_in': [],
+            'tag_top_out': [],
+            'categories': {},
+            'tags': {}
+        }
+        rows = self.select(collection, condition)
+
+        # Calculate TOP categories and tags
+        for row in rows:
+            amount = row.get('amount', 0.0)
+            cat = row.get('category', 'unkategorisiert')
+            tags = row.get('tags', ['ungetagged'])
+
+            # Tag and Categories sums
+
+            # -- Cats
+            if cat not in result['categories']:
+                result['categories'][cat] = {
+                    'category': cat,
+                    'count': 0,
+                    'sum': 0.0,
+                    'abs_in': 0.0,
+                    'abs_out': 0.0
+                }
+
+            else:
+                result['categories'][cat]['count'] += 1
+                result['categories'][cat]['sum'] += amount
+                if amount >= 0:
+                    result['categories'][cat]['abs_in'] += abs(amount)
+                else:
+                    result['categories'][cat]['abs_out'] += abs(amount)
+
+            # -- Tags
+            for t in tags:
+                if t not in result['tags']:
+                    result['tags'][t] = {
+                        'tag': t,
+                        'count': 0,
+                        'sum': 0.0,
+                        'abs_in': 0.0,
+                        'abs_out': 0.0
+                    }
+
+                else:
+                    result['tags'][t]['count'] += 1
+                    result['tags'][t]['sum'] += amount
+                    if amount >= 0:
+                        result['tags'][t]['abs_in'] += abs(amount)
+                    else:
+                        result['tags'][t]['abs_out'] += abs(amount)
+
+        # Sort and limit results by absolute inflow and return only category keys
+        result['cat_top_in'] = [key for key, _ in sorted(
+            result['categories'].items(), key=lambda item: item[1]['abs_in']
+        )]
+        result['cat_top_out'] = [key for key, _ in sorted(
+            result['categories'].items(), key=lambda item: item[1]['abs_out'], reverse=True
+        )]
+        result['tag_top_in'] = [key for key, _ in sorted(
+            result['tags'].items(), key=lambda item: item[1]['abs_in']
+        )]
+        result['tag_top_out'] = [key for key, _ in sorted(
+            result['tags'].items(), key=lambda item: item[1]['abs_out'], reverse=True
+        )]
+
+        return result

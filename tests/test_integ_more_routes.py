@@ -46,6 +46,34 @@ def test_upload_file_route(test_app):
                 "Angaben zum Upload wurden nicht gefunden"
 
 
+def test_add_or_update_tags(test_app):
+    """Test adding and updating tag for a transaction"""
+
+    with test_app.app_context():
+
+        iban = "DE89370400440532013000"
+        tid = "6884802db5e07ee68a68e2c64f9c0cdd"
+
+        # Add first tag
+        r = test_app.host.set_manual_tag_and_cat(iban, tid, ['Bäckerei'])
+        assert r == {'updated': 1}, \
+            "Es wurde keine Transaktion geändert (set_manual_tag_and_cat), first Tag"
+
+        # Update tag (add one more)
+        r = test_app.host.set_manual_tag_and_cat(iban, tid, ['Markt'], overwrite=False)
+        assert r == {'updated': 1}, \
+            "Es wurde keine Transaktion geändert (set_manual_tag_and_cat), add Tag"
+
+        # Update tag (remove one)
+        r = test_app.host.set_manual_tag_and_cat(iban, tid, ['Bäckerei'], overwrite=True)
+        assert r == {'updated': 1}, \
+            "Es wurde keine Transaktion geändert (set_manual_tag_and_cat), remove one Tag"
+
+        # Update tag (remove all)
+        assert test_app.host.remove_tags(iban, tid) == {'updated': 1}, \
+            "Es wurde keine Transaktion geändert (remove_tags)"
+
+
 def test_get_error_messages(test_app):
     """
     Testet das Auslesen der Fehlermeldungen,

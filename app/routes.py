@@ -261,39 +261,9 @@ class Routes:
                     return "", 404
 
                 # Check filter args
-                condition, frontend_filters = parent.filter_to_condition(request.args)
-                # Table with Transactions
-                current_app.logger.debug(f"Using condition filter: {condition}")
-                rows = parent.db_handler.select(iban, condition)
+                _, frontend_filters = parent.filter_to_condition(request.args)
 
-                # Calculate TOP categories and tags
-                sums = {'categories': {}, 'tags': {}}
-                for row in rows:
-                    amount = row.get('amount', 0.0)
-                    cat = row.get('category', 'unkategorisiert')
-                    if cat not in sums['categories']:
-                        sums['categories'][cat] = 0.0
-
-                    sums['categories'][cat] += amount
-
-                    tags = row.get('tags', [])
-                    if not tags:
-                        tags = ['untagged']
-                    for tag in tags:
-                        if tag not in sums['tags']:
-                            sums['tags'][tag] = 0.0
-
-                        sums['tags'][tag] += amount
-
-                # Sort Sums
-                sums['categories'] = dict(sorted(sums['categories'].items(),
-                                            key=lambda item: item[1],
-                                            reverse=True))
-                sums['tags'] = dict(sorted(sums['tags'].items(),
-                                            key=lambda item: item[1],
-                                            reverse=True))
-
-                return render_template('stats.html', sums=sums, IBAN=iban,
+                return render_template('stats.html', IBAN=iban,
                                        filters=frontend_filters)
 
             @current_app.route('/sw.js')
@@ -890,18 +860,35 @@ class Routes:
             @current_app.route('/api/stats/<iban>', methods=['GET'])
             def statsIban(iban):
                 """
-                Liefert Statistiken zur IBAN zurück.
+                Liefert eine bestimmte Statistik zu einer IBAN und einem Filter zurück.
 
                 Args (uri):
                     iban, str:  IBAN zu der die Statistiken angezeigt werden sollen.
+                    startDate, str (query): Startdatum (Y-m-d) für die Anzeige der Einträge
+                    endDate, str (query):   Enddatum (Y-m-d) für die Anzeige der Einträge
+                    category, str (query):  Kategorie-Filter
+                    tag, str (query):       Tag-Filter, einzelner Eintrag oder kommagetrennte Liste
+                    tag_mode, str (query):  Vergleichsmodus für Tag-Filter (siehe Models.md)
+                    amount_min, float (query):  Betragsfilter (größer gleich amount_min)
+                    amount_max, float (query):  Betragsfilter (kleiner gleich amount_max)
+                    type, str (query):      Art der Statistik (default: top)
                 Returns:
-                    json: Statistiken zur IBAN
-                        - min_date, str: Datum der ältesten Transaktion
-                        - max_date, str: Datum der jüngsten Transaktion
-                        - number_tx, int: Anzahl der Transaktionen
+                    json: Statistiken zur IBAN als dict {type: dict-result}
+                        - top: siehe db_handler.stats_top()
                 """
                 if not parent.check_requested_iban(iban):
                     return "", 404
 
-                stats = parent.db_handler.min_max_collection(iban, 'date_tx')
-                return stats, 200
+                condition, _ = parent.filter_to_condition(request.args)
+                stat_type = request.args.get('type', 'top')
+
+                # Statistic methods
+                methods = {
+                    'top': parent.db_handler.stats_top
+                }
+
+                # Table with Transactions
+                current_app.logger.debug(f"Using condition filter: {condition}")
+                return {
+                    stat_type: methods.get(stat_type)(iban, condition)
+                }, 200

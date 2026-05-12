@@ -5,7 +5,7 @@
         "category": "Lebensmittel",
         "filter": [{
             "key": "tags",
-            "value": ["Supermarkt", "Drogerie", "Apotheke", "Bäcker"],
+            "value": ["Lebensmittel", "Drogerie", "Apotheke", "Bäcker"],
             "compare": "in"
         }]
     },
