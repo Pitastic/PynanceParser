@@ -606,8 +606,8 @@ class BaseDb():
         # Calculate TOP categories and tags
         for row in rows:
             amount = row.get('amount', 0.0)
-            cat = row.get('category', 'unkategorisiert')
-            tags = row.get('tags', ['ungetagged'])
+            cat = row.get('category') or 'unkategorisiert'
+            tags = [t for t in (row.get('tags') or []) if t is not None] or ['ungetagged']
 
             # Tag and Categories sums
 
@@ -621,13 +621,12 @@ class BaseDb():
                     'abs_out': 0.0
                 }
 
+            result['categories'][cat]['count'] += 1
+            result['categories'][cat]['sum'] += amount
+            if amount >= 0:
+                result['categories'][cat]['abs_in'] += abs(amount)
             else:
-                result['categories'][cat]['count'] += 1
-                result['categories'][cat]['sum'] += amount
-                if amount >= 0:
-                    result['categories'][cat]['abs_in'] += abs(amount)
-                else:
-                    result['categories'][cat]['abs_out'] += abs(amount)
+                result['categories'][cat]['abs_out'] += abs(amount)
 
             # -- Tags
             for t in tags:
@@ -640,13 +639,12 @@ class BaseDb():
                         'abs_out': 0.0
                     }
 
+                result['tags'][t]['count'] += 1
+                result['tags'][t]['sum'] += amount
+                if amount >= 0:
+                    result['tags'][t]['abs_in'] += abs(amount)
                 else:
-                    result['tags'][t]['count'] += 1
-                    result['tags'][t]['sum'] += amount
-                    if amount >= 0:
-                        result['tags'][t]['abs_in'] += abs(amount)
-                    else:
-                        result['tags'][t]['abs_out'] += abs(amount)
+                    result['tags'][t]['abs_out'] += abs(amount)
 
         # Sort and limit results by absolute inflow and return only category keys
         result['cat_top_in'] = [key for key, _ in sorted(

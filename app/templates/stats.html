@@ -35,7 +35,7 @@
                     {% for c, amount in sums.categories.items() %}
                     <tr>
                         <td>{{c}}</td>
-                        <td>{{"%.2f"|format(amount|round(2))}}</td>
+                        <td>{{"%.2f"|format(amount['sum']|round(2))}}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -49,7 +49,7 @@
                     {% for t, amount in sums.tags.items() %}
                     <tr>
                         <td>{{t}}</td>
-                        <td>{{"%.2f"|format(amount|round(2))}}</td>
+                        <td>{{"%.2f"|format(amount['sum']|round(2))}}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

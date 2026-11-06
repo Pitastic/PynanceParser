@@ -42,11 +42,11 @@ def test_create_test_dataset(test_app):
 
         # Check Return Value
         found_rows_len = len(found_rows)
-        assert found_rows_len == 5, (f'Es wurden {found_rows_len} statt der '
-                                    'erwarteten 5 Einträge aus der Datei eingelesen.')
+        assert found_rows_len == 6, (f'Es wurden {found_rows_len} statt der '
+                                    'erwarteten 6 Einträge aus der Datei eingelesen.')
         # Savev to DB for next Tests
         r = test_app.host.db_handler.insert(found_rows, "DE89370400440532013001")
-        assert r.get('inserted') == 5, \
+        assert r.get('inserted') == 6, \
             "Es wurden nicht alle Einträge in die DB eingefügt."
 
         # Group IBANs for next Tests

@@ -742,16 +742,40 @@ def test_statsapi(test_app):
             assert result.status_code == 200, \
                 "Der Statistik-API-Endpoint ist nicht (richtig) erreichbar"
             result = result.json
-            assert 'count' in result, \
+            assert 'top' in result, \
                 "Die Statistik-Antwort ist unvollständig"
-            assert result.get('count') == 5, \
-                "Die Statistik-Antwort ist fehlerhaft"
-            assert "min" in result, \
-                "Die Statistik-Antwort ist unvollständig"
-            assert result.get('min') == 1672531200.0, \
-                "Die Statistik-Antwort ist fehlerhaft"
-            assert "max" in result, \
-                "Die Statistik-Antwort ist unvollständig"
+            top = result['top']
+
+            # Die vier Top-Listen müssen vorhanden sein und Strings enthalten
+            for key in ('cat_top_in', 'cat_top_out', 'tag_top_in', 'tag_top_out'):
+                assert key in top, \
+                    f"{key} fehlt in der Statistik-Antwort"
+                assert isinstance(top[key], list), \
+                    f"{key} muss eine Liste sein"
+                for item in top[key]:
+                    assert isinstance(item, str), \
+                        f"Jedes Element in {key} muss ein String sein"
+
+            # Die Dicts categories und tags prüfen
+            for key, name_key in (('categories', 'category'), ('tags', 'tag')):
+                assert key in top, \
+                    f"{key} fehlt in der Statistik-Antwort"
+                assert isinstance(top[key], dict), \
+                    f"{key} muss ein Dictionary sein"
+                for _, entry in top[key].items():
+                    assert isinstance(entry, dict), \
+                        f"Jedes Element in {key} muss ein Dictionary sein"
+                    assert name_key in entry, \
+                        f"{name_key} muss in jedem {key}-Dict vorhanden sein"
+                    assert 'count' in entry, \
+                        f"count muss in jedem {key}-Dict vorhanden sein"
+                    assert isinstance(entry['count'], int), \
+                        f"count in {key} muss ein Integer sein"
+                    for num_key in ('sum', 'abs_in', 'abs_out'):
+                        assert num_key in entry, \
+                            f"{num_key} muss in jedem {key}-Dict vorhanden sein"
+                        assert isinstance(entry[num_key], (int, float)), \
+                            f"{num_key} in {key} muss ein Integer oder Float sein"
 
 
 def test_statspage(test_app):

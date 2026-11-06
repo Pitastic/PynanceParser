@@ -261,10 +261,13 @@ class Routes:
                     return "", 404
 
                 # Check filter args
-                _, frontend_filters = parent.filter_to_condition(request.args)
+                condition, frontend_filters = parent.filter_to_condition(request.args)
+
+                # Statistiken für die aktuelle IBAN und den Filter berechnen
+                sums = parent.db_handler.stats_top(iban, condition)
 
                 return render_template('stats.html', IBAN=iban,
-                                       filters=frontend_filters)
+                                       filters=frontend_filters, sums=sums)
 
             @current_app.route('/sw.js')
             def sw():
@@ -474,7 +477,9 @@ class Routes:
                 result = parent.db_handler.import_metadata(path, metatype=metadata)
                 os.remove(path)
                 if result.get('error'):
-                    return {'error': f"Die Datei konnte nicht importiert werden: {result.get('error')}"}, 400
+                    return {
+                        'error': f"Die Datei konnte nicht importiert werden: {result.get('error')}"
+                    }, 400
 
                 return result, 201 if result.get('inserted') else 200
 

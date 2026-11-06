@@ -136,9 +136,11 @@ def test_route_stats(test_app):
                 assert 'sum' in cat, "sum muss in jedem categories-Dict vorhanden sein"
                 assert isinstance(cat['sum'], (int, float)), "sum muss ein Integer oder Float sein"
                 assert 'abs_in' in cat, "abs_in muss in jedem categories-Dict vorhanden sein"
-                assert isinstance(cat['abs_in'], (int, float)), "abs_in muss ein Integer oder Float sein"
+                assert isinstance(cat['abs_in'], (int, float)), \
+                    "abs_in muss ein Integer oder Float sein"
                 assert 'abs_out' in cat, "abs_out muss in jedem categories-Dict vorhanden sein"
-                assert isinstance(cat['abs_out'], (int, float)), "abs_out muss ein Integer oder Float sein"
+                assert isinstance(cat['abs_out'], (int, float)), \
+                    "abs_out muss ein Integer oder Float sein"
 
             # Prüfe die Struktur für tags
             assert 'tags' in top_result, "tags muss vorhanden sein"
@@ -152,6 +154,8 @@ def test_route_stats(test_app):
                 assert 'sum' in tag, "sum muss in jedem tags-Dict vorhanden sein"
                 assert isinstance(tag['sum'], (int, float)), "sum muss ein Integer oder Float sein"
                 assert 'abs_in' in tag, "abs_in muss in jedem tags-Dict vorhanden sein"
-                assert isinstance(tag['abs_in'], (int, float)), "abs_in muss ein Integer oder Float sein"
+                assert isinstance(tag['abs_in'], (int, float)), \
+                    "abs_in muss ein Integer oder Float sein"
                 assert 'abs_out' in tag, "abs_out muss in jedem tags-Dict vorhanden sein"
-                assert isinstance(tag['abs_out'], (int, float)), "abs_out muss ein Integer oder Float sein"
+                assert isinstance(tag['abs_out'], (int, float)), \
+                    "abs_out muss ein Integer oder Float sein"
