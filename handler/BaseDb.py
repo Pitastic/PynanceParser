@@ -47,7 +47,7 @@ class BaseDb():
         return self.set_metadata(new_group, overwrite=True)
 
     def select(self, collection:str, condition: dict|list[dict]=None, multi: str='AND',
-               descending: bool=True):
+               descending: bool=True, sort_by: str='date_tx'):
         """
         Handler für das Vorbereiten der '_select' Methode, welche Datensätze aus der Datenbank
         selektiert, die die angegebene Bedingung erfüllen.
@@ -67,6 +67,7 @@ class BaseDb():
                           werden diese logisch wie hier angegeben verknüpft. Default: 'AND'
             descending (bool):   Wenn True, werden die Ergebnisse aufsteigend nach Datum sortiert.
                                  Default: True.
+            sort_by (str):      Schlüssel, nach dem sortiert werden soll. Default: 'date_tx'
         Returns:
             dict:
                 - result, list: Liste der ausgewählten Datensätze
@@ -90,8 +91,8 @@ class BaseDb():
 
         result_list = self._select(collection, condition, multi)
 
-        # Sort the result by date_tx
-        result_list = sorted(result_list, reverse=descending, key=lambda x: x.get('date_tx', 0))
+        # Sort the result by the specified field
+        result_list = sorted(result_list, reverse=descending, key=lambda x: x.get(sort_by, 0))
 
         for r in result_list:
             # Format Datestrings
@@ -559,17 +560,104 @@ class BaseDb():
         iban_regex = re.compile(r'[A-Z]{2}[0-9]{2}[ ]?([0-9]{4}[ ]?){4,7}[0-9]{1,4}')
         return bool(re.match(iban_regex, collection))
 
-    def min_max_collection(self, collection: str, key: str):
+    def stats_top(self, collection: str, condition: dict|list[dict]):
         """
-        Gibt das Minimum und Maximum sowie die Gesamtzahl an Datensätzen einer Collection zurück.
+        Berechnet die Top-Kategorien und Tags basierend unter
+        Berücksichtigung einer Filter-Condition.
 
         Args:
-            collection (str): Name der Collection.
-            key (str): Schlüssel, für den Minimum und Maximum ermittelt werden sollen.
-        Returns:
-            dict:
-                - min (any): Minimum Wert
-                - max (any): Maximum Wert
-                - count (int): Anzahl der Datensätze
+            collection (str): Name der Collection oder Gruppe, aus der selektiert werden soll.
+            condition (dict | list(dict)): Bedingung als Dictionary
+        Returns: dict
+            - cat_top_in, list[dict]: Liste der Kategorien mit den höchsten
+                                        positiven Werten
+            - cat_top_out, list[dict]: Liste der Kategorien mit den höchsten
+                                        negativen Werten
+            - tag_top_in, list[dict]: Liste der Tags mit den höchsten
+                                        positiven Werten
+            - tag_top_out, list[dict]: Liste der Tags mit den höchsten
+                                        negativen Werten
+            - categories, dict:
+                category, str: Name der Kategorie
+                count, int: Anzahl der Transaktionen mit dieser Kategorie
+                sum, int: Summe der Beträge der Transaktionen mit dieser Kategorie
+                abs_in, int: Summe der positiven Beträge der Transaktionen mit
+                                dieser Kategorie
+                abs_out, int: Summe der negativen Beträge der Transaktionen mit
+                                dieser Kategorie
+            - tags, dict:
+                tag, str: Name des Tags
+                count, int: Anzahl der Transaktionen mit diesem Tag
+                sum, int: Summe der Beträge der Transaktionen mit diesem Tag
+                abs_in, int: Summe der positiven Beträge der Transaktionen
+                                mit diesem Tag
+                abs_out, int: Summe der negativen Beträge der Transaktionen
         """
-        raise NotImplementedError()
+        result = {
+            'cat_top_in': [],
+            'cat_top_out': [],
+            'tag_top_in': [],
+            'tag_top_out': [],
+            'categories': {},
+            'tags': {}
+        }
+        rows = self.select(collection, condition)
+
+        # Calculate TOP categories and tags
+        for row in rows:
+            amount = row.get('amount', 0.0)
+            cat = row.get('category') or 'unkategorisiert'
+            tags = [t for t in (row.get('tags') or []) if t is not None] or ['ungetagged']
+
+            # Tag and Categories sums
+
+            # -- Cats
+            if cat not in result['categories']:
+                result['categories'][cat] = {
+                    'category': cat,
+                    'count': 0,
+                    'sum': 0.0,
+                    'abs_in': 0.0,
+                    'abs_out': 0.0
+                }
+
+            result['categories'][cat]['count'] += 1
+            result['categories'][cat]['sum'] += amount
+            if amount >= 0:
+                result['categories'][cat]['abs_in'] += abs(amount)
+            else:
+                result['categories'][cat]['abs_out'] += abs(amount)
+
+            # -- Tags
+            for t in tags:
+                if t not in result['tags']:
+                    result['tags'][t] = {
+                        'tag': t,
+                        'count': 0,
+                        'sum': 0.0,
+                        'abs_in': 0.0,
+                        'abs_out': 0.0
+                    }
+
+                result['tags'][t]['count'] += 1
+                result['tags'][t]['sum'] += amount
+                if amount >= 0:
+                    result['tags'][t]['abs_in'] += abs(amount)
+                else:
+                    result['tags'][t]['abs_out'] += abs(amount)
+
+        # Sort and limit results by absolute inflow and return only category keys
+        result['cat_top_in'] = [key for key, _ in sorted(
+            result['categories'].items(), key=lambda item: item[1]['abs_in']
+        )]
+        result['cat_top_out'] = [key for key, _ in sorted(
+            result['categories'].items(), key=lambda item: item[1]['abs_out'], reverse=True
+        )]
+        result['tag_top_in'] = [key for key, _ in sorted(
+            result['tags'].items(), key=lambda item: item[1]['abs_in']
+        )]
+        result['tag_top_out'] = [key for key, _ in sorted(
+            result['tags'].items(), key=lambda item: item[1]['abs_out'], reverse=True
+        )]
+
+        return result

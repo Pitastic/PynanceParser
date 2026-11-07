@@ -17,6 +17,26 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	}
 
+	// Event handlers for sorting dropdowns to ensure only one is active
+	const filterDescending = document.getElementById('filter-sort-date');
+	const filterSortAmount = document.getElementById('filter-sort-amount');
+
+	if (filterDescending) {
+		filterDescending.addEventListener('change', function() {
+			if (this.value !== '') {
+				filterSortAmount.value = '';
+			}
+		});
+	}
+
+	if (filterSortAmount) {
+		filterSortAmount.addEventListener('change', function() {
+			if (this.value !== '') {
+				filterDescending.value = '';
+			}
+		});
+	}
+
 });
 
 // ----------------------------------------------------------------------------
@@ -104,11 +124,26 @@ function getFilteredList() {
 		arg_concat = '&';
 	}
 
-	let sort_order = document.getElementById('filter-descending').value;
-	if (sort_order) {
-		query_args = query_args + arg_concat + 'descending=' + sort_order;
-		arg_concat = '&';
+	// Handle sorting: amount or date
+	const sort_amount = document.getElementById('filter-sort-amount').value;
+	const sort_date = document.getElementById('filter-sort-date').value;
+
+	let sort_by_value = 'date_tx';
+	let descending_value = 'true';
+
+	if (sort_amount) {
+		// Sort by amount
+		sort_by_value = 'amount';
+		descending_value = sort_amount;
+	} else if (sort_date) {
+		// Sort by date
+		sort_by_value = 'date_tx';
+		descending_value = sort_date;
 	}
+
+	query_args = query_args + arg_concat + 'sort_by=' + sort_by_value;
+	arg_concat = '&';
+	query_args = query_args + arg_concat + 'descending=' + descending_value;
 
 	return query_args;
 }

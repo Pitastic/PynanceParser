@@ -128,7 +128,9 @@ class Routes:
                     amount_min, float (query):  Betragsfilter (größer gleich amount_min)
                     amount_max, float (query):  Betragsfilter (kleiner gleich amount_max)
                     page, int (query):      Seite für die Paginierung (default: 1)
-                    descending, bool (query): Sortierreihenfolge nach Datum (default: True)
+                    sort_by, str (query):   Schlüssel, nach dem sortiert werden soll
+                                            (default: date_tx)
+                    descending, bool (query): Sortierreihenfolge (default: True, absteigend)
                 Returns:
                     html: Startseite mit Navigation
                 """
@@ -141,7 +143,10 @@ class Routes:
                 # Table with Transactions
                 current_app.logger.debug(f"Using condition filter: {condition}")
                 sort_order = request.args.get('descending', 'true').lower() == 'true'
-                rows = parent.db_handler.select(iban, condition, descending=sort_order)
+                sort_by = request.args.get('sort_by', 'date_tx')
+                rows = parent.db_handler.select(
+                    iban, condition, descending=sort_order, sort_by=sort_by
+                )
 
                 # If pagination is requested, do not serve the whole page and all metadata
                 entries_per_page = 50
@@ -257,39 +262,12 @@ class Routes:
 
                 # Check filter args
                 condition, frontend_filters = parent.filter_to_condition(request.args)
-                # Table with Transactions
-                current_app.logger.debug(f"Using condition filter: {condition}")
-                rows = parent.db_handler.select(iban, condition)
 
-                # Calculate TOP categories and tags
-                sums = {'categories': {}, 'tags': {}}
-                for row in rows:
-                    amount = row.get('amount', 0.0)
-                    cat = row.get('category', 'unkategorisiert')
-                    if cat not in sums['categories']:
-                        sums['categories'][cat] = 0.0
+                # Statistiken für die aktuelle IBAN und den Filter berechnen
+                sums = parent.db_handler.stats_top(iban, condition)
 
-                    sums['categories'][cat] += amount
-
-                    tags = row.get('tags', [])
-                    if not tags:
-                        tags = ['untagged']
-                    for tag in tags:
-                        if tag not in sums['tags']:
-                            sums['tags'][tag] = 0.0
-
-                        sums['tags'][tag] += amount
-
-                # Sort Sums
-                sums['categories'] = dict(sorted(sums['categories'].items(),
-                                            key=lambda item: item[1],
-                                            reverse=True))
-                sums['tags'] = dict(sorted(sums['tags'].items(),
-                                            key=lambda item: item[1],
-                                            reverse=True))
-
-                return render_template('stats.html', sums=sums, IBAN=iban,
-                                       filters=frontend_filters)
+                return render_template('stats.html', IBAN=iban,
+                                       filters=frontend_filters, sums=sums)
 
             @current_app.route('/sw.js')
             def sw():
@@ -498,7 +476,42 @@ class Routes:
                 # Import and cleanup
                 result = parent.db_handler.import_metadata(path, metatype=metadata)
                 os.remove(path)
+                if result.get('error'):
+                    return {
+                        'error': f"Die Datei konnte nicht importiert werden: {result.get('error')}"
+                    }, 400
+
                 return result, 201 if result.get('inserted') else 200
+
+            @current_app.route('/api/export/metadata/<metatype>', methods=['GET'])
+            def exportMetadata(metatype):
+                """
+                Endpunkt für das Exportieren von Metadaten.
+
+                Args (uri):
+                    metatype (str): Type of Metadata to export
+                Returns:
+                    json: Informationen zur Datei und Ergebnis der Untersuchung.
+                """
+                if metatype not in ['rule', 'parser', 'config']:
+                    return {'error': 'Ungültiger Metadatentyp (rule, parser, config)'}, 400
+
+                meta = parent.db_handler.filter_metadata({
+                    'key': 'metatype',
+                    'value': metatype
+                })
+
+                # Strip uuids for export
+                for m in meta:
+                    m.pop('uuid', None)
+
+                # Create file response
+                response = make_response(json.dumps(meta, indent=4))
+                response.headers['Content-Type'] = 'application/json'
+                response.headers['Content-Disposition'] = (
+                    f'attachment; filename={metatype}_export.json'
+                )
+                return response
 
             @current_app.route('/api/deleteDatabase/<iban>', methods=['DELETE'])
             def deleteDatabase(iban):
@@ -852,18 +865,35 @@ class Routes:
             @current_app.route('/api/stats/<iban>', methods=['GET'])
             def statsIban(iban):
                 """
-                Liefert Statistiken zur IBAN zurück.
+                Liefert eine bestimmte Statistik zu einer IBAN und einem Filter zurück.
 
                 Args (uri):
                     iban, str:  IBAN zu der die Statistiken angezeigt werden sollen.
+                    startDate, str (query): Startdatum (Y-m-d) für die Anzeige der Einträge
+                    endDate, str (query):   Enddatum (Y-m-d) für die Anzeige der Einträge
+                    category, str (query):  Kategorie-Filter
+                    tag, str (query):       Tag-Filter, einzelner Eintrag oder kommagetrennte Liste
+                    tag_mode, str (query):  Vergleichsmodus für Tag-Filter (siehe Models.md)
+                    amount_min, float (query):  Betragsfilter (größer gleich amount_min)
+                    amount_max, float (query):  Betragsfilter (kleiner gleich amount_max)
+                    type, str (query):      Art der Statistik (default: top)
                 Returns:
-                    json: Statistiken zur IBAN
-                        - min_date, str: Datum der ältesten Transaktion
-                        - max_date, str: Datum der jüngsten Transaktion
-                        - number_tx, int: Anzahl der Transaktionen
+                    json: Statistiken zur IBAN als dict {type: dict-result}
+                        - top: siehe db_handler.stats_top()
                 """
                 if not parent.check_requested_iban(iban):
                     return "", 404
 
-                stats = parent.db_handler.min_max_collection(iban, 'date_tx')
-                return stats, 200
+                condition, _ = parent.filter_to_condition(request.args)
+                stat_type = request.args.get('type', 'top')
+
+                # Statistic methods
+                methods = {
+                    'top': parent.db_handler.stats_top
+                }
+
+                # Table with Transactions
+                current_app.logger.debug(f"Using condition filter: {condition}")
+                return {
+                    stat_type: methods.get(stat_type)(iban, condition)
+                }, 200

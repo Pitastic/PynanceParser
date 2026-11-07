@@ -9,6 +9,9 @@ import pytest
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
 
+# Set Env before more imports
+os.environ['PYTEST_MODE'] = '1'
+
 from helper import MockDatabase
 from app.server import create_app
 
@@ -22,6 +25,7 @@ def test_app():
 
     # Config
     root_path = os.path.dirname(os.path.realpath(__file__))
+    print(f"Root Path: {root_path}")
     config_path = os.path.join(
         root_path,
         'config.py'

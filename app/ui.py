@@ -123,6 +123,10 @@ class UserInterface():
                     continue
 
         # - Sort direction
+        sort_by = get_args.get('sort_by')
+        if sort_by is not None:
+            frontend_filters['sort_by'] = sort_by
+
         sort_desc = get_args.get('descending')
         if sort_desc is not None:
             frontend_filters['descending'] = sort_desc

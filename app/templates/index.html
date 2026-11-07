@@ -240,6 +240,28 @@
                 <button class="delete" onclick="deleteSetting()">Löschen</button>
             </footer>
         </details>
+        <details>
+            <summary>
+                Export in eine Datei:
+            </summary>
+            <p>
+                Exportiere eine Art von Einstellungen in eine <kbd>.json</kbd> Datei, um sie über das
+                Serververzeichnis <code>/app/settings/*</code> oder in der Oberfläche wieder zu importieren.
+            </p>
+            <p>
+                Namensgleiche Einstellungen werden überschrieben, neue hinzugefügt.
+            </p>
+            <p>
+                <select id="export-setting-type">
+                    <option value="config">Einstellungen</option>
+                    <option value="parser">Parsing-Anweisungen</option>
+                    <option value="rule">Regeln</option>
+                </select>
+            </p>
+            <footer dir="rtl">
+                <button class="secondary" onclick="exportSettings()">Export</button>
+            </footer>
+        </details>
     </article>
 </dialog>
 

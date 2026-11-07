@@ -42,11 +42,11 @@ def test_create_test_dataset(test_app):
 
         # Check Return Value
         found_rows_len = len(found_rows)
-        assert found_rows_len == 5, (f'Es wurden {found_rows_len} statt der '
-                                    'erwarteten 5 Einträge aus der Datei eingelesen.')
+        assert found_rows_len == 6, (f'Es wurden {found_rows_len} statt der '
+                                    'erwarteten 6 Einträge aus der Datei eingelesen.')
         # Savev to DB for next Tests
         r = test_app.host.db_handler.insert(found_rows, "DE89370400440532013001")
-        assert r.get('inserted') == 5, \
+        assert r.get('inserted') == 6, \
             "Es wurden nicht alle Einträge in die DB eingefügt."
 
         # Group IBANs for next Tests
@@ -96,3 +96,38 @@ def test_sort_entries_date_desc(test_app):
         dates = [entry['date_tx'] for entry in sorted_entries]
         assert dates == sorted(dates, reverse=True), \
             "Die Einträge sind nicht korrekt nach Datum absteigend sortiert."
+
+def test_sort_entries_amount_asc(test_app):
+    """
+    Testet das sortierte Ausgeben von Einträgen nach Betrag aufsteigend.
+    """
+    with test_app.app_context():
+        group_name = "testgroup"
+
+        # Get entries in ascending order by amount
+        sorted_entries = test_app.host.db_handler.select(
+            group_name, sort_by='amount', descending=False
+        )
+
+        # Check sorted form of retrieved entries
+        amounts = [entry['amount'] for entry in sorted_entries]
+        assert amounts == sorted(amounts), \
+            "Die Einträge sind nicht korrekt nach Betrag aufsteigend sortiert."
+
+
+def test_sort_entries_amount_desc(test_app):
+    """
+    Testet das sortierte Ausgeben von Einträgen nach Betrag absteigend.
+    """
+    with test_app.app_context():
+        group_name = "testgroup"
+
+        # Get entries in descending order by amount
+        sorted_entries = test_app.host.db_handler.select(
+            group_name, sort_by='amount', descending=True
+        )
+
+        # Check sorted form of retrieved entries
+        amounts = [entry['amount'] for entry in sorted_entries]
+        assert amounts == sorted(amounts, reverse=True), \
+            "Die Einträge sind nicht korrekt nach Betrag absteigend sortiert."
